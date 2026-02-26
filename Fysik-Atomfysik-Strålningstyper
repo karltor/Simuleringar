@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jämförelse av strålningstyp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        canvas {
+            background: white;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
+        <header class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 leading-tight">Strålnings-jämförelse</h1>
+                <p class="text-slate-500 text-sm">Trigga varje strålningstyp individuellt eller alla samtidigt</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+                <!-- Individuella knappar -->
+                <button onclick="fireSingle('non')" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg font-bold border border-green-200 hover:bg-green-200 transition-all text-xs">
+                    Icke-joniserande
+                </button>
+                <button onclick="fireSingle('uv')" class="bg-purple-100 text-purple-700 px-3 py-1.5 rounded-lg font-bold border border-purple-200 hover:bg-purple-200 transition-all text-xs">
+                    UV-strålning
+                </button>
+                <button onclick="fireSingle('ion')" class="bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-bold border border-red-200 hover:bg-red-200 transition-all text-xs">
+                    Joniserande
+                </button>
+                
+                <!-- Huvudkontroller -->
+                <div class="h-8 w-px bg-slate-300 mx-1 hidden md:block"></div>
+                
+                <button onclick="fireAll()" class="bg-indigo-600 text-white px-5 py-1.5 rounded-lg font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-md text-xs">
+                    STARTA ALLA ⚡
+                </button>
+                <button onclick="resetSim()" class="bg-slate-200 text-slate-700 px-4 py-1.5 rounded-lg font-bold hover:bg-slate-300 transition-all text-xs">
+                    Återställ
+                </button>
+            </div>
+        </header>
+
+        <div class="relative flex-grow bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
+            <!-- Etiketter för kolumner -->
+            <div class="absolute top-4 left-0 w-full flex pointer-events-none z-10">
+                <div class="w-1/3 text-center text-green-600 font-bold uppercase tracking-tight">Icke-joniserande<br><span class="text-[10px] text-slate-400 font-normal">Låg frekvens</span></div>
+                <div class="w-1/3 text-center text-purple-600 font-bold uppercase tracking-tight">UV-strålning<br><span class="text-[10px] text-slate-400 font-normal">Mellan - Gränsfall</span></div>
+                <div class="w-1/3 text-center text-red-600 font-bold uppercase tracking-tight">Joniserande<br><span class="text-[10px] text-slate-400 font-normal">Hög frekvens</span></div>
+            </div>
+
+            <canvas id="radiationCanvas"></canvas>
+            
+            <!-- Info-rutor i botten -->
+            <div class="absolute bottom-0 left-0 w-full grid grid-cols-3 border-t border-slate-100 bg-slate-50/90 backdrop-blur-sm text-[11px] leading-snug">
+                <div class="p-3 border-r border-slate-200">
+                    <b class="text-green-700 block mb-1 uppercase">Vibration</b>
+                    Atomen skakar om men förblir hel. Skapar värme.
+                </div>
+                <div class="p-3 border-r border-slate-200">
+                    <b class="text-purple-700 block mb-1 uppercase">Excitation</b>
+                    Energin flyttar elektroner utåt. Kemisk instabilitet.
+                </div>
+                <div class="p-3">
+                    <b class="text-red-700 block mb-1 uppercase">Jonisering</b>
+                    Elektronen skjuts bort helt. Atomen blir en jon.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('radiationCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let atoms = [];
+        
+        // Separat tillstånd för varje strålningstyp
+        let waveStates = {
+            'non': { active: false, progress: 0 },
+            'uv': { active: false, progress: 0 },
+            'ion': { active: false, progress: 0 }
+        };
+        
+        const ANIMATION_SPEED = 0.0035;
+
+        function resize() {
+            const container = canvas.parentElement;
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initAtoms();
+        }
+
+        class Atom {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.baseX = x;
+                this.type = type;
+                this.radius = 14;
+                this.vibration = 0;
+                this.electrons = [
+                    { angle: 0, dist: 40, state: 'normal', x_pos: 0, y_pos: 0 },
+                    { angle: Math.PI, dist: 40, state: 'normal', x_pos: 0, y_pos: 0 }
+                ];
+                this.isHit = false;
+            }
+
+            reset() {
+                this.isHit = false;
+                this.x = this.baseX;
+                this.vibration = 0;
+                this.electrons[0].state = 'normal';
+                this.electrons[0].dist = 40;
+                this.electrons[1].state = 'normal';
+                this.electrons[1].dist = 40;
+                delete this.electrons[1].vx;
+                delete this.electrons[1].vy;
+            }
+
+            update(waveFrontY, isActive) {
+                // Triggning vid kollision
+                if (isActive && waveFrontY > this.y - 10) {
+                    this.isHit = true;
+                }
+
+                if (this.isHit && isActive) {
+                    if (this.type === 'non') {
+                        // Vibration
+                        if (waveFrontY < this.y + 180) {
+                            this.vibration = Math.sin(Date.now() * 0.05) * 6;
+                        } else {
+                            this.vibration *= 0.92;
+                        }
+                        this.x = this.baseX + this.vibration;
+                    } 
+                    
+                    if (this.type === 'uv') {
+                        // Excitation
+                        this.electrons[0].state = 'excited';
+                        this.electrons[0].dist = Math.min(65, this.electrons[0].dist + 0.8);
+                    }
+
+                    if (this.type === 'ion') {
+                        // Jonisering
+                        this.electrons[1].state = 'ionizing';
+                        if (!this.electrons[1].vx) {
+                            this.electrons[1].vx = 7;
+                            this.electrons[1].vy = 2;
+                        }
+                    }
+                }
+
+                // Elektronernas rörelse
+                this.electrons.forEach(e => {
+                    if (e.state !== 'ionizing') {
+                        e.angle += 0.04;
+                        e.x_pos = this.x + Math.cos(e.angle) * e.dist;
+                        e.y_pos = this.y + Math.sin(e.angle) * e.dist;
+                    } else {
+                        e.x_pos += e.vx;
+                        e.y_pos += e.vy;
+                    }
+                });
+            }
+
+            draw() {
+                // Banor
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 40, 0, Math.PI * 2);
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                if (this.type === 'uv') {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 65, 0, Math.PI * 2);
+                    ctx.setLineDash([2, 6]);
+                    ctx.strokeStyle = '#f3e8ff';
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Kärna
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                const colors = { 'non': '#22c55e', 'uv': '#a855f7', 'ion': '#ef4444' };
+                ctx.fillStyle = colors[this.type];
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Elektroner
+                this.electrons.forEach(e => {
+                    ctx.beginPath();
+                    ctx.arc(e.x_pos, e.y_pos, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fill();
+                    
+                    if (e.state === 'excited') {
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = '#a855f7';
+                    }
+                });
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function initAtoms() {
+            const bottomArea = height * 0.7;
+            atoms = [
+                new Atom(width * 0.166, bottomArea, 'non'),
+                new Atom(width * 0.5, bottomArea, 'uv'),
+                new Atom(width * 0.833, bottomArea, 'ion')
+            ];
+        }
+
+        function fireSingle(type) {
+            // Nollställ bara den specifika atomen
+            const atom = atoms.find(a => a.type === type);
+            if (atom) atom.reset();
+            
+            waveStates[type].active = true;
+            waveStates[type].progress = 0;
+        }
+
+        function fireAll() {
+            Object.keys(waveStates).forEach(type => fireSingle(type));
+        }
+
+        function resetSim() {
+            Object.keys(waveStates).forEach(type => {
+                waveStates[type].active = false;
+                waveStates[type].progress = 0;
+            });
+            atoms.forEach(a => a.reset());
+        }
+
+        function drawWaves() {
+            const configs = [
+                { type: 'non', freq: 0.015, amp: 40, color: '#22c55e' },
+                { type: 'uv', freq: 0.08, amp: 25, color: '#a855f7' },
+                { type: 'ion', freq: 0.25, amp: 15, color: '#ef4444' }
+            ];
+
+            configs.forEach((conf, index) => {
+                const state = waveStates[conf.type];
+                const atom = atoms[index];
+
+                if (state.active) {
+                    ctx.beginPath();
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = conf.color;
+                    
+                    let waveFrontY = (state.progress * height * 1.4) - 100;
+                    let waveTailY = waveFrontY - 200;
+                    
+                    for (let y = waveTailY; y < waveFrontY; y += 2) {
+                        if (y < 0) continue;
+                        let waveX = atom.baseX + Math.sin(y * conf.freq) * conf.amp;
+                        if (y === waveTailY) ctx.moveTo(waveX, y);
+                        else ctx.lineTo(waveX, y);
+                    }
+                    ctx.stroke();
+
+                    atom.update(waveFrontY, true);
+
+                    state.progress += ANIMATION_SPEED;
+                    if (state.progress > 1.2) {
+                        state.active = false;
+                    }
+                } else {
+                    atom.update(-100, false);
+                }
+            });
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Kolumn-guider
+            ctx.strokeStyle = '#f8fafc';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(width/3, 0); ctx.lineTo(width/3, height);
+            ctx.moveTo(2*width/3, 0); ctx.lineTo(2*width/3, height);
+            ctx.stroke();
+
+            drawWaves();
+            atoms.forEach(a => a.draw());
+
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = () => {
+            resize();
+            animate();
+        };
+        window.onresize = resize;
+    </script>
+</body>
+</html>

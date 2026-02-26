@@ -5,90 +5,197 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Informationsöverföring i Kroppen</title>
 <style>
-  .container {
+  :root {
+    --bg-color: #0f172a; /* Mörk skifferblå */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --pipe-bg: rgba(0, 0, 0, 0.2);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --nerve-color: #06b6d4; /* Cyan */
+    --hormone-color: #d946ef; /* Fuchsia */
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+  }
+
+  h1 {
+    font-weight: 300;
+    letter-spacing: 1px;
+    margin-bottom: 2rem;
     text-align: center;
-    margin-bottom: 20px; /* Adds distance between elements */
   }
-  .pipe {
-    position: relative;
-    width: 90%;
-    margin: auto;
-    height: 50px; /* Height of the top pipe */
-    border: 1px solid black;
-    overflow: hidden;
-    margin-bottom: 40px; /* Distance between the pipes */
+
+  .container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 24px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px); /* Glassmorphism-effekt */
   }
-  .dot {
-    position: absolute;
-    width: 10px; /* Adjusted size */
-    height: 10px; /* Adjusted size */
-    background-color: blue;
+
+  .title {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Små färgkodade prickar bredvid titlarna */
+  .title::before {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
   }
+  .title.nerve-title::before {
+    background-color: var(--nerve-color);
+    box-shadow: 0 0 10px var(--nerve-color);
+  }
+  .title.hormone-title::before {
+    background-color: var(--hormone-color);
+    box-shadow: 0 0 10px var(--hormone-color);
+  }
+
+  .pipe {
+    position: relative;
+    width: 100%;
+    background: var(--pipe-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 50px; /* Pillerformade rör */
+    overflow: hidden;
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  #topPipe {
+    height: 50px;
+  }
+
   #bottomPipe {
-    height: 100px; /* Height of the bottom pipe */
+    height: 120px;
   }
-  .title {
-    font-size: 24px;
-    margin: 20px 0;
-  }
+
   .explanation {
-    font-size: 18px;
-    margin-top: 20px;
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin: 1.5rem 0 0 0;
+    line-height: 1.5;
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50px;
+    will-change: transform; /* Optimerar animationen */
+  }
+
+  /* Specifik styling för nervsignalen (snabb och avlång) */
+  .nerve-particle {
+    width: 40px;
+    height: 6px;
+    background-color: #fff;
+    box-shadow: 0 0 15px 4px var(--nerve-color), inset 0 0 4px var(--nerve-color);
+  }
+
+  /* Specifik styling för hormoner (långsamma, runda och pulserande) */
+  .hormone-particle {
+    width: 8px;
+    height: 8px;
+    background-color: #fff;
+    box-shadow: 0 0 10px 2px var(--hormone-color);
+    opacity: 0.8;
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="title">Nervsignal</div>
-  <div id="topPipe" class="pipe"></div>
-  <p class="explanation">Nervsignaler skickar snabb information för omedelbara reaktioner.</p>
-</div>
-<div class="container">
-  <div class="title">Hormoner</div>
-  <div id="bottomPipe" class="pipe"></div>
-  <p class="explanation">Hormoner transporterar information långsamt för att reglera kroppens långsiktiga processer.</p>
-</div>
+
+  <h1>Kroppens Kommunikationssystem</h1>
+
+  <div class="container">
+    <div class="title nerve-title">Nervsystemet</div>
+    <div id="topPipe" class="pipe"></div>
+    <p class="explanation">Nervsignaler skickar elektriska impulser blixtsnabbt genom nervtrådarna för omedelbara reaktioner.</p>
+  </div>
+
+  <div class="container">
+    <div class="title hormone-title">Hormonsystemet</div>
+    <div id="bottomPipe" class="pipe"></div>
+    <p class="explanation">Hormoner utsöndras i blodet och transporterar information långsamt för att reglera kroppens långsiktiga processer.</p>
+  </div>
+
 <script>
-  function moveDot(dot, container, baseSpeed) {
-    let pos = Math.random() * container.clientWidth; // Initial horizontal position
-    let containerWidth = container.clientWidth;
-    const speedVariation = baseSpeed * 0.1;
-    const speed = baseSpeed + (Math.random() * (speedVariation * 2) - speedVariation);
+  function animateParticle(element, container, baseSpeed) {
+    let x = Math.random() * container.clientWidth;
+    let y = Math.random() * (container.clientHeight - element.offsetHeight);
+    
+    // Lägg till lite slumpmässighet i hastigheten för varje partikel
+    const speed = baseSpeed + (Math.random() * (baseSpeed * 0.3) - (baseSpeed * 0.15));
 
-    // Set a random vertical position
-    dot.style.top = `${Math.random() * (container.clientHeight - dot.offsetHeight)}px`;
+    element.style.top = `${y}px`;
 
-    function animate() {
-      pos += speed;
-      if (pos > containerWidth) {
-        pos = -dot.offsetWidth;
-        // Randomize vertical position when dot resets
-        dot.style.top = `${Math.random() * (container.clientHeight - dot.offsetHeight)}px`;
+    function step() {
+      x += speed;
+      
+      // Om partikeln åker ut till höger, börja om till vänster
+      if (x > container.clientWidth) {
+        x = -element.offsetWidth * 2; // Ge den lite marginal innan den syns
+        y = Math.random() * (container.clientHeight - element.offsetHeight);
+        element.style.top = `${y}px`;
       }
-      dot.style.left = pos + 'px';
-      requestAnimationFrame(animate);
+      
+      // Använd transform (translate3d) istället för "left" för mycket mjukare rendering
+      element.style.transform = `translate3d(${x}px, 0, 0)`;
+      requestAnimationFrame(step);
     }
-    animate();
+    
+    // Starta loopen
+    requestAnimationFrame(step);
   }
 
-  // Single dot for the top pipe
+  // --- Initiera Nervsignalen ---
   const topPipe = document.getElementById('topPipe');
-  const singleDot = document.createElement('div');
-  singleDot.classList.add('dot');
-  topPipe.appendChild(singleDot);
-  moveDot(singleDot, topPipe, 6, 0); // No vertical range for the top pipe
+  const nerveSignal = document.createElement('div');
+  nerveSignal.classList.add('particle', 'nerve-particle');
+  topPipe.appendChild(nerveSignal);
+  
+  // Hög hastighet (t.ex. 15) för nervsignalen
+  animateParticle(nerveSignal, topPipe, 15);
 
-  // Multiple dots for the bottom pipe
+  // --- Initiera Hormonerna ---
   const bottomPipe = document.getElementById('bottomPipe');
-  const numberOfDots = 60;
-  for (let i = 0; i < numberOfDots; i++) {
-    let dot = document.createElement('div');
-    dot.classList.add('dot');
-    bottomPipe.appendChild(dot);
-    moveDot(dot, bottomPipe, 0.2, 40); // Vertical range of 40px
+  const numberOfHormones = 50;
+  
+  for (let i = 0; i < numberOfHormones; i++) {
+    let hormone = document.createElement('div');
+    hormone.classList.add('particle', 'hormone-particle');
+    
+    // Skapa lite variation i storlek och opacitet för snyggare effekt
+    let scale = 0.5 + Math.random() * 1;
+    hormone.style.width = `${8 * scale}px`;
+    hormone.style.height = `${8 * scale}px`;
+    hormone.style.opacity = 0.3 + Math.random() * 0.7;
+    
+    bottomPipe.appendChild(hormone);
+    
+    // Låg hastighet (t.ex. 0.5) för hormonerna
+    animateParticle(hormone, bottomPipe, 0.5);
   }
-
 </script>
 </body>
 </html>

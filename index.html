@@ -5,124 +5,197 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Karls Dashboard</title>
   <style>
-    /* Tunnare och tajtare grundstil */
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 10px 15px; color: #333; margin: 0; }
-    h1 { text-align: left; margin: 10px 0 20px 10px; font-size: 1.5rem; color: #1a202c; border-bottom: 2px solid #ccc; padding-bottom: 5px; }
+    /* Extremt tajt och yteffektiv layout */
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 10px; color: #333; margin: 0; }
     
-    /* CSS GRID: Här är magin som utnyttjar hela skärmen */
-    .container { 
-      display: grid; 
-      /* auto-fit skapar så många kolumner som får plats. Minst 280px breda, annars tänjer de ut sig */
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-      gap: 15px; 
-      width: 100%;
-      align-items: start; 
-    }
+    /* Header och inställningar */
+    .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
+    h1 { margin: 0; font-size: 1.4rem; color: #1a202c; display: flex; align-items: center; gap: 8px;}
     
-    .subject-block { background: white; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border: 1px solid #e1e4e8; }
+    .settings-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
+    .settings-btn:hover { background: #cbd5e1; transform: rotate(15deg); }
     
-    /* Tajtare rubriker */
-    .subject-title { 
-      background: #007bff; color: white; padding: 8px 12px; margin: 0; 
-      font-size: 1rem; font-weight: 600; cursor: pointer; 
-      display: flex; justify-content: space-between; align-items: center;
-      border-radius: 5px 5px 0 0;
-    }
+    /* Settings Modal (Kugghjulet) */
+    #settings-modal { display: none; position: absolute; top: 55px; right: 10px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #e1e4e8; z-index: 100; min-width: 200px; }
+    #settings-modal h3 { margin: 0 0 10px 0; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+    .setting-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; }
+    .setting-label input { cursor: pointer; }
+
+    /* CSS GRID: Ännu tajtare (230px min-bredd för laptops) */
+    .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; width: 100%; align-items: start; }
     
-    .content-wrapper { display: none; padding: 8px; }
+    .subject-block { background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e1e4e8; }
     
-    /* Kompaktare listor */
-    .category-group { margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+    .subject-title { background: #007bff; color: white; padding: 6px 10px; margin: 0; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }
+    
+    .content-wrapper { display: none; padding: 6px; }
+    
+    .category-group { margin-bottom: 6px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
     .category-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     
-    .category-name { font-weight: 700; color: #444; display: block; margin: 4px 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .category-name { font-weight: 700; color: #444; display: block; margin: 2px 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
     
-    .sim-link { 
-      display: block; padding: 5px 8px; margin: 2px 0; 
-      background: #f8f9fa; border-radius: 4px; text-decoration: none; 
-      color: #0366d6; font-size: 0.85rem; border: 1px solid transparent; 
-    }
+    .sim-link { display: block; padding: 4px 6px; margin: 2px 0; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: #0366d6; font-size: 0.85rem; border: 1px solid transparent; }
     .sim-link:hover { background: #f0f8ff; border-color: #cce5ff; text-decoration: underline; }
     
     .active { display: block !important; }
   </style>
 </head>
 <body>
-  <h1>⚙️ Mina Simuleringar</h1>
+  <div class="header-container">
+    <h1>⚙️ Mina Simuleringar</h1>
+    <button class="settings-btn" onclick="toggleSettings()" title="Hantera ämnen">⚙️</button>
+  </div>
+  
+  <div id="settings-modal">
+    <h3>Visa/Dölj Ämnen</h3>
+    <div id="settings-list"></div>
+  </div>
+
   <div class="container" id="main-content">
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Biologi <span>-</span></div>
+<div class='subject-block' data-subject='Biologi'>
+<div class='subject-title'>Biologi <span>-</span></div>
 <div class='content-wrapper active'>
 <span class='category-name'>📂 Centrala Nervsystemet</span>
-<a class='sim-link' href="./Biologi-Centrala Nervsystemet-Nervsignaler & Hormoner.html">Nervsignaler & Hormoner</a>
+<a class='sim-link' href="./Biologi-Centrala Nervsystemet-Nervsignaler & Hormoner.html" target="_blank">Nervsignaler & Hormoner</a>
 <span class='category-name'>📂 Ekologi</span>
-<a class='sim-link' href="./Biologi-Ekologi-Abiotiska och biotiska faktorer.html">Abiotiska och biotiska faktorer</a>
-<a class='sim-link' href="./Biologi-Ekologi-Anrikning av Miljögifter.html">Anrikning av Miljögifter</a>
+<a class='sim-link' href="./Biologi-Ekologi-Abiotiska och biotiska faktorer.html" target="_blank">Abiotiska och biotiska faktorer</a>
+<a class='sim-link' href="./Biologi-Ekologi-Anrikning av Miljögifter.html" target="_blank">Anrikning av Miljögifter</a>
 </div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>-</span></div>
+<div class='subject-block' data-subject='Fysik'>
+<div class='subject-title'>Fysik <span>-</span></div>
 <div class='content-wrapper active'>
 <span class='category-name'>📂 Astronomi</span>
-<a class='sim-link' href="./Fysik-Astronomi-Spektroskopi och exoplaneters gaser.html">Spektroskopi och exoplaneters gaser</a>
-<a class='sim-link' href="./Fysik-Astronomi-Transitmetoden.html">Transitmetoden</a>
+<a class='sim-link' href="./Fysik-Astronomi-Spektroskopi och exoplaneters gaser.html" target="_blank">Spektroskopi och exoplaneters gaser</a>
+<a class='sim-link' href="./Fysik-Astronomi-Transitmetoden.html" target="_blank">Transitmetoden</a>
 <span class='category-name'>📂 Elektromagnetism</span>
-<a class='sim-link' href="./Fysik-Elektromagnetism-AC Lampa.html">AC Lampa</a>
+<a class='sim-link' href="./Fysik-Elektromagnetism-AC Lampa.html" target="_blank">AC Lampa</a>
 <span class='category-name'>📂 Krafter</span>
-<a class='sim-link' href="./Fysik-Krafter-Fritt Fall sidled.html">Fritt Fall sidled</a>
-<a class='sim-link' href="./Fysik-Krafter-Tröghetslagen.html">Tröghetslagen</a>
-<a class='sim-link' href="./Fysik-Krafter-Tyngdacceleration.html">Tyngdacceleration</a>
+<a class='sim-link' href="./Fysik-Krafter-Fritt Fall sidled.html" target="_blank">Fritt Fall sidled</a>
+<a class='sim-link' href="./Fysik-Krafter-Tröghetslagen.html" target="_blank">Tröghetslagen</a>
+<a class='sim-link' href="./Fysik-Krafter-Tyngdacceleration.html" target="_blank">Tyngdacceleration</a>
 <span class='category-name'>📂 Kraft</span>
-<a class='sim-link' href="./Fysik-Kraft-Fritt Fall.html">Fritt Fall</a>
+<a class='sim-link' href="./Fysik-Kraft-Fritt Fall.html" target="_blank">Fritt Fall</a>
 <span class='category-name'>📂 Ljud</span>
-<a class='sim-link' href="./Fysik-Ljud-Dopplereffekten.html">Dopplereffekten</a>
+<a class='sim-link' href="./Fysik-Ljud-Dopplereffekten.html" target="_blank">Dopplereffekten</a>
 <span class='category-name'>📂 Optik</span>
-<a class='sim-link' href="./Fysik-Optik-Våglängd.html">Våglängd</a>
+<a class='sim-link' href="./Fysik-Optik-Våglängd.html" target="_blank">Våglängd</a>
 <span class='category-name'>📂 Värmelära</span>
-<a class='sim-link' href="./Fysik-Värmelära-Tid och Temperatur Diagram.html">Tid och Temperatur Diagram</a>
+<a class='sim-link' href="./Fysik-Värmelära-Tid och Temperatur Diagram.html" target="_blank">Tid och Temperatur Diagram</a>
 </div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Kemi <span>-</span></div>
+<div class='subject-block' data-subject='Kemi'>
+<div class='subject-title'>Kemi <span>-</span></div>
 <div class='content-wrapper active'>
 <span class='category-name'>📂 Grunder</span>
-<a class='sim-link' href="./Kemi-Grunder-Kemiska föreningar.html">Kemiska föreningar</a>
+<a class='sim-link' href="./Kemi-Grunder-Kemiska föreningar.html" target="_blank">Kemiska föreningar</a>
 </div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>-</span></div>
+<div class='subject-block' data-subject='Matematik'>
+<div class='subject-title'>Matematik <span>-</span></div>
 <div class='content-wrapper active'>
 <span class='category-name'>📂 Geometri</span>
-<a class='sim-link' href="./Matematik-Geometri-Cirkel.html">Cirkel</a>
-<a class='sim-link' href="./Matematik-Geometri-Likformighet och kongruens.html">Likformighet och kongruens</a>
-<a class='sim-link' href="./Matematik-Geometri-Pythagoras Golf.html">Pythagoras Golf</a>
+<a class='sim-link' href="./Matematik-Geometri-Cirkel.html" target="_blank">Cirkel</a>
+<a class='sim-link' href="./Matematik-Geometri-Likformighet och kongruens.html" target="_blank">Likformighet och kongruens</a>
+<a class='sim-link' href="./Matematik-Geometri-Pythagoras Golf.html" target="_blank">Pythagoras Golf</a>
 <span class='category-name'>📂 Problemlösning</span>
-<a class='sim-link' href="./Matematik-Problemlösning-Lösenord.html">Lösenord</a>
+<a class='sim-link' href="./Matematik-Problemlösning-Lösenord.html" target="_blank">Lösenord</a>
 <span class='category-name'>📂 Sannolikhetslära</span>
-<a class='sim-link' href="./Matematik-Sannolikhetslära-2 Tiosidiga Tärningar.html">2 Tiosidiga Tärningar</a>
-<a class='sim-link' href="./Matematik-Sannolikhetslära-Falsk Tärning.html">Falsk Tärning</a>
+<a class='sim-link' href="./Matematik-Sannolikhetslära-2 Tiosidiga Tärningar.html" target="_blank">2 Tiosidiga Tärningar</a>
+<a class='sim-link' href="./Matematik-Sannolikhetslära-Falsk Tärning.html" target="_blank">Falsk Tärning</a>
 <span class='category-name'>📂 Statistik</span>
-<a class='sim-link' href="./Matematik-Statistik-Diagram.html">Diagram</a>
+<a class='sim-link' href="./Matematik-Statistik-Diagram.html" target="_blank">Diagram</a>
 <span class='category-name'>📂 Taluppfattning</span>
-<a class='sim-link' href="./Matematik-Taluppfattning-Bråk högre eller lägre.html">Bråk högre eller lägre</a>
-<a class='sim-link' href="./Matematik-Taluppfattning-Hitta Kvadratroten.html">Hitta Kvadratroten</a>
-<a class='sim-link' href="./Matematik-Taluppfattning-Multiplicera med 10.html">Multiplicera med 10</a>
-<a class='sim-link' href="./Matematik-Taluppfattning-Potenser.html">Potenser</a>
-<a class='sim-link' href="./Matematik-Taluppfattning-Primtal.html">Primtal</a>
-<a class='sim-link' href="./Matematik-Taluppfattning-Ränta på Ränta.html">Ränta på Ränta</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Bråk högre eller lägre.html" target="_blank">Bråk högre eller lägre</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Hitta Kvadratroten.html" target="_blank">Hitta Kvadratroten</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Multiplicera med 10.html" target="_blank">Multiplicera med 10</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Potenser.html" target="_blank">Potenser</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Primtal.html" target="_blank">Primtal</a>
+<a class='sim-link' href="./Matematik-Taluppfattning-Ränta på Ränta.html" target="_blank">Ränta på Ränta</a>
 <span class='category-name'>📂 Övrigt</span>
-<a class='sim-link' href="./Matematik-Övrigt-Countdown.html">Countdown</a>
-<a class='sim-link' href="./Matematik-Övrigt-Klockan.html">Klockan</a>
+<a class='sim-link' href="./Matematik-Övrigt-Countdown.html" target="_blank">Countdown</a>
+<a class='sim-link' href="./Matematik-Övrigt-Klockan.html" target="_blank">Klockan</a>
 </div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Övrigt <span>-</span></div>
+<div class='subject-block' data-subject='Övrigt'>
+<div class='subject-title'>Övrigt <span>-</span></div>
 <div class='content-wrapper active'>
 <span class='category-name'>📂 Gruppövningar</span>
-<a class='sim-link' href="./Övrigt-Gruppövningar-Jeopardy.html">Jeopardy</a>
+<a class='sim-link' href="./Övrigt-Gruppövningar-Jeopardy.html" target="_blank">Jeopardy</a>
   </div>
   <script>
-    function toggle(el) {
-      el.classList.toggle('active');
-      const span = el.previousElementSibling.querySelector('span');
-      span.innerText = el.classList.contains('active') ? '-' : '+';
+    // --- 1. Hantera Settings-menyn ---
+    function toggleSettings() {
+      const modal = document.getElementById('settings-modal');
+      modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
     }
+
+    // Stäng modalen om man klickar utanför
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('settings-modal');
+      const btn = document.querySelector('.settings-btn');
+      if (modal.style.display === 'block' && !modal.contains(e.target) && !btn.contains(e.target)) {
+        modal.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // --- 2. Arkiverings-logik (Visa/Dölj Hela Ämnen) ---
+      const blocks = Array.from(document.querySelectorAll('.subject-block'));
+      const settingsList = document.getElementById('settings-list');
+      const hiddenSubjects = JSON.parse(localStorage.getItem('hidden-subjects') || '[]');
+
+      blocks.forEach(block => {
+        const subjectName = block.getAttribute('data-subject');
+        
+        // Dölj om den är sparad som dold i localstorage
+        if (hiddenSubjects.includes(subjectName)) {
+          block.style.display = 'none';
+        }
+
+        // Skapa checkbox i inställningar
+        const label = document.createElement('label');
+        label.className = 'setting-label';
+        const isChecked = !hiddenSubjects.includes(subjectName);
+        label.innerHTML = `<input type="checkbox" ${isChecked ? 'checked' : ''}> ${subjectName}`;
+        
+        label.querySelector('input').addEventListener('change', (e) => {
+          if (e.target.checked) {
+            block.style.display = 'block';
+            // Ta bort från dolda listan
+            const index = hiddenSubjects.indexOf(subjectName);
+            if (index > -1) hiddenSubjects.splice(index, 1);
+          } else {
+            block.style.display = 'none';
+            // Lägg till i dolda listan
+            hiddenSubjects.push(subjectName);
+          }
+          localStorage.setItem('hidden-subjects', JSON.stringify(hiddenSubjects));
+        });
+        
+        settingsList.appendChild(label);
+      });
+
+      // --- 3. Dragspels-logik (Spara minimerade/expanderade block) ---
+      document.querySelectorAll('.subject-title').forEach(titleEl => {
+        const subjectName = titleEl.parentElement.getAttribute('data-subject');
+        const content = titleEl.nextElementSibling;
+        const span = titleEl.querySelector('span');
+        const storageKey = 'toggle-state-' + subjectName;
+
+        // Läs in sparat tillstånd (Standard är 'open' om inget finns sparat)
+        const savedState = localStorage.getItem(storageKey);
+        if (savedState === 'closed') {
+          content.classList.remove('active');
+          span.innerText = '+';
+        }
+
+        // Klick-event för att öppna/stänga
+        titleEl.addEventListener('click', () => {
+          content.classList.toggle('active');
+          const isOpen = content.classList.contains('active');
+          span.innerText = isOpen ? '-' : '+';
+          localStorage.setItem(storageKey, isOpen ? 'open' : 'closed');
+        });
+      });
+    });
   </script>
 </body>
 </html>

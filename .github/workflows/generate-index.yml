@@ -10,8 +10,86 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
-      - name: Generate HTML
+      - name: Generate HTML Files
         run: |
+          
+          # ==========================================
+          # 1. GENERERA "OM MIG"-SIDAN
+          # ==========================================
+          cat <<'EOF' > om-mig.html
+          <!DOCTYPE html>
+          <html lang="sv">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Om Mig - Karl Törnered</title>
+            <style>
+              body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; line-height: 1.6; }
+              .nav-header { max-width: 800px; margin: 0 auto 20px auto; display: flex; justify-content: flex-start; }
+              .back-btn { text-decoration: none; background: #e2e8f0; color: #333; padding: 8px 16px; border-radius: 6px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+              .back-btn:hover { background: #cbd5e1; transform: translateX(-5px); }
+              
+              .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+              
+              .hero { background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 40px 30px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
+              .profile-img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #007bff; font-weight: bold; overflow: hidden; flex-shrink: 0; }
+              .profile-img img { width: 100%; height: 100%; object-fit: cover; }
+              .hero-text h1 { margin: 0 0 5px 0; font-size: 2.5rem; letter-spacing: -0.5px; }
+              .hero-text p { margin: 0; font-size: 1.2rem; opacity: 0.9; font-weight: 300; }
+              
+              .content { padding: 40px 30px; font-size: 1.05rem; color: #444; }
+              .content p { margin-bottom: 20px; }
+              
+              .cta-container { display: flex; gap: 15px; margin-top: 40px; flex-wrap: wrap; }
+              .cta-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: 0.2s; color: white; }
+              .cta-linkedin { background: #0a66c2; } /* Officiell LinkedIn-blå */
+              .cta-linkedin:hover { background: #004182; transform: translateY(-3px); box-shadow: 0 4px 10px rgba(10,102,194,0.3); }
+              .cta-article { background: #1a202c; }
+              .cta-article:hover { background: #000; transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+              .linkedin-icon { width: 22px; height: 22px; fill: currentColor; }
+            </style>
+          </head>
+          <body>
+            <div class="nav-header">
+              <a href="index.html" class="back-btn">🔙 Tillbaka till Dashboard</a>
+            </div>
+            
+            <div class="container">
+              <div class="hero">
+                <div class="profile-img">
+                  <img src="profilbild.jpg" alt="Karl Törnered" onerror="this.style.display='none'; this.parentNode.innerHTML='KT';">
+                </div>
+                <div class="hero-text">
+                  <h1>Karl Törnered</h1>
+                  <p>Lärare & AI-entusiast</p>
+                </div>
+              </div>
+              
+              <div class="content">
+                <p>Jag har sedan 2023 arbetat flitigt med AI och dess potential att förändra hur jag undervisar med hjälp av digitala verktyg.</p>
+                <p>Många verktyg man hittar på nätet efter mycket om och men är inte pedagogiskt värdefulla, är ofta på engelska, har reklam eller andra störningsmoment. De är sällan avskalade nog, försöker göra för mycket på en och samma sida, eller så saknas exakt det man söker efter.</p>
+                <p>Därför började jag på min planeringstid producera dessa simulatorer. De flesta är AI-genererade, där jag tillsammans med chattbottar som Gemini och ChatGPT har bollat fram och tillbaka för att skapa avskalade digitala verktyg som är direkt användbara i undervisningen.</p>
+                <p>Flertalet simuleringar är tänkta att visas av läraren under en genomgång, men vissa skickar jag direkt till mina elever. Vissa verktyg kan verka otydliga då de är en del av specifika laborationer som kräver ytterligare kontext för att användas fullt ut.</p>
+                <p>Jag föreläser även på grund- och gymnasieskolor kring hur lärare kan använda sig av och bör förhålla sig till AI.</p>
+                
+                <div class="cta-container">
+                  <a href="https://se.linkedin.com/in/karl-t%C3%B6rnered-2b19731b6" target="_blank" class="cta-btn cta-linkedin">
+                    <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                    Kontakta mig på LinkedIn
+                  </a>
+                  <a href="https://atenadidaktik.se/article/view/5472" target="_blank" class="cta-btn cta-article">
+                    📄 Atena Didaktik
+                  </a>
+                </div>
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+          # ==========================================
+          # 2. GENERERA DASHBOARDEN (INDEX.HTML)
+          # ==========================================
           cat <<'EOF' > index.html
           <!DOCTYPE html>
           <html lang="sv">
@@ -20,44 +98,31 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Karls Simuleringar</title>
             <style>
-              /* Extremt tajt och yteffektiv layout */
               body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 10px; color: #333; margin: 0; }
               
-              /* Header och inställningar */
               .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
               h1 { margin: 0; font-size: 1.4rem; color: #1a202c; display: flex; align-items: center; gap: 8px;}
               
-              /* Nya knappgruppen i headern */
               .header-buttons { display: flex; gap: 8px; }
               .icon-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; text-decoration: none; display: flex; align-items: center; justify-content: center; color: #333; }
               .icon-btn:hover { background: #cbd5e1; transform: translateY(-2px); }
               
-              /* Settings Modal (Kugghjulet) */
               #settings-modal { display: none; position: absolute; top: 55px; right: 10px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #e1e4e8; z-index: 100; min-width: 200px; }
               #settings-modal h3 { margin: 0 0 10px 0; font-size: 1rem; border-bottom: 1px solid #eee; padding-bottom: 5px; }
               .setting-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; }
               .setting-label input { cursor: pointer; }
 
-              /* Centrerade Overlay-Modaler (Om mig & Testa Kod) */
               .overlay-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-              .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
+              .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
               .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: #888; transition: 0.2s; }
               .close-btn:hover { color: #333; }
               
-              /* Design för Om mig-texten */
-              .about-text { line-height: 1.6; font-size: 1.05rem; color: #444; }
-              .about-text p { margin-bottom: 15px; }
-              .link-buttons { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
               .text-btn { background: #007bff; color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s; border: none; cursor: pointer; display: inline-block; }
               .text-btn:hover { background: #0056b3; }
-              .text-btn.alt { background: #0a66c2; } /* LinkedIn-blå */
-              .text-btn.alt:hover { background: #004182; }
 
-              /* Design för Kod-renderaren */
               .code-area { width: 100%; height: 350px; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; padding: 12px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; box-sizing: border-box; margin-bottom: 15px; background: #f8f9fa; }
               .code-area:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.25); }
 
-              /* CSS GRID: Tajt och responsivt */
               .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; width: 100%; align-items: start; }
               .subject-block { background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e1e4e8; }
               .subject-title { background: #007bff; color: white; padding: 6px 10px; margin: 0; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }
@@ -76,7 +141,7 @@ jobs:
             <div class="header-container">
               <h1>🚀 Karls Simuleringar</h1>
               <div class="header-buttons">
-                <button class="icon-btn" onclick="openModal('about-modal')" title="Om Mig">👤</button>
+                <a href="om-mig.html" class="icon-btn" title="Om Mig">👤</a>
                 <button class="icon-btn" onclick="openModal('test-modal')" title="Testkör HTML-kod">⚡</button>
                 <a href="https://github.com/karltor/Simuleringar" target="_blank" class="icon-btn" title="GitHub Repo">🐙</a>
                 <button class="icon-btn settings-btn" onclick="toggleSettings()" title="Hantera ämnen">⚙️</button>
@@ -88,26 +153,8 @@ jobs:
               <div id="settings-list"></div>
             </div>
 
-            <div id="about-modal" class="overlay-modal" onclick="closeOnOutsideClick(event, 'about-modal')">
-              <div class="modal-content">
-                <button class="close-btn" onclick="closeModal('about-modal')">&times;</button>
-                <h2 style="margin-top:0; color:#1a202c; border-bottom:2px solid #007bff; padding-bottom:10px;">Om Mig</h2>
-                <div class="about-text">
-                  <p>Mitt namn är <strong>Karl Törnered</strong>. Jag har sedan 2023 arbetat flitigt med AI och dess potential att förändra hur jag undervisar med hjälp av digitala verktyg.</p>
-                  <p>Många verktyg man hittar på nätet efter mycket om och men är inte pedagogiskt värdefulla, är ofta på engelska, har reklam eller andra störningsmoment. De är sällan avskalade nog, försöker göra för mycket på en och samma sida, eller så saknas exakt det man söker efter.</p>
-                  <p>Därför började jag på min planeringstid producera dessa simulatorer. De flesta är AI-genererade, där jag tillsammans med chattbottar som Gemini och ChatGPT har bollat fram och tillbaka för att skapa avskalade digitala verktyg som är direkt användbara i undervisningen.</p>
-                  <p>Flertalet simuleringar är tänkta att visas av läraren under en genomgång, men vissa skickar jag direkt till mina elever. Vissa verktyg kan verka otydliga då de är en del av specifika laborationer som kräver ytterligare kontext för att användas fullt ut.</p>
-                  <p>Jag föreläser även på grund- och gymnasieskolor kring hur lärare kan använda sig av och bör förhålla sig till AI.</p>
-                </div>
-                <div class="link-buttons">
-                  <a href="https://atenadidaktik.se/article/view/5472" target="_blank" class="text-btn">Läs min artikel på Atena Didaktik</a>
-                  <a href="https://se.linkedin.com/in/karl-t%C3%B6rnered-2b19731b6" target="_blank" class="text-btn alt">Kontakta mig på LinkedIn</a>
-                </div>
-              </div>
-            </div>
-
             <div id="test-modal" class="overlay-modal" onclick="closeOnOutsideClick(event, 'test-modal')">
-              <div class="modal-content" style="max-width:800px;">
+              <div class="modal-content">
                 <button class="close-btn" onclick="closeModal('test-modal')">&times;</button>
                 <h2 style="margin-top:0; color:#1a202c; border-bottom:2px solid #007bff; padding-bottom:10px;">⚡ Sandlådan - Testkör kod</h2>
                 <p style="color:#666; font-size:0.9rem; margin-top:0;">Klistra in din HTML/CSS/JS från AI:n nedan och klicka på Kör. Koden renderas i en ny flik.</p>
@@ -121,7 +168,8 @@ jobs:
 
           > raw_data.txt
 
-          find . -maxdepth 1 -name "*.html" ! -name "index.html" -not -path "*/.*" | sort | while read -r f; do
+          # UPPDATERAD FIND: Ignorerar nu både index.html och om-mig.html så den inte dyker upp som en simulering
+          find . -maxdepth 1 -name "*.html" ! -name "index.html" ! -name "om-mig.html" -not -path "*/.*" | sort | while read -r f; do
             filename=$(basename "$f" .html)
             sub=$(echo "$filename" | cut -d'-' -f1)
             cat_name=$(echo "$filename" | cut -d'-' -f2)
@@ -171,10 +219,8 @@ jobs:
           cat <<'EOF' >> index.html
             </div>
             <script>
-              // --- Logik för Modaler ---
               function openModal(id) {
                 document.getElementById(id).style.display = 'flex';
-                // Hindra bakgrunden från att scrolla när modalen är öppen
                 document.body.style.overflow = 'hidden';
               }
 
@@ -184,34 +230,22 @@ jobs:
               }
 
               function closeOnOutsideClick(event, id) {
-                if (event.target.id === id) {
-                  closeModal(id);
-                }
+                if (event.target.id === id) closeModal(id);
               }
 
-              // --- Logik för Sandlådan (Kör HTML) ---
               function runHTMLCode() {
                 const code = document.getElementById('code-input').value;
-                if (!code.trim()) {
-                  alert("Klistra in lite kod först!");
-                  return;
-                }
-                
-                // Öppna en ny flik
+                if (!code.trim()) return alert("Klistra in lite kod först!");
                 const newWindow = window.open();
-                
                 if (newWindow) {
-                  // Skriv koden till den nya fliken
                   newWindow.document.open();
                   newWindow.document.write(code);
                   newWindow.document.close();
                 } else {
-                  // Varning om webbläsaren blockerar popups
-                  alert("Det verkar som att din webbläsare blockerar popups. Tillåt popups för denna sida för att kunna köra koden i en ny flik!");
+                  alert("Tillåt popups för denna sida för att kunna köra koden!");
                 }
               }
 
-              // --- Hantera Settings-menyn ---
               function toggleSettings() {
                 const modal = document.getElementById('settings-modal');
                 modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
@@ -229,7 +263,6 @@ jobs:
                 const hiddenSubjects = JSON.parse(localStorage.getItem('hidden-subjects') || '[]');
                 const settingsList = document.getElementById('settings-list');
 
-                // --- Huvudämnen: Arkivering och Dragspel ---
                 document.querySelectorAll('.subject-block').forEach(block => {
                   const titleEl = block.querySelector('.subject-title');
                   const content = block.querySelector('.content-wrapper');
@@ -269,7 +302,6 @@ jobs:
                   });
                 });
 
-                // --- Underkategorier: Dragspelslogik ---
                 document.querySelectorAll('.category-name').forEach(catEl => {
                   const content = catEl.nextElementSibling; 
                   const span = catEl.querySelectorAll('span')[1]; 
@@ -300,5 +332,5 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'action@github.com'
-          git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Add header tools, about page, and HTML sandbox" && git push)
+          git add index.html om-mig.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Add dedicated om-mig page and keep sandbox" && git push)

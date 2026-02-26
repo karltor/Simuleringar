@@ -1,44 +1,4 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Karls Simuleringar</title>
-    <style>
-        body { font-family: sans-serif; padding: 40px; background: #f4f4f9; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-decoration: none; color: #333; transition: 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-    </style>
-</head>
-<body>
-    <h1>Mina Simuleringar</h1>
-    <div id="list" class="grid">Laddar...</div>
-
-    <script>
-        const username = 'DITT_ANVÄNDARNAMN'; 
-        const repo = 'DITT_REPO_NAMN';
-
-        async function fetchFiles() {
-            // Vi hämtar innehållet i repot via GitHubs API
-            const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/`);
-            const files = await response.json();
-            const listDiv = document.getElementById('list');
-            listDiv.innerHTML = '';
-
-            files.forEach(file => {
-                // Vi vill bara visa HTML-filer och mappar, och inte index.html själv
-                if (file.name !== 'index.html' && (file.type === 'dir' || file.name.endsWith('.html'))) {
-                    const card = document.createElement('a');
-                    card.className = 'card';
-                    // Om det är en mapp, länka till index.html i den mappen
-                    card.href = file.type === 'dir' ? `${file.name}/index.html` : file.name;
-                    card.innerText = file.name.replace('.html', '').replace(/-/g, ' ');
-                    listDiv.appendChild(card);
-                }
-            });
-        }
-
-        fetchFiles();
-    </script>
-</body>
-</html>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Karls Simuleringar</title>
+<style>body{font-family:sans-serif;padding:40px;background:#f4f4f9;} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;} .card{background:white;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-decoration:none;color:#333;display:block;margin-bottom:5px;transition:0.2s;} .card:hover{background:#eef;transform:scale(1.02);} h2{border-bottom:2px solid #333;margin-top:40px;}</style></head><body>
+<h1>Välkommen till Karls simuleringar</h1><div class="grid">
+</div></body></html>

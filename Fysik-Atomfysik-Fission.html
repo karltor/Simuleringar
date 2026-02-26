@@ -9,47 +9,74 @@
         canvas { display: block; }
         #ui {
             position: absolute;
-            top: 20px; left: 20px;
+            top: 20px;
+            left: 20px;
             z-index: 10;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             padding: 15px;
             border-radius: 8px;
             border: 1px solid #444;
             max-width: 300px;
         }
-        .btn-group { display: flex; gap: 5px; margin: 5px 0 10px 0; }
+        .btn-group { display: flex; gap: 5px; margin: 10px 0; }
         button {
-            display: block; width: 100%;
-            margin: 5px 0; padding: 10px;
-            cursor: pointer; background: #2c3e50;
-            color: white; border: none; border-radius: 4px;
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            cursor: pointer;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            border-radius: 4px;
             transition: background 0.3s;
         }
         button:hover { background: #34495e; }
-        button.active { background: #c0392b; border: 1px solid #ff7675; }
-        .stats { font-size: 0.9em; margin-top: 10px; color: #ccc; border-top: 1px solid #444; padding-top: 10px; }
+        button.active { background: #e74c3c; }
+        .stats { font-size: 0.9em; margin-top: 10px; color: #ccc; }
+        #label-container {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+            width: 100%; height: 100%;
+            z-index: 5;
+        }
+        .label {
+            position: absolute;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            transform: translate(-50%, -100%);
+        }
         .slider-container { margin: 15px 0; font-size: 0.9em; }
         .slider-container input { width: 100%; }
+        
         #hidden-settings {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(0, 0, 0, 0.5); padding: 5px 10px;
-            border-radius: 4px; font-size: 11px; color: #888;
-            opacity: 0.3; transition: opacity 0.3s;
+            position: absolute;
+            top: 10px; right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #888;
+            opacity: 0.15;
+            transition: all 0.3s ease;
+            z-index: 10;
         }
-        #hidden-settings:hover { opacity: 1; }
+        #hidden-settings:hover { opacity: 1; color: #fff; background: rgba(0, 0, 0, 0.8); }
     </style>
 </head>
 <body>
 
 <div id="ui">
-    <h3 style="margin-top: 0; color: #ecf0f1;">Fissions-simulering</h3>
+    <h3 style="margin-top: 0;">Fissions-simulering</h3>
     <button onclick="shootNeutron()">Skjut start-neutron</button>
     
-    <div style="font-size: 0.85em; margin-bottom: 2px; color: #bdc3c7;">Lägg till U-235:</div>
+    <div style="font-size: 0.85em; margin-bottom: 2px;">Lägg till U-235:</div>
     <div class="btn-group">
-        <button onclick="addUranium(5)">+5</button>
-        <button onclick="addUranium(25)">+25</button>
-        <button onclick="addUranium(100)">+100</button>
+        <button onclick="addUranium(5)">+5 st</button>
+        <button onclick="addUranium(25)">+25 st</button>
     </div>
 
     <button id="rodBtn" onclick="toggleControlRods()">Aktivera Styrstavar: AV</button>
@@ -59,17 +86,16 @@
         <input type="range" id="speedSlider" min="0.1" max="2.0" step="0.1" value="1.0" oninput="document.getElementById('speedVal').textContent = this.value">
     </div>
 
-    <button onclick="resetSim()" style="background: #7f8c8d;">Återställ Scen</button>
+    <button onclick="resetSim()" style="background: #7f8c8d; margin-top: 10px;">Återställ Scen</button>
     
     <div class="stats">
         Atomer: <span id="atomCount">1</span><br>
-        Neutroner: <span id="neutronCount">0</span><br>
-        Styrstavar i grid: <span id="rodCount">0</span>
+        Neutroner: <span id="neutronCount">0</span>
     </div>
 </div>
 
 <div id="hidden-settings">
-    Absorptions-radie bonus: <input type="number" id="absorbBonus" value="25" style="width:35px; background: #222; color: #fff; border: 1px solid #555;">%
+    Absorption utanför stav: <input type="number" id="absorbBonus" value="20" style="width:40px;">%
 </div>
 
 <div id="label-container"></div>
@@ -79,33 +105,29 @@
 
 <script>
     let scene, camera, renderer, clock, controls;
-    let atoms = [], neutrons = [], activeFragments = [], labels = [], flashes = [];
-    let rodMesh = null; // InstancedMesh för styrstavar
-    let rodPositions = []; // För kollisionsberäkning
+    let atoms = [], neutrons = [], activeFragments = [], controlRods = [], labels = [];
     let controlRodsActive = false;
-    let rodHeight = 40;
 
     const PROTON_COLOR = 0xff3333;
     const NEUTRON_COLOR = 0xffffff;
+    const SPHERE_RADIUS = 0.15;
     const ATOM_RADIUS = 1.5;
-    const ROD_SPACING = 12; // Avstånd mellan stavar i grid
 
     let uraniumTemplate, baTemplate, krTemplate;
 
     function init() {
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
-        camera.position.set(40, 40, 60);
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 15, 35); // Dragit bak kameran lite
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x050505);
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
-        mainLight.position.set(50, 100, 50);
-        scene.add(mainLight);
+        scene.add(new THREE.AmbientLight(0x404040, 2));
+        const sun = new THREE.PointLight(0xffffff, 1);
+        sun.position.set(20, 20, 20);
+        scene.add(sun);
 
         clock = new THREE.Clock();
         controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -113,16 +135,26 @@
 
         buildTemplates();
         createUranium(new THREE.Vector3(0, 0, 0));
+        
+        // Initiera styrstavarna direkt, men placera dem högt upp
+        initControlRods();
 
         window.addEventListener('resize', onWindowResize, false);
         animate();
     }
 
+    // --- Nucleon Mixing Logic ---
     function buildIsotopeTemplate(pCount, nCount, radius) {
         const group = new THREE.Group();
         const sphereGeo = new THREE.SphereGeometry(radius, 8, 8);
-        const pMat = new THREE.MeshPhongMaterial({ color: PROTON_COLOR, shininess: 30 });
-        const nMat = new THREE.MeshPhongMaterial({ color: NEUTRON_COLOR, shininess: 30 });
+        const pMat = new THREE.MeshPhongMaterial({ color: PROTON_COLOR });
+        const nMat = new THREE.MeshPhongMaterial({ color: NEUTRON_COLOR });
+        
+        const pMesh = new THREE.InstancedMesh(sphereGeo, pMat, pCount);
+        const nMesh = new THREE.InstancedMesh(sphereGeo, nMat, nCount);
+        
+        const dummy = new THREE.Object3D();
+        const total = pCount + nCount;
         
         let types = Array(pCount).fill('p').concat(Array(nCount).fill('n'));
         for (let i = types.length - 1; i > 0; i--) {
@@ -130,96 +162,136 @@
             [types[i], types[j]] = [types[j], types[i]];
         }
 
-        const pMesh = new THREE.InstancedMesh(sphereGeo, pMat, pCount);
-        const nMesh = new THREE.InstancedMesh(sphereGeo, nMat, nCount);
-        const dummy = new THREE.Object3D();
-
-        for (let i = 0; i < (pCount + nCount); i++) {
-            const phi = Math.acos(-1 + (2 * i) / (pCount + nCount));
-            const theta = Math.sqrt((pCount + nCount) * Math.PI) * phi;
+        let pIdx = 0, nIdx = 0;
+        for (let i = 0; i < total; i++) {
+            const phi = Math.acos(-1 + (2 * i) / total);
+            const theta = Math.sqrt(total * Math.PI) * phi;
             const r = (radius > 0.1 ? 1.1 : 0.7) * Math.pow(Math.random(), 0.3);
-            dummy.position.set(r * Math.cos(theta) * Math.sin(phi), r * Math.sin(theta) * Math.sin(phi), r * Math.cos(phi));
+            
+            dummy.position.set(
+                r * Math.cos(theta) * Math.sin(phi),
+                r * Math.sin(theta) * Math.sin(phi),
+                r * Math.cos(phi)
+            );
             dummy.updateMatrix();
-            if (types[i] === 'p') pMesh.setMatrixAt(scene.userData.pIdx++, dummy.matrix);
-            else nMesh.setMatrixAt(scene.userData.nIdx++, dummy.matrix);
+            
+            if (types[i] === 'p') {
+                pMesh.setMatrixAt(pIdx++, dummy.matrix);
+            } else {
+                nMesh.setMatrixAt(nIdx++, dummy.matrix);
+            }
         }
         group.add(pMesh, nMesh);
         return group;
     }
 
     function buildTemplates() {
-        scene.userData.pIdx = 0; scene.userData.nIdx = 0; uraniumTemplate = buildIsotopeTemplate(92, 143, 0.15);
-        scene.userData.pIdx = 0; scene.userData.nIdx = 0; baTemplate = buildIsotopeTemplate(56, 85, 0.12);
-        scene.userData.pIdx = 0; scene.userData.nIdx = 0; krTemplate = buildIsotopeTemplate(36, 56, 0.12);
+        uraniumTemplate = buildIsotopeTemplate(92, 143, SPHERE_RADIUS);
+        baTemplate = buildIsotopeTemplate(56, 85, SPHERE_RADIUS * 0.8);
+        krTemplate = buildIsotopeTemplate(36, 56, SPHERE_RADIUS * 0.8);
     }
 
     function createUranium(pos) {
         const group = uraniumTemplate.clone();
         group.position.copy(pos);
+        group.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
         scene.add(group);
         atoms.push({ group, radius: ATOM_RADIUS });
     }
 
     function addUranium(count) {
-        const minDistance = 4.8;
+        const minDistance = 4.5;
         let globalAttempts = 0;
+
         for (let i = 0; i < count; i++) {
-            let pos, valid = false, searchArea = 15 + Math.sqrt(atoms.length) * 2;
-            while (!valid && globalAttempts < 2000) {
+            let pos, validPosition = false;
+            let searchArea = 15;
+            let localAttempts = 0;
+
+            while (!validPosition && globalAttempts < 1000) {
                 globalAttempts++;
-                pos = new THREE.Vector3((Math.random()-0.5)*searchArea*2, (Math.random()-0.5)*searchArea*2, (Math.random()-0.5)*searchArea*2);
-                valid = true;
-                for (let a of atoms) { if (pos.distanceTo(a.group.position) < minDistance) { valid = false; break; } }
+                pos = new THREE.Vector3(
+                    (Math.random() - 0.5) * searchArea * 2,
+                    (Math.random() - 0.5) * searchArea * 2,
+                    (Math.random() - 0.5) * searchArea * 2
+                );
+
+                validPosition = true;
+                for (let a of atoms) {
+                    if (pos.distanceTo(a.group.position) < minDistance) {
+                        validPosition = false;
+                        break;
+                    }
+                }
+                
+                if (++localAttempts > 30) searchArea += 2;
             }
-            if (valid) createUranium(pos);
+            if (validPosition) createUranium(pos);
         }
-        if (controlRodsActive) updateControlRods(); // Uppdatera grid om atomer tillkommit
         updateUI();
     }
 
-    function updateControlRods() {
-        if (rodMesh) { scene.remove(rodMesh); rodMesh = null; }
-        if (!controlRodsActive || atoms.length === 0) return;
+    function fission(atom) {
+        const pos = atom.group.position.clone();
+        scene.remove(atom.group);
+        // Glow-effekten är helt borttagen här för prestanda
 
-        // Hitta ytterpunkter för atomer
-        let minX = 0, maxX = 0, minZ = 0, maxZ = 0, minY = 0, maxY = 0;
-        atoms.forEach(a => {
-            minX = Math.min(minX, a.group.position.x); maxX = Math.max(maxX, a.group.position.x);
-            minZ = Math.min(minZ, a.group.position.z); maxZ = Math.max(maxZ, a.group.position.z);
-            minY = Math.min(minY, a.group.position.y); maxY = Math.max(maxY, a.group.position.y);
+        // Create fragments (Ba and Kr)
+        const fragments = [
+            { template: baTemplate, name: 'Ba-141', vel: new THREE.Vector3(-0.12, 0.05, 0) },
+            { template: krTemplate, name: 'Kr-92', vel: new THREE.Vector3(0.12, -0.05, 0) }
+        ];
+
+        fragments.forEach(f => {
+            const g = f.template.clone();
+            g.position.copy(pos);
+            scene.add(g);
+            activeFragments.push({ group: g, velocity: f.vel, life: 3.0 });
+            
+            const div = document.createElement('div');
+            div.className = 'label';
+            div.textContent = f.name;
+            document.getElementById('label-container').appendChild(div);
+            labels.push({ element: div, object: g, life: 3.0 });
         });
 
-        // Bestäm höjd baserat på Y-axeln
-        rodHeight = (maxY - minY) + 40; 
-        const yCenter = (maxY + minY) / 2;
-
-        // Skapa grid-positioner
-        rodPositions = [];
-        const margin = 10;
-        for (let x = Math.floor((minX-margin)/ROD_SPACING)*ROD_SPACING; x <= maxX+margin; x += ROD_SPACING) {
-            for (let z = Math.floor((minZ-margin)/ROD_SPACING)*ROD_SPACING; z <= maxZ+margin; z += ROD_SPACING) {
-                rodPositions.push(new THREE.Vector3(x, yCenter, z));
-            }
+        for (let i = 0; i < 3; i++) {
+            const vel = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.2);
+            spawnNeutron(pos.clone(), vel);
         }
+    }
 
-        // Material med metall-look
-        const rodGeo = new THREE.CylinderGeometry(0.7, 0.7, rodHeight, 16);
+    function spawnNeutron(pos, vel) {
+        const mesh = new THREE.Mesh(new THREE.SphereGeometry(SPHERE_RADIUS, 6, 6), new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0x444444 }));
+        mesh.position.copy(pos);
+        scene.add(mesh);
+        neutrons.push({ mesh, velocity: vel, active: true });
+    }
+
+    function shootNeutron() {
+        if (atoms.length === 0) return;
+        const target = atoms[0];
+        const startPos = new THREE.Vector3(-25, target.group.position.y, target.group.position.z);
+        const vel = new THREE.Vector3().subVectors(target.group.position, startPos).normalize().multiplyScalar(0.25);
+        spawnNeutron(startPos, vel);
+    }
+    
+    function initControlRods() {
+        // Skapar snyggare metalliska stavar som utgår ifrån en osynlig position ovanför
+        const rodGeo = new THREE.CylinderGeometry(1.2, 1.2, 100, 16);
         const rodMat = new THREE.MeshStandardMaterial({ 
-            color: 0x888888, 
-            metalness: 1.0, 
-            roughness: 0.1,
-            envMapIntensity: 1.0
+            color: 0x8899a6, 
+            metalness: 0.8, 
+            roughness: 0.2 
         });
 
-        rodMesh = new THREE.InstancedMesh(rodGeo, rodMat, rodPositions.length);
-        const dummy = new THREE.Object3D();
-        rodPositions.forEach((pos, i) => {
-            dummy.position.copy(pos);
-            dummy.updateMatrix();
-            rodMesh.setMatrixAt(i, dummy.matrix);
+        // Sprider dem något mer för att täcka en stor atomklump bättre
+        [[0,0], [-10,0], [10,0], [0,-10], [0,10]].forEach(p => {
+            const rod = new THREE.Mesh(rodGeo, rodMat);
+            rod.position.set(p[0], 100, p[1]); // Startar gömda högt upp
+            scene.add(rod);
+            controlRods.push({ mesh: rod, targetY: 100 });
         });
-        scene.add(rodMesh);
-        document.getElementById('rodCount').textContent = rodPositions.length;
     }
 
     function toggleControlRods() {
@@ -227,89 +299,65 @@
         const btn = document.getElementById('rodBtn');
         btn.textContent = `Aktivera Styrstavar: ${controlRodsActive ? 'PÅ' : 'AV'}`;
         btn.classList.toggle('active', controlRodsActive);
-        updateControlRods();
-    }
-
-    function createFlash(pos) {
-        const light = new THREE.PointLight(0xffcc00, 10, 15);
-        light.position.copy(pos);
-        scene.add(light);
-        flashes.push({ light, life: 0.4 });
-    }
-
-    function spawnNeutron(pos, vel) {
-        const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-        mesh.position.copy(pos);
-        scene.add(mesh);
-        neutrons.push({ mesh, velocity: vel, active: true });
-    }
-
-    function fission(atom) {
-        const pos = atom.group.position.clone();
-        scene.remove(atom.group);
-        createFlash(pos);
-
-        // Skapa dotterisotoper
-        const frags = [{t:baTemplate, n:'Ba-141', v:new THREE.Vector3(-0.15,0.04,0)}, {t:krTemplate, n:'Kr-92', v:new THREE.Vector3(0.15,-0.04,0)}];
-        frags.forEach(f => {
-            const g = f.t.clone(); g.position.copy(pos); scene.add(g);
-            activeFragments.push({ group: g, velocity: f.v, life: 2.5 });
-            const div = document.createElement('div'); div.className = 'label'; div.textContent = f.n;
-            document.getElementById('label-container').appendChild(div);
-            labels.push({ element: div, object: g, life: 2.5 });
+        
+        // Sätt ny target Y för animationen (0 = inne i smeten, 100 = uppe i luften)
+        controlRods.forEach(r => {
+            r.targetY = controlRodsActive ? 0 : 100;
         });
-
-        for (let i = 0; i < 3; i++) {
-            const v = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.22);
-            spawnNeutron(pos.clone(), v);
-        }
     }
 
     function animate() {
         requestAnimationFrame(animate);
         const delta = clock.getDelta();
         const simSpeed = parseFloat(document.getElementById('speedSlider').value);
+
         if (controls) controls.update();
+        
+        // Animera styrstavarna så att de glider mjukt upp/ner
+        controlRods.forEach(r => {
+            r.mesh.position.y += (r.targetY - r.mesh.position.y) * 5 * delta;
+        });
 
-        // Flashes
-        for (let i = flashes.length - 1; i >= 0; i--) {
-            flashes[i].life -= delta;
-            flashes[i].light.intensity = (flashes[i].life / 0.4) * 12;
-            if (flashes[i].life <= 0) { scene.remove(flashes[i].light); flashes.splice(i, 1); }
-        }
+        // Neutron movement & Collision
+        // Justerat base radius till 1.2 för att matcha de nya tjockare stavarna
+        const absorbDistSq = Math.pow(1.2 + (parseFloat(document.getElementById('absorbBonus').value)/100), 2);
 
-        // Neutrons
-        const absorbRadSq = Math.pow(0.7 + (parseFloat(document.getElementById('absorbBonus').value)/100), 2);
         for (let i = neutrons.length - 1; i >= 0; i--) {
             const n = neutrons[i];
             n.mesh.position.addScaledVector(n.velocity, simSpeed);
 
-            // Kolla Uran
+            // Atom collision
             for (let j = atoms.length - 1; j >= 0; j--) {
                 if (n.mesh.position.distanceTo(atoms[j].group.position) < ATOM_RADIUS) {
-                    fission(atoms[j]); atoms.splice(j, 1); n.active = false; break;
+                    fission(atoms[j]);
+                    atoms.splice(j, 1);
+                    n.active = false;
+                    break;
                 }
             }
 
-            // Kolla Grid-styrstavar
-            if (n.active && controlRodsActive && rodPositions.length > 0) {
-                for (let rp of rodPositions) {
-                    const dx = n.mesh.position.x - rp.x;
-                    const dz = n.mesh.position.z - rp.z;
-                    const dy = Math.abs(n.mesh.position.y - rp.y);
-                    if (dx*dx + dz*dz < absorbRadSq && dy < rodHeight/2) {
+            // Control rod collision - kollar nu mot stavarnas FAKTISKA position istället för bara en toggle
+            if (n.active) {
+                for (let r of controlRods) {
+                    const dx = n.mesh.position.x - r.mesh.position.x;
+                    const dz = n.mesh.position.z - r.mesh.position.z;
+                    // Kollar så att neutronen befinner sig inom stavens radie OCH höjd
+                    if (dx*dx + dz*dz < absorbDistSq && Math.abs(n.mesh.position.y - r.mesh.position.y) < 50) {
                         n.active = false; break;
                     }
                 }
             }
 
-            if (n.mesh.position.length() > 250 || !n.active) {
-                scene.remove(n.mesh); neutrons.splice(i, 1);
+            if (n.mesh.position.length() > 100 || !n.active) {
+                scene.remove(n.mesh);
+                neutrons.splice(i, 1);
             }
         }
 
-        activeFragments.forEach((f, i) => { 
-            f.group.position.addScaledVector(f.velocity, simSpeed); f.life -= delta * simSpeed;
+        // Fragment & Label updates
+        activeFragments.forEach((f, i) => {
+            f.group.position.addScaledVector(f.velocity, simSpeed);
+            f.life -= delta * simSpeed;
             if (f.life <= 0) { scene.remove(f.group); activeFragments.splice(i, 1); }
         });
 
@@ -326,22 +374,11 @@
         updateUI();
     }
 
-    function shootNeutron() {
-        if (atoms.length === 0) return;
-        const target = atoms[Math.floor(Math.random()*atoms.length)];
-        const startPos = new THREE.Vector3(-60, target.group.position.y, target.group.position.z);
-        spawnNeutron(startPos, new THREE.Vector3().subVectors(target.group.position, startPos).normalize().multiplyScalar(0.3));
-    }
-
     function resetSim() {
         atoms.forEach(a => scene.remove(a.group)); atoms = [];
         neutrons.forEach(n => scene.remove(n.mesh)); neutrons = [];
         activeFragments.forEach(f => scene.remove(f.group)); activeFragments = [];
         labels.forEach(l => { if (l.element.parentNode) l.element.parentNode.removeChild(l.element); }); labels = [];
-        if (rodMesh) { scene.remove(rodMesh); rodMesh = null; }
-        controlRodsActive = false;
-        document.getElementById('rodBtn').classList.remove('active');
-        document.getElementById('rodBtn').textContent = "Aktivera Styrstavar: AV";
         createUranium(new THREE.Vector3(0, 0, 0));
         updateUI();
     }

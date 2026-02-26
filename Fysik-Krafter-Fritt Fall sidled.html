@@ -3,426 +3,400 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tyngdacceleration</title>
+  <title>Oberoende Rörelser: Fritt fall vs Kast</title>
   <style>
-    :root{ --bg:#0f172a; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --accent2:#3b82f6; --accent3:#ef4444; }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:#0b1220}
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --stone-a: #3b82f6; /* Tydlig blå */
+      --stone-b: #f97316; /* Tydlig orange */
+      --btn-bg: #0f172a;
+      --btn-text: #f8fafc;
+      --btn-hover: #334155;
+      --ground: #cbd5e1;
+    }
 
-    /* Layout */
-    main{display:grid;grid-template-columns:1fr 360px;gap:16px;min-height:100vh;padding:12px}
-    @media (max-width:980px){ main{grid-template-columns:1fr} }
+    * { box-sizing: border-box; }
+    
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
 
-    .bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:10px 12px}
-    .title{font-weight:800}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-    .toolbar button{background:#0ea5e9;border:none;color:white;padding:8px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-    .toolbar button.secondary{background:#334155}
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
 
-    #stageWrap{position:relative;border-radius:16px;overflow:hidden;background:#0b1220;border:1px solid #1f2937;min-height:calc(100vh - 110px)}
-    #stage{display:block;width:100%;height:100%;touch-action:none}
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
 
-    /* Legend (färginfon) uppe till höger i fallytan */
-    .legend{position:absolute;right:12px;top:12px;background:rgba(2,6,23,.66);border:1px solid #1f2937;padding:8px 10px;border-radius:12px;font-size:14px;backdrop-filter: blur(6px)}
-    .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
-    .chip{width:14px;height:14px;border-radius:999px;display:inline-block}
-    .chip.blue{background:var(--accent2)} .chip.green{background:var(--accent)} .chip.red{background:var(--accent3)}
+    p.subtitle {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 16px;
+    }
 
-    aside{background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:14px;overflow:auto;max-height:calc(100vh - 110px)}
-    .card{background:rgba(2,6,23,.7);border:1px solid #1f2937;border-radius:12px;padding:12px}
-    .card h3{margin:0 0 8px 0;font-size:16px}
-    .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:8px 0}
-    input[type="range"]{width:100%}
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-    .note{color:#cbd5e1;font-size:14px}
+    .app-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Kontrollpanelen */
+    .controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      padding: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    button {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 99px; /* Moderna runda knappar */
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover { background: var(--btn-hover); }
+    button:active { transform: scale(0.97); }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid var(--border);
+    }
+    button.secondary:hover { background: var(--bg); }
+
+    /* Switch för horisontell hastighet */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 500;
+      background: var(--surface);
+      padding: 10px 16px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: var(--border);
+      border-radius: 24px;
+      transition: background 0.3s;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    input[type="checkbox"] { display: none; }
+    input[type="checkbox"]:checked + .toggle-switch { background: var(--stone-b); }
+    input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
+
+    /* Canvas (Scenen) */
+    .stage-wrapper {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fafafa;
+      border: 1px solid var(--border);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .legend div {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    .chip {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
   </style>
 </head>
 <body>
-  <main>
-    <div class="bar">
-      <div class="title">Tyngdacceleration</div>
-      <div class="toolbar">
-        <button id="btnStart">▶︎ Start</button>
-        <button id="btnPause" class="secondary">⏸ Paus</button>
-        <button id="btnStep" class="secondary">⏭ Stega 0,1 s</button>
-        <button id="btnReset" class="secondary">⟲ Reset</button>
-        <button id="btnToggleB" class="secondary">Visa B</button>
-        <button id="btnGiveVX" class="secondary">Ge B hor. fart</button>
+
+  <header>
+    <h1>Fritt fall och kaströrelse</h1>
+    <p class="subtitle">Visar att rörelse i x- och y-led är helt oberoende av varandra.</p>
+  </header>
+
+  <div class="app-container">
+    
+    <div class="controls">
+      <button id="btnStart">▶︎ Släpp stenarna</button>
+      <button id="btnReset" class="secondary">⟲ Återställ</button>
+      
+      <label class="toggle-container">
+        <input type="checkbox" id="pushToggle">
+        <div class="toggle-switch"></div>
+        Ge Sten B fart i sidled
+      </label>
+    </div>
+
+    <div class="stage-wrapper">
+      <canvas id="stage"></canvas>
+      <div class="legend">
+        <div><span class="chip" style="background: var(--stone-a)"></span> Sten A (Rakt ner)</div>
+        <div><span class="chip" style="background: var(--stone-b)"></span> Sten B</div>
       </div>
     </div>
 
-    <section id="stageWrap">
-      <canvas id="stage"></canvas>
-      <div class="legend">
-        <div><span class="chip blue"></span> Boll A (släpps rakt ned)</div>
-        <div><span class="chip green"></span> Boll B (kan ha horisontell fart)</div>
-        <div><span class="chip red"></span> Hastighetspil (växer när v ökar)</div>
-      </div>
-    </section>
-
-    <aside>
-      <div class="card">
-        <h3>Miljö & förutsättningar</h3>
-        <div class="row"><label>Tyngdacceleration g (m/s²)</label><span class="mono"><span id="gVal">9.82</span></span></div>
-        <input type="range" id="g" min="1" max="20" step="0.01" value="9.82" />
-        <div class="row"><label>Luftmotstånd β (1/s)</label><span class="mono"><span id="betaVal">0.00</span></span></div>
-        <input type="range" id="beta" min="0" max="1" step="0.01" value="0" />
-        <div class="row"><label>Fallhöjd H (m över mark)</label><span class="mono"><span id="HVal">50</span></span></div>
-        <input type="range" id="H" min="5" max="150" step="1" value="50" />
-        <label style="display:block;margin-top:8px"><input type="checkbox" id="showVectors" checked> Visa hastighetspilar</label>
-        <label style="display:block"><input type="checkbox" id="strobe" checked> Stroboskop (prickar var 0,2 s)</label>
-        <label style="display:block"><input type="checkbox" id="grid" checked> Rutnät & höjdmått</label>
-        <p class="note">0 m vid marken, ökande uppåt.</p>
-      </div>
-    </aside>
-  </main>
+  </div>
 
   <script>
-    // === Elements ===
     const stage = document.getElementById('stage');
     const btnStart = document.getElementById('btnStart');
-    const btnPause = document.getElementById('btnPause');
-    const btnStep = document.getElementById('btnStep');
     const btnReset = document.getElementById('btnReset');
-    const btnToggleB = document.getElementById('btnToggleB');
-    const btnGiveVX = document.getElementById('btnGiveVX');
-    const gSlider = document.getElementById('g');
-    const betaSlider = document.getElementById('beta');
-    const HSlider = document.getElementById('H');
-    const gVal = document.getElementById('gVal');
-    const betaVal = document.getElementById('betaVal');
-    const HVal = document.getElementById('HVal');
-    const showVectors = document.getElementById('showVectors');
-    const strobe = document.getElementById('strobe');
-    const grid = document.getElementById('grid');
+    const pushToggle = document.getElementById('pushToggle');
 
-    // === HiDPI ===
-    function fitCanvas(cnv){
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const rect = cnv.getBoundingClientRect();
-      cnv.width = Math.round(rect.width * dpr);
-      cnv.height = Math.round(rect.height * dpr);
-      const ctx = cnv.getContext('2d');
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      return ctx;
+    // Fysik-konstanter
+    const g = 9.82; 
+    const dt = 0.016; 
+    let pxPerM = 15; 
+    let running = false;
+    let time = 0;
+    
+    // För stroboskop-effekten
+    let strobeAcc = 0;
+    const strobeInterval = 0.15; // Sparar en prick var 0.15 sekund
+
+    function createStone(color) {
+      return { x: 0, y: 0, vx: 0, vy: 0, r: 12, color: color, active: true, trail: [] };
     }
 
-    // === World ===
-    let g = parseFloat(gSlider.value), beta = parseFloat(betaSlider.value), H = parseFloat(HSlider.value);
-    let pxPerM = 10;
-    function makeBall(color){ return {x:0,y:0,vx:0,vy:0,r:14,color,alive:true,strobe:[],vHistory:[]}; }
-    const A = makeBall('#3b82f6');
-    const B = makeBall('#22c55e');
-    let showB = false;
+    const stoneA = createStone('#3b82f6');
+    const stoneB = createStone('#f97316');
 
-    let running=false, t=0; const dt=0.016; let strobeEvery=0.2, strobeAcc=0;
-
-    // === Layout ===
-    function layout(){
-      fitCanvas(stage);
+    // Hantera högupplösta skärmar (Retina/4K)
+    function fitCanvas() {
+      const dpr = window.devicePixelRatio || 1;
       const rect = stage.getBoundingClientRect();
-      const groundMargin = 30; // px
-      pxPerM = (rect.height - (groundMargin + 20)) / Math.max(H,5);
+      stage.width = rect.width * dpr;
+      stage.height = rect.height * dpr;
+      const ctx = stage.getContext('2d');
+      ctx.scale(dpr, dpr);
     }
 
-    function reset(){
-      t=0; strobeAcc=0; running=false;
+    function reset() {
+      running = false;
+      time = 0;
+      strobeAcc = 0;
+      
       const rect = stage.getBoundingClientRect();
-      const startYpx = 20;
-      A.x = rect.width*0.35; A.y=startYpx; A.vx=0; A.vy=0; A.alive=true; A.strobe=[]; A.vHistory=[];
-      B.x = rect.width*0.65; B.y=startYpx; B.vx=0; B.vy=0; B.alive=true; B.strobe=[]; B.vHistory=[];
-      drawScene();
+      const startY = 40; // Marginal från toppen
+      
+      // Placera stenarna. B börjar på samma ställe som A, 
+      // men om man vill kan man separera dem något. Vi lägger A till vänster.
+      stoneA.x = rect.width * 0.2; 
+      stoneA.y = startY; 
+      stoneA.vx = 0; 
+      stoneA.vy = 0; 
+      stoneA.active = true; 
+      stoneA.trail = [];
+
+      stoneB.x = rect.width * 0.2; // Startar på samma ställe
+      stoneB.y = startY; 
+      
+      // Ger B fart om switchen är påslagen
+      stoneB.vx = pushToggle.checked ? 15 : 0; 
+      stoneB.vy = 0; 
+      stoneB.active = true; 
+      stoneB.trail = [];
+
+      draw();
     }
 
-    function giveHorizontal(){ B.vx = 12; }
+    function updatePhysics() {
+      if (!running) return;
 
-    // === Physics ===
-    function physicsStep(){
-      const rect = stage.getBoundingClientRect(); const groundY = rect.height - 30;
-      [A, showB?B:null].forEach(ball=>{
-        if(!ball || !ball.alive) return;
-        ball.vy += (g - beta*ball.vy) * dt;           // y-led
-        ball.y  += (ball.vy * pxPerM) * dt;
-        ball.vx += (-beta*ball.vx) * dt;              // x-led
-        ball.x  += (ball.vx * pxPerM) * dt;
-        if(ball.x - ball.r < 4){ ball.x = 4 + ball.r; ball.vx = Math.abs(ball.vx); }
-        if(ball.x + ball.r > rect.width - 4){ ball.x = rect.width - 4 - ball.r; ball.vx = -Math.abs(ball.vx); }
-        if(ball.y + ball.r >= groundY){ ball.y = groundY - ball.r; ball.alive=false; ball.vy=0; ball.vx=0; }
+      const rect = stage.getBoundingClientRect();
+      const groundY = rect.height - 40; // Markens position
+
+      [stoneA, stoneB].forEach(stone => {
+        if (!stone.active) return;
+
+        // Fysikformler (Euler-integrering)
+        stone.vy += g * dt;
+        stone.x += (stone.vx * pxPerM) * dt;
+        stone.y += (stone.vy * pxPerM) * dt;
+
+        // Stoppa när stenen träffar marken
+        if (stone.y + stone.r >= groundY) {
+          stone.y = groundY - stone.r;
+          stone.active = false;
+        }
       });
-      // Stoppa tiden när A har landat
-      if(!A.alive) running = false;
 
-      // strobe – spara både x och y
-      strobeAcc += dt; if(strobeAcc>=strobeEvery){ strobeAcc=0; [A, showB?B:null].forEach(ball=>{ if(ball&&ball.alive) ball.strobe.push({t, x:ball.x, y:ball.y}); }); }
-      t += dt;
-    }
-
-    // === Drawing ===
-    function drawGrid(){
-      if(!grid.checked) return; const ctx = stage.getContext('2d');
-      const {width,height} = stage.getBoundingClientRect(); const groundY = height-30;
-      ctx.save(); ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui';
-      const stepM=10; for(let h=0; h<=H; h+=stepM){ const y=groundY - h*pxPerM; if(y<20) break; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); ctx.fillText(`${h} m`, 8, y-4); }
-      ctx.restore();
-    }
-
-    function drawScene(){
-      const ctx = stage.getContext('2d'); const {width,height} = stage.getBoundingClientRect();
-      ctx.clearRect(0,0,width,height); ctx.fillStyle='#0b1220'; ctx.fillRect(0,0,width,height); drawGrid();
-      ctx.fillStyle='#334155'; ctx.fillRect(0,height-30,width,30); // mark
-
-      // strobe
-      if(strobe.checked){
-        ctx.save(); ctx.fillStyle = A.color+'66'; A.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); });
-        if(showB){ ctx.fillStyle = B.color+'66'; B.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); }); }
-        ctx.restore();
+      // Spara spår för visualisering
+      strobeAcc += dt;
+      if (strobeAcc >= strobeInterval) {
+        strobeAcc = 0;
+        [stoneA, stoneB].forEach(stone => {
+          if (stone.active || (!stone.active && stone.trail.length > 0 && stone.trail[stone.trail.length-1].y !== stone.y)) {
+            stone.trail.push({ x: stone.x, y: stone.y });
+          }
+        });
       }
 
-      // bollar
-      drawBall(A);
-      if(showB) drawBall(B);
-
-      // tidstext (uppdateras inte när running=false)
-      ctx.fillStyle='#e5e7eb'; ctx.font='14px system-ui';
-      ctx.fillText(`t = ${t.toFixed(2)} s`, 12, 22);
-      ctx.fillText(`g = ${g.toFixed(2)} m/s², β = ${beta.toFixed(2)} 1/s, H = ${H.toFixed(0)} m`, 12, 40);
+      // Stanna loopen om båda landat
+      if (!stoneA.active && !stoneB.active) {
+        running = false;
+      }
     }
 
-    function drawBall(ball){
+    function draw() {
       const ctx = stage.getContext('2d');
-      ctx.save(); ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-      const grad = ctx.createRadialGradient(ball.x-6,ball.y-6,4,ball.x,ball.y,ball.r); grad.addColorStop(0,'#e2e8f0'); grad.addColorStop(1,ball.color); ctx.fillStyle=grad; ctx.fill();
-      if(showVectors.checked && ball.alive){ const scale=0.05; const vy_px = ball.vy*pxPerM*scale; const {width,height} = stage.getBoundingClientRect(); ctx.save(); ctx.beginPath(); ctx.rect(0,0,width-8,height-8); ctx.clip(); ctx.beginPath(); ctx.moveTo(ball.x+ball.r+8,ball.y); ctx.lineTo(ball.x+ball.r+8,ball.y+vy_px); ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.stroke(); ctx.font='12px ui-monospace,monospace'; ctx.fillStyle='#ef4444'; const vmag=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy); const tx=Math.min(ball.x+ball.r+12, width-70); const ty=Math.min(ball.y+vy_px+14, height-8); ctx.fillText(`v=${vmag.toFixed(1)} m/s`, tx, ty); ctx.restore(); }
-      ctx.restore();
-    }
-
-    // === Loop ===
-    function frame(){ if(running){ physicsStep(); } drawScene(); requestAnimationFrame(frame); }
-
-    // === Events ===
-    btnStart.onclick=()=> running=true; btnPause.onclick=()=> running=false; btnStep.onclick=()=>{ for(let i=0;i<Math.round(0.1/dt); i++) physicsStep(); drawScene(); }; btnReset.onclick=()=> reset(); btnToggleB.onclick=()=>{ showB=!showB; btnToggleB.textContent = showB? 'Dölj B' : 'Visa B'; }; btnGiveVX.onclick=()=> giveHorizontal();
-    gSlider.oninput=e=>{ g=parseFloat(e.target.value); gVal.textContent=g.toFixed(2); };
-    betaSlider.oninput=e=>{ beta=parseFloat(e.target.value); betaVal.textContent=beta.toFixed(2); };
-    HSlider.oninput=e=>{ H=parseFloat(e.target.value); HVal.textContent=H.toFixed(0); layout(); reset(); };
-    window.addEventListener('resize', ()=>{ layout(); reset(); });
-
-    // === Start ===
-    layout(); reset(); frame();
-  </script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Tyngdacceleration</title>
-  <style>
-    :root{ --bg:#0f172a; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --accent2:#3b82f6; --accent3:#ef4444; }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:#0b1220}
-
-    /* Layout */
-    main{display:grid;grid-template-columns:1fr 360px;gap:16px;min-height:100vh;padding:12px}
-    @media (max-width:980px){ main{grid-template-columns:1fr} }
-
-    .bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:10px 12px}
-    .title{font-weight:800}
-    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-    .toolbar button{background:#0ea5e9;border:none;color:white;padding:8px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
-    .toolbar button.secondary{background:#334155}
-
-    #stageWrap{position:relative;border-radius:16px;overflow:hidden;background:#0b1220;border:1px solid #1f2937;min-height:calc(100vh - 110px)}
-    #stage{display:block;width:100%;height:100%;touch-action:none}
-
-    /* Legend (färginfon) uppe till höger i fallytan */
-    .legend{position:absolute;right:12px;top:12px;background:rgba(2,6,23,.66);border:1px solid #1f2937;padding:8px 10px;border-radius:12px;font-size:14px;backdrop-filter: blur(6px)}
-    .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
-    .chip{width:14px;height:14px;border-radius:999px;display:inline-block}
-    .chip.blue{background:var(--accent2)} .chip.green{background:var(--accent)} .chip.red{background:var(--accent3)}
-
-    aside{background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:14px;overflow:auto;max-height:calc(100vh - 110px)}
-    .card{background:rgba(2,6,23,.7);border:1px solid #1f2937;border-radius:12px;padding:12px}
-    .card h3{margin:0 0 8px 0;font-size:16px}
-    .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:8px 0}
-    input[type="range"]{width:100%}
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-    .note{color:#cbd5e1;font-size:14px}
-  </style>
-</head>
-<body>
-  <main>
-    <div class="bar">
-      <div class="title">Tyngdacceleration</div>
-      <div class="toolbar">
-        <button id="btnStart">▶︎ Start</button>
-        <button id="btnPause" class="secondary">⏸ Paus</button>
-        <button id="btnStep" class="secondary">⏭ Stega 0,1 s</button>
-        <button id="btnReset" class="secondary">⟲ Reset</button>
-        <button id="btnToggleB" class="secondary">Visa B</button>
-        <button id="btnGiveVX" class="secondary">Ge B hor. fart</button>
-      </div>
-    </div>
-
-    <section id="stageWrap">
-      <canvas id="stage"></canvas>
-      <div class="legend">
-        <div><span class="chip blue"></span> Boll A (släpps rakt ned)</div>
-        <div><span class="chip green"></span> Boll B (kan ha horisontell fart)</div>
-        <div><span class="chip red"></span> Hastighetspil (växer när v ökar)</div>
-      </div>
-    </section>
-
-    <aside>
-      <div class="card">
-        <h3>Miljö & förutsättningar</h3>
-        <div class="row"><label>Tyngdacceleration g (m/s²)</label><span class="mono"><span id="gVal">9.82</span></span></div>
-        <input type="range" id="g" min="1" max="20" step="0.01" value="9.82" />
-        <div class="row"><label>Luftmotstånd β (1/s)</label><span class="mono"><span id="betaVal">0.00</span></span></div>
-        <input type="range" id="beta" min="0" max="1" step="0.01" value="0" />
-        <div class="row"><label>Fallhöjd H (m över mark)</label><span class="mono"><span id="HVal">50</span></span></div>
-        <input type="range" id="H" min="5" max="150" step="1" value="50" />
-        <label style="display:block;margin-top:8px"><input type="checkbox" id="showVectors" checked> Visa hastighetspilar</label>
-        <label style="display:block"><input type="checkbox" id="strobe" checked> Stroboskop (prickar var 0,2 s)</label>
-        <label style="display:block"><input type="checkbox" id="grid" checked> Rutnät & höjdmått</label>
-        <p class="note">0 m vid marken, ökande uppåt.</p>
-      </div>
-    </aside>
-  </main>
-
-  <script>
-    // === Elements ===
-    const stage = document.getElementById('stage');
-    const btnStart = document.getElementById('btnStart');
-    const btnPause = document.getElementById('btnPause');
-    const btnStep = document.getElementById('btnStep');
-    const btnReset = document.getElementById('btnReset');
-    const btnToggleB = document.getElementById('btnToggleB');
-    const btnGiveVX = document.getElementById('btnGiveVX');
-    const gSlider = document.getElementById('g');
-    const betaSlider = document.getElementById('beta');
-    const HSlider = document.getElementById('H');
-    const gVal = document.getElementById('gVal');
-    const betaVal = document.getElementById('betaVal');
-    const HVal = document.getElementById('HVal');
-    const showVectors = document.getElementById('showVectors');
-    const strobe = document.getElementById('strobe');
-    const grid = document.getElementById('grid');
-
-    // === HiDPI ===
-    function fitCanvas(cnv){
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const rect = cnv.getBoundingClientRect();
-      cnv.width = Math.round(rect.width * dpr);
-      cnv.height = Math.round(rect.height * dpr);
-      const ctx = cnv.getContext('2d');
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      return ctx;
-    }
-
-    // === World ===
-    let g = parseFloat(gSlider.value), beta = parseFloat(betaSlider.value), H = parseFloat(HSlider.value);
-    let pxPerM = 10;
-    function makeBall(color){ return {x:0,y:0,vx:0,vy:0,r:14,color,alive:true,strobe:[],vHistory:[]}; }
-    const A = makeBall('#3b82f6');
-    const B = makeBall('#22c55e');
-    let showB = false;
-
-    let running=false, t=0; const dt=0.016; let strobeEvery=0.2, strobeAcc=0;
-
-    // === Layout ===
-    function layout(){
-      fitCanvas(stage);
       const rect = stage.getBoundingClientRect();
-      const groundMargin = 30; // px
-      pxPerM = (rect.height - (groundMargin + 20)) / Math.max(H,5);
-    }
+      const groundY = rect.height - 40;
 
-    function reset(){
-      t=0; strobeAcc=0; running=false;
-      const rect = stage.getBoundingClientRect();
-      const startYpx = 20;
-      A.x = rect.width*0.35; A.y=startYpx; A.vx=0; A.vy=0; A.alive=true; A.strobe=[]; A.vHistory=[];
-      B.x = rect.width*0.65; B.y=startYpx; B.vx=0; B.vy=0; B.alive=true; B.strobe=[]; B.vHistory=[];
-      drawScene();
-    }
+      // Rensa och rita bakgrund
+      ctx.clearRect(0, 0, rect.width, rect.height);
 
-    function giveHorizontal(){ B.vx = 12; }
-
-    // === Physics ===
-    function physicsStep(){
-      const rect = stage.getBoundingClientRect(); const groundY = rect.height - 30;
-      [A, showB?B:null].forEach(ball=>{
-        if(!ball || !ball.alive) return;
-        ball.vy += (g - beta*ball.vy) * dt;           // y-led
-        ball.y  += (ball.vy * pxPerM) * dt;
-        ball.vx += (-beta*ball.vx) * dt;              // x-led
-        ball.x  += (ball.vx * pxPerM) * dt;
-        if(ball.x - ball.r < 4){ ball.x = 4 + ball.r; ball.vx = Math.abs(ball.vx); }
-        if(ball.x + ball.r > rect.width - 4){ ball.x = rect.width - 4 - ball.r; ball.vx = -Math.abs(ball.vx); }
-        if(ball.y + ball.r >= groundY){ ball.y = groundY - ball.r; ball.alive=false; ball.vy=0; ball.vx=0; }
-      });
-      // Stoppa tiden när A har landat
-      if(!A.alive) running = false;
-
-      // strobe – spara både x och y
-      strobeAcc += dt; if(strobeAcc>=strobeEvery){ strobeAcc=0; [A, showB?B:null].forEach(ball=>{ if(ball&&ball.alive) ball.strobe.push({t, x:ball.x, y:ball.y}); }); }
-      t += dt;
-    }
-
-    // === Drawing ===
-    function drawGrid(){
-      if(!grid.checked) return; const ctx = stage.getContext('2d');
-      const {width,height} = stage.getBoundingClientRect(); const groundY = height-30;
-      ctx.save(); ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui';
-      const stepM=10; for(let h=0; h<=H; h+=stepM){ const y=groundY - h*pxPerM; if(y<20) break; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); ctx.fillText(`${h} m`, 8, y-4); }
-      ctx.restore();
-    }
-
-    function drawScene(){
-      const ctx = stage.getContext('2d'); const {width,height} = stage.getBoundingClientRect();
-      ctx.clearRect(0,0,width,height); ctx.fillStyle='#0b1220'; ctx.fillRect(0,0,width,height); drawGrid();
-      ctx.fillStyle='#334155'; ctx.fillRect(0,height-30,width,30); // mark
-
-      // strobe
-      if(strobe.checked){
-        ctx.save(); ctx.fillStyle = A.color+'66'; A.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); });
-        if(showB){ ctx.fillStyle = B.color+'66'; B.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); }); }
-        ctx.restore();
+      // Rita tunna horisontella stödlinjer för att tydliggöra höjden
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      for(let i = 40; i < groundY; i += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(rect.width, i);
+        ctx.stroke();
       }
 
-      // bollar
-      drawBall(A);
-      if(showB) drawBall(B);
+      // Rita marken
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, groundY, rect.width, 40);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(rect.width, groundY);
+      ctx.stroke();
 
-      // tidstext (uppdateras inte när running=false)
-      ctx.fillStyle='#e5e7eb'; ctx.font='14px system-ui';
-      ctx.fillText(`t = ${t.toFixed(2)} s`, 12, 22);
-      ctx.fillText(`g = ${g.toFixed(2)} m/s², β = ${beta.toFixed(2)} 1/s, H = ${H.toFixed(0)} m`, 12, 40);
+      // Rita spåren (stroboskop)
+      [stoneA, stoneB].forEach(stone => {
+        ctx.fillStyle = stone.color + '80'; // Gör spåren halvt genomskinliga
+        stone.trail.forEach(pos => {
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+
+      // Rita stenarna
+      [stoneA, stoneB].forEach(stone => {
+        ctx.fillStyle = stone.color;
+        ctx.beginPath();
+        ctx.arc(stone.x, stone.y, stone.r, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Enkel blänk-effekt för lite 3D-känsla
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.arc(stone.x - 3, stone.y - 3, stone.r / 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
     }
 
-    function drawBall(ball){
-      const ctx = stage.getContext('2d');
-      ctx.save(); ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-      const grad = ctx.createRadialGradient(ball.x-6,ball.y-6,4,ball.x,ball.y,ball.r); grad.addColorStop(0,'#e2e8f0'); grad.addColorStop(1,ball.color); ctx.fillStyle=grad; ctx.fill();
-      if(showVectors.checked && ball.alive){ const scale=0.05; const vy_px = ball.vy*pxPerM*scale; const {width,height} = stage.getBoundingClientRect(); ctx.save(); ctx.beginPath(); ctx.rect(0,0,width-8,height-8); ctx.clip(); ctx.beginPath(); ctx.moveTo(ball.x+ball.r+8,ball.y); ctx.lineTo(ball.x+ball.r+8,ball.y+vy_px); ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.stroke(); ctx.font='12px ui-monospace,monospace'; ctx.fillStyle='#ef4444'; const vmag=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy); const tx=Math.min(ball.x+ball.r+12, width-70); const ty=Math.min(ball.y+vy_px+14, height-8); ctx.fillText(`v=${vmag.toFixed(1)} m/s`, tx, ty); ctx.restore(); }
-      ctx.restore();
+    function loop() {
+      updatePhysics();
+      draw();
+      requestAnimationFrame(loop);
     }
 
-    // === Loop ===
-    function frame(){ if(running){ physicsStep(); } drawScene(); requestAnimationFrame(frame); }
+    // Event Listeners
+    btnStart.addEventListener('click', () => {
+      if(!running && stoneA.active) {
+        running = true;
+      } else if (!stoneA.active) {
+        // Om de redan landat och man klickar start, gör en reset först
+        reset();
+        running = true;
+      }
+    });
 
-    // === Events ===
-    btnStart.onclick=()=> running=true; btnPause.onclick=()=> running=false; btnStep.onclick=()=>{ for(let i=0;i<Math.round(0.1/dt); i++) physicsStep(); drawScene(); }; btnReset.onclick=()=> reset(); btnToggleB.onclick=()=>{ showB=!showB; btnToggleB.textContent = showB? 'Dölj B' : 'Visa B'; }; btnGiveVX.onclick=()=> giveHorizontal();
-    gSlider.oninput=e=>{ g=parseFloat(e.target.value); gVal.textContent=g.toFixed(2); };
-    betaSlider.oninput=e=>{ beta=parseFloat(e.target.value); betaVal.textContent=beta.toFixed(2); };
-    HSlider.oninput=e=>{ H=parseFloat(e.target.value); HVal.textContent=H.toFixed(0); layout(); reset(); };
-    window.addEventListener('resize', ()=>{ layout(); reset(); });
+    btnReset.addEventListener('click', reset);
+    
+    // Återställ om man ändrar förutsättningarna
+    pushToggle.addEventListener('change', reset);
+    
+    // Hantera fönsterstorlek
+    window.addEventListener('resize', () => {
+      fitCanvas();
+      reset();
+    });
 
-    // === Start ===
-    layout(); reset(); frame();
+    // Start
+    fitCanvas();
+    reset();
+    loop();
   </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-name: Generate Smart Categorized Index
+name: Generate Smart Accordion Index
 on:
   push:
     branches: [main]
@@ -12,52 +12,72 @@ jobs:
       - uses: actions/checkout@v3
       - name: Generate HTML
         run: |
-          # Skapa grunden med CSS för snygga "kort" och kategorier
           cat <<EOF > index.html
           <!DOCTYPE html>
-          <html>
+          <html lang="sv">
           <head>
             <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Karls Dashboard</title>
             <style>
-              body { font-family: system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
-              .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-              .category-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-              .category-title { border-bottom: 2px solid #007bff; color: #007bff; margin-bottom: 15px; padding-bottom: 5px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
-              .subcategory { margin-bottom: 15px; }
-              .subcategory-title { font-weight: bold; color: #444; font-size: 1rem; margin-bottom: 8px; display: block; }
-              .sim-link { display: block; padding: 8px 12px; margin: 4px 0; background: #f8f9fa; color: #333; text-decoration: none; border-radius: 6px; transition: 0.2s; font-size: 0.95rem; }
-              .sim-link:hover { background: #e9ecef; transform: translateX(5px); color: #007bff; }
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+              .container { max-width: 800px; margin: 0 auto; }
+              .subject-block { background: white; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+              .subject-title { background: #007bff; color: white; padding: 15px; margin: 0; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: space-between; }
+              .category-group { padding: 10px 20px; border-bottom: 1px solid #eee; }
+              .category-name { font-weight: bold; color: #555; display: block; margin: 10px 0 5px 0; cursor: pointer; }
+              .links-container { display: none; margin-left: 15px; padding-bottom: 10px; }
+              .sim-link { display: block; padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 6px; text-decoration: none; color: #007bff; transition: 0.2s; }
+              .sim-link:hover { background: #eef; transform: translateX(5px); }
+              .active { display: block !important; }
             </style>
           </head>
           <body>
-            <h1 style="text-align:center; color:#1a202c;">Mina Simuleringar</h1>
             <div class="container">
+              <h1>Mina Simuleringar</h1>
+              <div id="main-content">
           EOF
 
-          # Logik för att gruppera: Vi loopar genom alla HTML-filer
-          # Vi antar formatet: Ämne-Kategori-Namn.html
-          for f in $(find . -maxdepth 1 -name "*.html" ! -name "index.html" | sort); do
+          # Logik för att bygga strukturen
+          # Vi använder en temporär fil för att sortera och gruppera
+          find . -maxdepth 1 -name "*.html" ! -name "index.html" -not -path "*/.*" | sort | while read f; do
             filename=$(basename "$f" .html)
-            # Dela upp namnet via bindestreck
-            subject=$(echo $filename | cut -d'-' -f1)
-            category=$(echo $filename | cut -d'-' -f2)
-            name=$(echo $filename | cut -d'-' -f3-)
-            
-            # Om filen bara heter "Test.html", sätt default-kategorier
-            if [ "$subject" == "$name" ]; then subject="Övrigt"; category="Allmänt"; name=$filename; fi
-            if [ "$category" == "$name" ]; then category="Allmänt"; fi
+            # Vi splittar ENDAST på bindestreck
+            subject=$(echo "$filename" | cut -d'-' -f1)
+            category=$(echo "$filename" | cut -d'-' -f2)
+            name=$(echo "$filename" | cut -d'-' -f3-)
 
-            # (Här skulle man kunna lägga in logik för att skriva ut <div> tags, 
-            # men för enkelhetens skull i detta steg skapar vi en snygg lista per fil)
-            echo "<div class='category-card'><div class='category-title'>$subject</div><div class='subcategory'><span class='subcategory-title'>$category</span><a class='sim-link' href='$f'>$(echo $name | sed 's/-/ /g')</a></div></div>" >> index.html
+            # Fallback om namnet saknar bindestreck
+            if [ "$subject" == "$name" ] || [ -z "$category" ]; then subject="Övrigt"; category="Allmänt"; name="$filename"; fi
+
+            echo "<div class='subject-block'>" >> index.html
+            echo "<div class='subject-title' onclick='toggle(this.nextElementSibling)'>$subject <span>+</span></div>" >> index.html
+            echo "<div class='category-group' style='display:none;'>" >> index.html
+            echo "<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 $category</span>" >> index.html
+            echo "<div class='links-container'>" >> index.html
+            echo "<a class='sim-link' href='$f'>$name</a>" >> index.html
+            echo "</div></div></div>" >> index.html
           done
 
-          echo "</div></body></html>" >> index.html
+          cat <<EOF >> index.html
+              </div>
+            </div>
+            <script>
+              function toggle(el) {
+                if (el.style.display === 'block') {
+                  el.style.display = 'none';
+                } else {
+                  el.style.display = 'block';
+                }
+              }
+            </script>
+          </body>
+          </html>
+          EOF
 
       - name: Commit change
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'action@github.com'
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Index" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Accordion Index" && git push)

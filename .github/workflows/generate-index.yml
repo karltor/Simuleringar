@@ -18,17 +18,19 @@ jobs:
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Karls Dashboard</title>
+            <title>Karls Simuleringar</title>
             <style>
               /* Extremt tajt och yteffektiv layout */
               body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; padding: 10px; color: #333; margin: 0; }
               
               /* Header och inställningar */
-              .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; }
+              .header-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
               h1 { margin: 0; font-size: 1.4rem; color: #1a202c; display: flex; align-items: center; gap: 8px;}
               
-              .settings-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
-              .settings-btn:hover { background: #cbd5e1; transform: rotate(15deg); }
+              /* Nya knappgruppen i headern */
+              .header-buttons { display: flex; gap: 8px; }
+              .icon-btn { background: #e2e8f0; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; text-decoration: none; display: flex; align-items: center; justify-content: center; color: #333; }
+              .icon-btn:hover { background: #cbd5e1; transform: translateY(-2px); }
               
               /* Settings Modal (Kugghjulet) */
               #settings-modal { display: none; position: absolute; top: 55px; right: 10px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border: 1px solid #e1e4e8; z-index: 100; min-width: 200px; }
@@ -36,41 +38,82 @@ jobs:
               .setting-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; }
               .setting-label input { cursor: pointer; }
 
+              /* Centrerade Overlay-Modaler (Om mig & Testa Kod) */
+              .overlay-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+              .modal-content { background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative; }
+              .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; cursor: pointer; border: none; background: none; color: #888; transition: 0.2s; }
+              .close-btn:hover { color: #333; }
+              
+              /* Design för Om mig-texten */
+              .about-text { line-height: 1.6; font-size: 1.05rem; color: #444; }
+              .about-text p { margin-bottom: 15px; }
+              .link-buttons { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+              .text-btn { background: #007bff; color: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.9rem; transition: 0.2s; border: none; cursor: pointer; display: inline-block; }
+              .text-btn:hover { background: #0056b3; }
+              .text-btn.alt { background: #0a66c2; } /* LinkedIn-blå */
+              .text-btn.alt:hover { background: #004182; }
+
+              /* Design för Kod-renderaren */
+              .code-area { width: 100%; height: 350px; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; padding: 12px; border: 1px solid #ccc; border-radius: 6px; resize: vertical; box-sizing: border-box; margin-bottom: 15px; background: #f8f9fa; }
+              .code-area:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,0.25); }
+
               /* CSS GRID: Tajt och responsivt */
               .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; width: 100%; align-items: start; }
-              
               .subject-block { background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e1e4e8; }
-              
-              /* Huvudrubriker */
               .subject-title { background: #007bff; color: white; padding: 6px 10px; margin: 0; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }
               .content-wrapper { display: none; padding: 6px; }
-              
-              /* Underkategorier (Mapparna) */
               .category-group { margin-bottom: 6px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
               .category-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-              
               .category-name { font-weight: 700; color: #444; margin: 2px 0 4px 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; padding: 4px; border-radius: 4px; transition: background 0.2s; }
               .category-name:hover { background: #f8f9fa; color: #007bff; }
-              
-              /* Behållaren för själva länkarna under en mapp */
               .category-links { display: none; padding-left: 5px; }
-              
-              /* Länkarna */
               .sim-link { display: block; padding: 4px 6px; margin: 2px 0; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: #0366d6; font-size: 0.85rem; border: 1px solid transparent; }
               .sim-link:hover { background: #f0f8ff; border-color: #cce5ff; text-decoration: underline; }
-              
               .active { display: block !important; }
             </style>
           </head>
           <body>
             <div class="header-container">
-              <h1>⚙️ Mina Simuleringar</h1>
-              <button class="settings-btn" onclick="toggleSettings()" title="Hantera ämnen">⚙️</button>
+              <h1>🚀 Karls Simuleringar</h1>
+              <div class="header-buttons">
+                <button class="icon-btn" onclick="openModal('about-modal')" title="Om Mig">👤</button>
+                <button class="icon-btn" onclick="openModal('test-modal')" title="Testkör HTML-kod">⚡</button>
+                <a href="https://github.com/karltor/Simuleringar" target="_blank" class="icon-btn" title="GitHub Repo">🐙</a>
+                <button class="icon-btn settings-btn" onclick="toggleSettings()" title="Hantera ämnen">⚙️</button>
+              </div>
             </div>
             
             <div id="settings-modal">
               <h3>Visa/Dölj Ämnen</h3>
               <div id="settings-list"></div>
+            </div>
+
+            <div id="about-modal" class="overlay-modal" onclick="closeOnOutsideClick(event, 'about-modal')">
+              <div class="modal-content">
+                <button class="close-btn" onclick="closeModal('about-modal')">&times;</button>
+                <h2 style="margin-top:0; color:#1a202c; border-bottom:2px solid #007bff; padding-bottom:10px;">Om Mig</h2>
+                <div class="about-text">
+                  <p>Mitt namn är <strong>Karl Törnered</strong>. Jag har sedan 2023 arbetat flitigt med AI och dess potential att förändra hur jag undervisar med hjälp av digitala verktyg.</p>
+                  <p>Många verktyg man hittar på nätet efter mycket om och men är inte pedagogiskt värdefulla, är ofta på engelska, har reklam eller andra störningsmoment. De är sällan avskalade nog, försöker göra för mycket på en och samma sida, eller så saknas exakt det man söker efter.</p>
+                  <p>Därför började jag på min planeringstid producera dessa simulatorer. De flesta är AI-genererade, där jag tillsammans med chattbottar som Gemini och ChatGPT har bollat fram och tillbaka för att skapa avskalade digitala verktyg som är direkt användbara i undervisningen.</p>
+                  <p>Flertalet simuleringar är tänkta att visas av läraren under en genomgång, men vissa skickar jag direkt till mina elever. Vissa verktyg kan verka otydliga då de är en del av specifika laborationer som kräver ytterligare kontext för att användas fullt ut.</p>
+                  <p>Jag föreläser även på grund- och gymnasieskolor kring hur lärare kan använda sig av och bör förhålla sig till AI.</p>
+                </div>
+                <div class="link-buttons">
+                  <a href="https://atenadidaktik.se/article/view/5472" target="_blank" class="text-btn">Läs min artikel på Atena Didaktik</a>
+                  <a href="https://se.linkedin.com/in/karl-t%C3%B6rnered-2b19731b6" target="_blank" class="text-btn alt">Kontakta mig på LinkedIn</a>
+                </div>
+              </div>
+            </div>
+
+            <div id="test-modal" class="overlay-modal" onclick="closeOnOutsideClick(event, 'test-modal')">
+              <div class="modal-content" style="max-width:800px;">
+                <button class="close-btn" onclick="closeModal('test-modal')">&times;</button>
+                <h2 style="margin-top:0; color:#1a202c; border-bottom:2px solid #007bff; padding-bottom:10px;">⚡ Sandlådan - Testkör kod</h2>
+                <p style="color:#666; font-size:0.9rem; margin-top:0;">Klistra in din HTML/CSS/JS från AI:n nedan och klicka på Kör. Koden renderas i en ny flik.</p>
+                <textarea id="code-input" class="code-area" placeholder="<!DOCTYPE html>&#10;<html>&#10;...klistra in kod här..."></textarea>
+                <button class="text-btn" onclick="runHTMLCode()" style="width:100%; font-size:1.1rem; padding:12px;">🚀 Kör koden i ny flik</button>
+              </div>
             </div>
 
             <div class="container" id="main-content">
@@ -96,13 +139,9 @@ jobs:
           current_sub=""
           current_cat=""
           
-          # HÄR BYGGER VI DEN NYA STRUKTUREN
           sort raw_data.txt | while IFS='|' read -r sub cat_name sim_name f; do
-            # Om vi byter Ämne
             if [ "$sub" != "$current_sub" ]; then
-              # Stäng föregående mapp (om den fanns)
               if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
-              # Stäng föregående ämneslåda (om den fanns)
               if [ "$current_sub" != "" ]; then echo "</div></div>" >> index.html; fi
               
               echo "<div class='subject-block' data-subject='$sub'>" >> index.html
@@ -112,9 +151,7 @@ jobs:
               current_cat=""
             fi
             
-            # Om vi byter Undermapp
             if [ "$cat_name" != "$current_cat" ]; then
-              # Stäng föregående mapp inuti detta ämne (om den fanns)
               if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
               
               echo "<div class='category-group' data-category='$cat_name'>" >> index.html
@@ -126,7 +163,6 @@ jobs:
             echo "<a class='sim-link' href=\"$f\" target=\"_blank\">$sim_name</a>" >> index.html
           done
 
-          # Stäng de absolut sista lådorna när loopen är klar
           if [ "$current_sub" != "" ]; then
              if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
              echo "</div></div>" >> index.html
@@ -135,7 +171,47 @@ jobs:
           cat <<'EOF' >> index.html
             </div>
             <script>
-              // --- 1. Hantera Settings-menyn ---
+              // --- Logik för Modaler ---
+              function openModal(id) {
+                document.getElementById(id).style.display = 'flex';
+                // Hindra bakgrunden från att scrolla när modalen är öppen
+                document.body.style.overflow = 'hidden';
+              }
+
+              function closeModal(id) {
+                document.getElementById(id).style.display = 'none';
+                document.body.style.overflow = 'auto';
+              }
+
+              function closeOnOutsideClick(event, id) {
+                if (event.target.id === id) {
+                  closeModal(id);
+                }
+              }
+
+              // --- Logik för Sandlådan (Kör HTML) ---
+              function runHTMLCode() {
+                const code = document.getElementById('code-input').value;
+                if (!code.trim()) {
+                  alert("Klistra in lite kod först!");
+                  return;
+                }
+                
+                // Öppna en ny flik
+                const newWindow = window.open();
+                
+                if (newWindow) {
+                  // Skriv koden till den nya fliken
+                  newWindow.document.open();
+                  newWindow.document.write(code);
+                  newWindow.document.close();
+                } else {
+                  // Varning om webbläsaren blockerar popups
+                  alert("Det verkar som att din webbläsare blockerar popups. Tillåt popups för denna sida för att kunna köra koden i en ny flik!");
+                }
+              }
+
+              // --- Hantera Settings-menyn ---
               function toggleSettings() {
                 const modal = document.getElementById('settings-modal');
                 modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
@@ -144,7 +220,7 @@ jobs:
               document.addEventListener('click', (e) => {
                 const modal = document.getElementById('settings-modal');
                 const btn = document.querySelector('.settings-btn');
-                if (modal.style.display === 'block' && !modal.contains(e.target) && !btn.contains(e.target)) {
+                if (modal && modal.style.display === 'block' && !modal.contains(e.target) && !btn.contains(e.target)) {
                   modal.style.display = 'none';
                 }
               });
@@ -153,14 +229,13 @@ jobs:
                 const hiddenSubjects = JSON.parse(localStorage.getItem('hidden-subjects') || '[]');
                 const settingsList = document.getElementById('settings-list');
 
-                // --- 2. Huvudämnen: Arkivering och Dragspel ---
+                // --- Huvudämnen: Arkivering och Dragspel ---
                 document.querySelectorAll('.subject-block').forEach(block => {
                   const titleEl = block.querySelector('.subject-title');
                   const content = block.querySelector('.content-wrapper');
                   const span = titleEl.querySelector('span');
                   const subjectName = block.getAttribute('data-subject');
                   
-                  // Arkiveringslogik (Kugghjulet)
                   if (hiddenSubjects.includes(subjectName)) block.style.display = 'none';
 
                   const label = document.createElement('label');
@@ -180,7 +255,6 @@ jobs:
                   });
                   settingsList.appendChild(label);
 
-                  // Dragspelslogik Huvudämne
                   const storageKey = 'toggle-subject-' + subjectName;
                   if (localStorage.getItem(storageKey) === 'closed') {
                     content.classList.remove('active');
@@ -195,14 +269,13 @@ jobs:
                   });
                 });
 
-                // --- 3. Underkategorier (Mapparna): Dragspelslogik ---
+                // --- Underkategorier: Dragspelslogik ---
                 document.querySelectorAll('.category-name').forEach(catEl => {
-                  const content = catEl.nextElementSibling; // div.category-links
-                  const span = catEl.querySelectorAll('span')[1]; // Det andra span-elementet är +/- tecknet
+                  const content = catEl.nextElementSibling; 
+                  const span = catEl.querySelectorAll('span')[1]; 
                   const categoryName = catEl.parentElement.getAttribute('data-category');
                   const subjectName = catEl.closest('.subject-block').getAttribute('data-subject');
                   
-                  // Skapa en helt unik nyckel för just denna undermapp (ex. toggle-cat-Matematik-Taluppfattning)
                   const storageKey = 'toggle-cat-' + subjectName + '-' + categoryName;
 
                   if (localStorage.getItem(storageKey) === 'closed') {
@@ -228,4 +301,4 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'action@github.com'
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Add collapsible subcategories with localStorage" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Add header tools, about page, and HTML sandbox" && git push)

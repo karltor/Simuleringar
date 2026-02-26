@@ -5,44 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Om Mig - Karl Törnered</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 20px; line-height: 1.6; }
-    .nav-header { max-width: 800px; margin: 0 auto 20px auto; display: flex; justify-content: flex-start; }
-    .back-btn { text-decoration: none; background: #e2e8f0; color: #333; padding: 8px 16px; border-radius: 6px; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .back-btn:hover { background: #cbd5e1; transform: translateX(-5px); }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; color: #333; margin: 0; padding: 0; line-height: 1.5; }
     
-    .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+    .container { max-width: 900px; margin: 0 auto; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); min-height: 100vh; }
     
-    .hero { background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 40px 30px; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
-    .profile-img { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: #007bff; font-weight: bold; overflow: hidden; flex-shrink: 0; }
+    /* Hero-sektionen som börjar direkt i toppen */
+    .hero { position: relative; background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 45px 30px 25px 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    
+    /* Tillbaka-knappen absolut positionerad i övre vänstra hörnet */
+    .back-btn { position: absolute; top: 12px; left: 15px; text-decoration: none; background: rgba(255,255,255,0.15); color: white; padding: 4px 10px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.2); }
+    .back-btn:hover { background: rgba(255,255,255,0.3); transform: translateX(-3px); }
+    
+    /* Vänster sida av Hero (Bild + Text) */
+    .hero-left { display: flex; align-items: center; gap: 20px; }
+    .profile-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #007bff; font-weight: bold; overflow: hidden; flex-shrink: 0; }
     .profile-img img { width: 100%; height: 100%; object-fit: cover; }
-    .hero-text h1 { margin: 0 0 5px 0; font-size: 2.5rem; letter-spacing: -0.5px; }
-    .hero-text p { margin: 0; font-size: 1.2rem; opacity: 0.9; font-weight: 300; }
+    .hero-text h1 { margin: 0 0 2px 0; font-size: 2rem; letter-spacing: -0.5px; }
+    .hero-text p { margin: 0; font-size: 1rem; opacity: 0.9; font-weight: 400; }
     
-    .content { padding: 40px 30px; font-size: 1.05rem; color: #444; }
-    .content p { margin-bottom: 20px; }
+    /* Höger sida av Hero (CTA-knappar) */
+    .hero-right { display: flex; flex-direction: column; gap: 8px; }
+    .cta-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: 0.2s; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .cta-linkedin { background: #0a66c2; border: 1px solid #0854a1; } 
+    .cta-linkedin:hover { background: #004182; transform: translateY(-2px); }
+    .cta-article { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); }
+    .cta-article:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
+    .linkedin-icon { width: 18px; height: 18px; fill: currentColor; }
     
-    .cta-container { display: flex; gap: 15px; margin-top: 40px; flex-wrap: wrap; }
-    .cta-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: 0.2s; color: white; }
-    .cta-linkedin { background: #0a66c2; } /* Officiell LinkedIn-blå */
-    .cta-linkedin:hover { background: #004182; transform: translateY(-3px); box-shadow: 0 4px 10px rgba(10,102,194,0.3); }
-    .cta-article { background: #1a202c; }
-    .cta-article:hover { background: #000; transform: translateY(-3px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    .linkedin-icon { width: 22px; height: 22px; fill: currentColor; }
+    /* Brödtexten */
+    .content { padding: 25px 30px; font-size: 0.95rem; color: #333; }
+    .content p { margin-top: 0; margin-bottom: 15px; }
   </style>
 </head>
 <body>
-  <div class="nav-header">
-    <a href="index.html" class="back-btn">🔙 Tillbaka till Dashboard</a>
-  </div>
-  
   <div class="container">
     <div class="hero">
-      <div class="profile-img">
-        <img src="profilbild.jpg" alt="Karl Törnered" onerror="this.style.display='none'; this.parentNode.innerHTML='KT';">
+      <a href="index.html" class="back-btn">🔙 Tillbaka till Dashboard</a>
+      
+      <div class="hero-left">
+        <div class="profile-img">
+          <img src="profilbild.jpg" alt="Karl Törnered" onerror="this.style.display='none'; this.parentNode.innerHTML='KT';">
+        </div>
+        <div class="hero-text">
+          <h1>Karl Törnered</h1>
+          <p>Lärare, Föreläsare & AI-entusiast</p>
+        </div>
       </div>
-      <div class="hero-text">
-        <h1>Karl Törnered</h1>
-        <p>Lärare & AI-entusiast</p>
+
+      <div class="hero-right">
+        <a href="https://se.linkedin.com/in/karl-t%C3%B6rnered-2b19731b6" target="_blank" class="cta-btn cta-linkedin">
+          <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+          Kontakta mig
+        </a>
+        <a href="https://atenadidaktik.se/article/view/5472" target="_blank" class="cta-btn cta-article">
+          📄 Atena Didaktik-artikel
+        </a>
       </div>
     </div>
     
@@ -52,16 +69,6 @@
       <p>Därför började jag på min planeringstid producera dessa simulatorer. De flesta är AI-genererade, där jag tillsammans med chattbottar som Gemini och ChatGPT har bollat fram och tillbaka för att skapa avskalade digitala verktyg som är direkt användbara i undervisningen.</p>
       <p>Flertalet simuleringar är tänkta att visas av läraren under en genomgång, men vissa skickar jag direkt till mina elever. Vissa verktyg kan verka otydliga då de är en del av specifika laborationer som kräver ytterligare kontext för att användas fullt ut.</p>
       <p>Jag föreläser även på grund- och gymnasieskolor kring hur lärare kan använda sig av och bör förhålla sig till AI.</p>
-      
-      <div class="cta-container">
-        <a href="https://se.linkedin.com/in/karl-t%C3%B6rnered-2b19731b6" target="_blank" class="cta-btn cta-linkedin">
-          <svg class="linkedin-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-          Kontakta mig på LinkedIn
-        </a>
-        <a href="https://atenadidaktik.se/article/view/5472" target="_blank" class="cta-btn cta-article">
-          📄 Atena Didaktik
-        </a>
-      </div>
     </div>
   </div>
 </body>

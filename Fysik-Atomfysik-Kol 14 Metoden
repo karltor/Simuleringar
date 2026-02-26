@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kol-14 Simulatorn</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @keyframes neutron-fly {
+            from { left: -10%; transform: scale(0.8); }
+            to { left: 45%; transform: scale(1.2); }
+        }
+        @keyframes proton-exit {
+            0% { left: 50%; top: 50%; transform: scale(1); opacity: 1; }
+            100% { left: 120%; top: -20%; transform: scale(0.5); opacity: 0; }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* Garanterad synlighet för reglage (sliders) */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+            height: 32px;
+        }
+
+        /* Ljus skena (Utmaning) */
+        .slider-light::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            background: #cbd5e1; /* slate-300 */
+        }
+
+        /* Mörk skena (Sönderfallspanel) */
+        .slider-dark::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            background: #475569; /* slate-600 */
+        }
+
+        /* Själva knappen (Thumb) */
+        input[type=range]::-webkit-slider-thumb {
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            background: currentColor;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border: 3px solid white;
+            transition: transform 0.1s ease;
+        }
+
+        input[type=range]:hover::-webkit-slider-thumb {
+            transform: scale(1.15);
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // Custom Icons to avoid external library conflicts
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const icons = {
+                play: <path d="m6 3 14 9-14 9V3z" />,
+                refresh: <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8m0 0V2m0 6h-6M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16m0 0v6m0-6h6" />,
+                chevronLeft: <path d="m15 18-6-6 6-6" />,
+                chevronRight: <path d="m9 18 6-6-6-6" />,
+                zap: <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+            };
+            return (
+                <svg 
+                    width={size} height={size} 
+                    viewBox="0 0 24 24" fill="none" 
+                    stroke="currentColor" strokeWidth="2.5" 
+                    strokeLinecap="round" strokeLinejoin="round" 
+                    className={className}
+                >
+                    {icons[name]}
+                </svg>
+            );
+        };
+
+        const Nucleus = ({ protons, neutrons, label }) => {
+            const total = protons + neutrons;
+            const particles = useMemo(() => {
+                const p = [];
+                const types = [...Array(protons).fill('proton'), ...Array(neutrons).fill('neutron')];
+                
+                // Deterministic seed-like shuffle based on total count
+                for (let i = types.length - 1; i > 0; i--) {
+                    const j = (i * 7) % (i + 1); 
+                    [types[i], types[j]] = [types[j], types[i]];
+                }
+
+                for (let i = 0; i < total; i++) {
+                    const isInner = i < 5;
+                    const shellCount = isInner ? 5 : (total - 5);
+                    const indexInShell = isInner ? i : (i - 5);
+                    const angle = (indexInShell / shellCount) * Math.PI * 2;
+                    // Spaced out for counting
+                    const radius = isInner ? 24 : 54; 
+                    p.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, type: types[i] });
+                }
+                return p;
+            }, [protons, neutrons]);
+
+            return (
+                <div className="relative w-64 h-64 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-blue-400/5 blur-3xl rounded-full"></div>
+                    {particles.map((p, i) => (
+                        <div 
+                            key={i}
+                            className={`absolute w-8 h-8 rounded-full border-2 border-black/20 shadow-md transition-all duration-700 ${
+                                p.type === 'proton' ? 'bg-red-500' : 'bg-white'
+                            }`}
+                            style={{ 
+                                transform: `translate(${p.x}px, ${p.y}px)`, 
+                                zIndex: Math.round(p.y + 100) 
+                            }}
+                        />
+                    ))}
+                    <div className="absolute -bottom-14 bg-slate-800 px-4 py-2 rounded-lg text-xs font-black text-white uppercase tracking-tighter whitespace-nowrap shadow-xl border border-slate-700">
+                        {label}: {protons}P + {neutrons}N
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [view, setView] = useState('atmosphere');
+            const [years, setYears] = useState(0);
+            
+            // Stats State - Session based only
+            const [stats, setStats] = useState({ 
+                totalPlayed: 0, 
+                totalCorrect: 0, 
+                currentStreak: 0, 
+                bestStreak: 0 
+            });
+
+            // Application Logic States
+            const [challengeTarget, setChallengeTarget] = useState(0);
+            const [challengeGuess, setChallengeGuess] = useState(25000);
+            const [hasChecked, setHasChecked] = useState(false);
+            const [animStage, setAnimStage] = useState('idle');
+
+            const HALF_LIFE = 5730;
+            const GRID_SIZE = 30;
+            const TOTAL_ATOMS = GRID_SIZE * GRID_SIZE;
+            const INITIAL_C14_RATIO = 0.22;
+
+            useEffect(() => {
+                if (animStage === 'flying') {
+                    const t = setTimeout(() => setAnimStage('collision'), 1000);
+                    return () => clearTimeout(t);
+                }
+                if (animStage === 'collision') {
+                    const t = setTimeout(() => setAnimStage('result'), 500);
+                    return () => clearTimeout(t);
+                }
+            }, [animStage]);
+
+            const updateStats = (isCorrect) => {
+                setStats(prev => {
+                    const newStreak = isCorrect ? prev.currentStreak + 1 : 0;
+                    return {
+                        totalPlayed: prev.totalPlayed + 1,
+                        totalCorrect: prev.totalCorrect + (isCorrect ? 1 : 0),
+                        currentStreak: newStreak,
+                        bestStreak: Math.max(prev.bestStreak, newStreak)
+                    };
+                });
+            };
+
+            const atomData = useMemo(() => {
+                const data = [];
+                for (let i = 0; i < TOTAL_ATOMS; i++) {
+                    const isC14 = i < TOTAL_ATOMS * INITIAL_C14_RATIO;
+                    // Fixed decay year per atom for consistent slider visuals
+                    const seed = Math.sin(i * 123.456) * 10000;
+                    const randomVal = (seed - Math.floor(seed));
+                    const decayYear = isC14 ? (-HALF_LIFE * Math.log2(randomVal)) : Infinity;
+                    data.push({ id: i, isC14, decayYear });
+                }
+                return data;
+            }, []);
+
+            const startChallenge = () => {
+                setChallengeTarget(Math.floor(Math.random() * 44000) + 500);
+                setChallengeGuess(25000);
+                setHasChecked(false);
+                setView('challenge');
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-100 text-slate-900 font-sans p-2 md:p-4">
+                    <div className="max-w-4xl mx-auto flex flex-col h-full">
+                        <header className="mb-4 text-center">
+                            <h1 className="text-3xl font-light tracking-tight">Kol-14 Metoden</h1>
+                        </header>
+
+                        <nav className="flex justify-center mb-4 bg-slate-200 p-1 rounded-xl w-fit mx-auto shadow-inner">
+                            {['atmosphere', 'decay', 'challenge'].map((v) => (
+                                <button 
+                                    key={v}
+                                    onClick={() => {
+                                        if (v === 'challenge') startChallenge();
+                                        else setView(v);
+                                        setAnimStage('idle');
+                                    }} 
+                                    className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-all ${view === v ? 'bg-white shadow-sm rounded-lg text-slate-900' : 'text-slate-500 hover:text-slate-800'}`}
+                                >
+                                    {v === 'atmosphere' ? '1. Atmosfären' : v === 'decay' ? '2. Sönderfall' : '3. Utmaning'}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <main className="bg-white rounded-2xl shadow-lg p-4 md:p-6 flex-1 border border-slate-200 overflow-hidden min-h-[540px]">
+                            
+                            {/* STEP 1: ATMOSPHERE */}
+                            {view === 'atmosphere' && (
+                                <div className="h-full flex flex-col md:flex-row gap-6 items-center fade-in">
+                                    <div className="relative flex-1 w-full h-[360px] bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                            {animStage === 'flying' && (
+                                                <div className="absolute left-0 w-8 h-8 bg-white rounded-full shadow-[0_0_20px_white] z-50" style={{animation: 'neutron-fly 1s linear forwards'}}></div>
+                                            )}
+                                            {animStage === 'result' && (
+                                                <div className="absolute w-8 h-8 bg-red-500 rounded-full shadow-[0_0_20px_#ef4444] z-50" style={{animation: 'proton-exit 1.5s ease-out forwards'}}></div>
+                                            )}
+                                            {animStage === 'idle' || animStage === 'flying' ? (
+                                                <Nucleus protons={7} neutrons={7} label="Kväve-14" />
+                                            ) : (
+                                                <div className={animStage === 'collision' ? 'animate-bounce' : ''}>
+                                                    <Nucleus protons={6} neutrons={8} label="Kol-14" />
+                                                </div>
+                                            )}
+                                            {animStage === 'collision' && (
+                                                <div className="absolute w-44 h-44 bg-white rounded-full animate-ping opacity-30"></div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full md:w-64 space-y-4">
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
+                                            <h3 className="font-bold text-sm mb-2 uppercase tracking-tight text-slate-800">Kärnreaktion</h3>
+                                            <p className="text-xs text-slate-500 leading-relaxed mb-4 italic">
+                                                När en neutron från rymden krockar med kärnan ersätter den en proton. Atomen blir Kol-14.
+                                            </p>
+                                            {animStage === 'idle' ? (
+                                                <button onClick={() => setAnimStage('flying')} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-blue-700 shadow-md active:scale-95 transition-all">
+                                                    <Icon name="play" /> Starta Simulation
+                                                </button>
+                                            ) : (
+                                                <button onClick={() => setAnimStage('idle')} className="w-full py-3 bg-slate-800 text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-slate-900 active:scale-95 transition-all">
+                                                    <Icon name="refresh" /> Nollställ
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 2: DECAY */}
+                            {view === 'decay' && (
+                                <div className="h-full flex flex-col space-y-4 fade-in">
+                                    <div className="grid md:grid-cols-2 gap-6 items-center flex-1">
+                                        <div className="bg-slate-50 rounded-xl border p-3 flex flex-col items-center shadow-inner border-slate-200">
+                                            <div className="grid gap-px bg-slate-200 border border-slate-300" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}>
+                                                {atomData.map((atom) => {
+                                                    const isCurrentlyDecayed = atom.isC14 && years > atom.decayYear;
+                                                    return (
+                                                        <div key={atom.id} className={`w-2 h-2 md:w-2.5 md:h-2.5 transition-colors duration-200 ${!atom.isC14 ? 'bg-slate-400' : (isCurrentlyDecayed ? 'bg-white' : 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.8)]')}`} />
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="flex gap-4 mt-3 text-[9px] uppercase font-black text-slate-500 tracking-tighter">
+                                                <div className="flex items-center gap-1"><div className="w-2 h-2 bg-slate-400 rounded-sm"></div> Stabilt Kol-12</div>
+                                                <div className="flex items-center gap-1"><div className="w-2 h-2 bg-emerald-500 rounded-sm shadow-[0_0_3px_#10b981]"></div> Aktivt Kol-14</div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="p-5 bg-slate-900 text-white rounded-xl shadow-lg">
+                                                <div className="flex justify-between items-end mb-4">
+                                                    <div>
+                                                        <div className="text-[10px] text-slate-400 uppercase font-bold mb-1">År sedan död</div>
+                                                        <div className="text-4xl font-mono font-bold text-emerald-400 leading-none">{years.toLocaleString()}</div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-[10px] text-slate-400 uppercase font-bold mb-1 tracking-tighter text-slate-500 uppercase">Halveringar</div>
+                                                        <div className="text-xl font-mono">{(years / HALF_LIFE).toFixed(2)}</div>
+                                                    </div>
+                                                </div>
+                                                <input type="range" min="0" max="50000" step="50" value={years} onChange={(e) => setYears(parseInt(e.target.value))} className="slider-dark text-emerald-400" />
+                                            </div>
+                                            <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-center shadow-sm">
+                                                <span className="text-xs font-bold text-emerald-800 uppercase block mb-1 tracking-tight">Kvarvarande andel Kol-14</span>
+                                                <span className="text-3xl font-mono font-bold text-emerald-600">{(Math.pow(0.5, years/HALF_LIFE) * 100).toFixed(1)}%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* STEP 3: CHALLENGE */}
+                            {view === 'challenge' && (
+                                <div className="h-full flex flex-col space-y-4 fade-in">
+                                    <div className="grid md:grid-cols-2 gap-4 items-start flex-1">
+                                        <div className="bg-slate-50 rounded-xl border p-4 flex flex-col items-center border-slate-200 shadow-inner">
+                                            <div className="grid gap-px bg-slate-200 border border-slate-300 shadow-sm" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))` }}>
+                                                {atomData.map((atom) => {
+                                                    const isCurrentlyDecayed = atom.isC14 && challengeTarget > atom.decayYear;
+                                                    return (
+                                                        <div key={atom.id} className={`w-2 h-2 md:w-2.5 md:h-2.5 ${!atom.isC14 ? 'bg-slate-400' : (isCurrentlyDecayed ? 'bg-white' : 'bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.8)]')}`} />
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2 mt-4 w-full">
+                                                <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                                                    <div className="text-[9px] text-slate-400 font-bold uppercase mb-0.5 tracking-tighter">Analys: Andel</div>
+                                                    <div className="text-lg font-mono font-bold">{(Math.pow(0.5, challengeTarget/HALF_LIFE) * 100).toFixed(1)}%</div>
+                                                </div>
+                                                <div className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
+                                                    <div className="text-[9px] text-slate-400 font-bold uppercase mb-0.5 tracking-tighter">Halveringar</div>
+                                                    <div className="text-lg font-mono font-bold">{(challengeTarget / HALF_LIFE).toFixed(2)}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="bg-white p-4 rounded-xl border-2 border-slate-100 shadow-sm">
+                                                <div className="text-center mb-4">
+                                                    <div className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mb-1 font-black">Gissa åldern på provet</div>
+                                                    <div className="flex items-center justify-center gap-3">
+                                                        <button onClick={() => setChallengeGuess(Math.max(0, challengeGuess - 500))} disabled={hasChecked} className="p-1.5 bg-slate-100 rounded-md hover:bg-slate-200 disabled:opacity-20 transition-colors"><Icon name="chevronLeft" /></button>
+                                                        <span className="text-2xl text-blue-600 font-mono font-bold w-36 text-center tracking-tighter">{challengeGuess.toLocaleString()} <span className="text-xs uppercase font-sans">år</span></span>
+                                                        <button onClick={() => setChallengeGuess(Math.min(50000, challengeGuess + 500))} disabled={hasChecked} className="p-1.5 bg-slate-100 rounded-md hover:bg-slate-200 disabled:opacity-20 transition-colors"><Icon name="chevronRight" /></button>
+                                                    </div>
+                                                </div>
+                                                <input type="range" min="0" max="50000" step="100" value={challengeGuess} disabled={hasChecked} onChange={(e) => setChallengeGuess(parseInt(e.target.value))} className="slider-light text-blue-600" />
+                                            </div>
+
+                                            {!hasChecked ? (
+                                                <button onClick={() => {
+                                                    const diff = Math.abs(challengeGuess - challengeTarget);
+                                                    const margin = Math.max(2000, Math.round(challengeTarget * 0.15));
+                                                    setHasChecked(true);
+                                                    updateStats(diff <= margin);
+                                                }} className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 shadow-md active:scale-95 transition-all text-sm uppercase tracking-widest">Kontrollera datering</button>
+                                            ) : (
+                                                <div className={`p-4 rounded-xl border animate-in zoom-in-95 ${Math.abs(challengeGuess - challengeTarget) <= Math.max(2000, Math.round(challengeTarget * 0.15)) ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <h3 className="font-bold text-sm uppercase tracking-tight">{Math.abs(challengeGuess - challengeTarget) <= Math.max(2000, Math.round(challengeTarget * 0.15)) ? 'Godkänt!' : 'Utanför marginalen'}</h3>
+                                                        <button onClick={startChallenge} className="text-[10px] font-bold underline uppercase hover:no-underline">Nästa prov</button>
+                                                    </div>
+                                                    <p className="text-xs opacity-90 leading-tight">Verklig ålder: <strong>{challengeTarget.toLocaleString()} år</strong>. (Marginal: ±{Math.max(2000, Math.round(challengeTarget * 0.15)).toLocaleString()} år)</p>
+                                                </div>
+                                            )}
+
+                                            <div className="grid grid-cols-4 gap-2 border-t border-slate-100 pt-4 mt-2">
+                                                <div className="text-center">
+                                                    <div className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Spelade</div>
+                                                    <div className="text-sm font-bold text-slate-700">{stats.totalPlayed}</div>
+                                                </div>
+                                                <div className="text-center border-x border-slate-100">
+                                                    <div className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Korrekt</div>
+                                                    <div className="text-sm font-bold text-slate-700">{stats.totalPlayed > 0 ? Math.round((stats.totalCorrect / stats.totalPlayed) * 100) : 0}%</div>
+                                                </div>
+                                                <div className="text-center border-r border-slate-100">
+                                                    <div className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Streak</div>
+                                                    <div className="text-sm font-bold flex items-center justify-center gap-0.5 text-amber-500"><Icon name="zap" size={12} className="fill-current" />{stats.currentStreak}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">Rekord</div>
+                                                    <div className="text-sm font-bold text-yellow-500">{stats.bestStreak}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

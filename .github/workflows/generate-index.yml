@@ -1,8 +1,7 @@
-name: Generate Auto Index
+name: Generate Smart Categorized Index
 on:
   push:
-    branches:
-      - main  # Eller 'master' om din gren heter det
+    branches: [main]
 
 jobs:
   build:
@@ -10,30 +9,55 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Generate Directory Index
+      - uses: actions/checkout@v3
+      - name: Generate HTML
         run: |
-          # Starta HTML-filen med din stil
-          echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Karls Simuleringar</title>' > index.html
-          echo '<style>body{font-family:sans-serif;padding:40px;background:#f4f4f9;} .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;} .card{background:white;padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-decoration:none;color:#333;display:block;margin-bottom:5px;transition:0.2s;} .card:hover{background:#eef;transform:scale(1.02);} h2{border-bottom:2px solid #333;margin-top:40px;}</style></head><body>' >> index.html
-          echo '<h1>Välkommen till Karls simuleringar</h1><div class="grid">' >> index.html
+          # Skapa grunden med CSS för snygga "kort" och kategorier
+          cat <<EOF > index.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Karls Dashboard</title>
+            <style>
+              body { font-family: system-ui, sans-serif; background: #f0f2f5; padding: 20px; }
+              .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+              .category-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+              .category-title { border-bottom: 2px solid #007bff; color: #007bff; margin-bottom: 15px; padding-bottom: 5px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+              .subcategory { margin-bottom: 15px; }
+              .subcategory-title { font-weight: bold; color: #444; font-size: 1rem; margin-bottom: 8px; display: block; }
+              .sim-link { display: block; padding: 8px 12px; margin: 4px 0; background: #f8f9fa; color: #333; text-decoration: none; border-radius: 6px; transition: 0.2s; font-size: 0.95rem; }
+              .sim-link:hover { background: #e9ecef; transform: translateX(5px); color: #007bff; }
+            </style>
+          </head>
+          <body>
+            <h1 style="text-align:center; color:#1a202c;">Mina Simuleringar</h1>
+            <div class="container">
+          EOF
 
-          # Hitta alla HTML-filer (utom index.html) och skapa länkar
-          # Detta kommando listar filer och gör om filnamn till snygga titlar
-          find . -name "*.html" ! -name "index.html" -not -path "*/.*" | sort | while read file; do
-            filename=$(basename "$file" .html)
-            displayname=$(echo $filename | sed 's/-/ /g' | sed 's/_/ /g')
-            clean_path=$(echo $file | sed 's|^\./||')
-            echo "<a class='card' href='$clean_path'>$displayname</a>" >> index.html
+          # Logik för att gruppera: Vi loopar genom alla HTML-filer
+          # Vi antar formatet: Ämne-Kategori-Namn.html
+          for f in $(find . -maxdepth 1 -name "*.html" ! -name "index.html" | sort); do
+            filename=$(basename "$f" .html)
+            # Dela upp namnet via bindestreck
+            subject=$(echo $filename | cut -d'-' -f1)
+            category=$(echo $filename | cut -d'-' -f2)
+            name=$(echo $filename | cut -d'-' -f3-)
+            
+            # Om filen bara heter "Test.html", sätt default-kategorier
+            if [ "$subject" == "$name" ]; then subject="Övrigt"; category="Allmänt"; name=$filename; fi
+            if [ "$category" == "$name" ]; then category="Allmänt"; fi
+
+            # (Här skulle man kunna lägga in logik för att skriva ut <div> tags, 
+            # men för enkelhetens skull i detta steg skapar vi en snygg lista per fil)
+            echo "<div class='category-card'><div class='category-title'>$subject</div><div class='subcategory'><span class='subcategory-title'>$category</span><a class='sim-link' href='$f'>$(echo $name | sed 's/-/ /g')</a></div></div>" >> index.html
           done
 
-          echo '</div></body></html>' >> index.html
+          echo "</div></body></html>" >> index.html
 
-      - name: Commit and push if changed
+      - name: Commit change
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name 'github-actions'
+          git config --global user.email 'action@github.com'
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Automagisk uppdatering av index" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Index" && git push)

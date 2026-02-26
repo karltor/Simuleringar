@@ -56,13 +56,16 @@
             position: absolute;
             top: 10px; right: 10px;
             background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
+            padding: 10px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 12px;
             color: #888;
             opacity: 0.15;
             transition: all 0.3s ease;
             z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
         #hidden-settings:hover { opacity: 1; color: #fff; background: rgba(0, 0, 0, 0.8); }
     </style>
@@ -95,7 +98,11 @@
 </div>
 
 <div id="hidden-settings">
-    Absorption utanför stav: <input type="number" id="absorbBonus" value="20" style="width:40px;">%
+    <label>Absorptionskraft (endast aktiv om stavar är PÅ):</label>
+    <div>
+        <input type="range" id="absorbSlider" min="0" max="100" value="20" style="width: 80px;" oninput="document.getElementById('absorbVal').textContent = this.value">
+        <span id="absorbVal">20</span>% / sek
+    </div>
 </div>
 
 <div id="label-container"></div>
@@ -118,7 +125,7 @@
     function init() {
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(15, 15, 35); // Dragit bak kameran lite
+        camera.position.set(15, 15, 35); 
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -136,14 +143,12 @@
         buildTemplates();
         createUranium(new THREE.Vector3(0, 0, 0));
         
-        // Initiera styrstavarna direkt, men placera dem högt upp
         initControlRods();
 
         window.addEventListener('resize', onWindowResize, false);
         animate();
     }
 
-    // --- Nucleon Mixing Logic ---
     function buildIsotopeTemplate(pCount, nCount, radius) {
         const group = new THREE.Group();
         const sphereGeo = new THREE.SphereGeometry(radius, 8, 8);
@@ -234,9 +239,7 @@
     function fission(atom) {
         const pos = atom.group.position.clone();
         scene.remove(atom.group);
-        // Glow-effekten är helt borttagen här för prestanda
 
-        // Create fragments (Ba and Kr)
         const fragments = [
             { template: baTemplate, name: 'Ba-141', vel: new THREE.Vector3(-0.12, 0.05, 0) },
             { template: krTemplate, name: 'Kr-92', vel: new THREE.Vector3(0.12, -0.05, 0) }
@@ -277,7 +280,6 @@
     }
     
     function initControlRods() {
-        // Skapar snyggare metalliska stavar som utgår ifrån en osynlig position ovanför
         const rodGeo = new THREE.CylinderGeometry(1.2, 1.2, 100, 16);
         const rodMat = new THREE.MeshStandardMaterial({ 
             color: 0x8899a6, 
@@ -285,10 +287,9 @@
             roughness: 0.2 
         });
 
-        // Sprider dem något mer för att täcka en stor atomklump bättre
         [[0,0], [-10,0], [10,0], [0,-10], [0,10]].forEach(p => {
             const rod = new THREE.Mesh(rodGeo, rodMat);
-            rod.position.set(p[0], 100, p[1]); // Startar gömda högt upp
+            rod.position.set(p[0], 100, p[1]); 
             scene.add(rod);
             controlRods.push({ mesh: rod, targetY: 100 });
         });
@@ -300,7 +301,6 @@
         btn.textContent = `Aktivera Styrstavar: ${controlRodsActive ? 'PÅ' : 'AV'}`;
         btn.classList.toggle('active', controlRodsActive);
         
-        // Sätt ny target Y för animationen (0 = inne i smeten, 100 = uppe i luften)
         controlRods.forEach(r => {
             r.targetY = controlRodsActive ? 0 : 100;
         });
@@ -313,37 +313,39 @@
 
         if (controls) controls.update();
         
-        // Animera styrstavarna så att de glider mjukt upp/ner
+        // Animera styrstavarna 
         controlRods.forEach(r => {
             r.mesh.position.y += (r.targetY - r.mesh.position.y) * 5 * delta;
         });
 
-        // Neutron movement & Collision
-        // Justerat base radius till 1.2 för att matcha de nya tjockare stavarna
-        const absorbDistSq = Math.pow(1.2 + (parseFloat(document.getElementById('absorbBonus').value)/100), 2);
+        // Räkna hur många aktiva neutroner vi har (så vi inte tar bort den sista)
+        let activeNeutronCount = neutrons.filter(n => n.active).length;
+        
+        // Hämta inställd absorptionschans (konvertera procent till decimal)
+        const absorbProbPerSec = parseFloat(document.getElementById('absorbSlider').value) / 100.0;
 
         for (let i = neutrons.length - 1; i >= 0; i--) {
             const n = neutrons[i];
             n.mesh.position.addScaledVector(n.velocity, simSpeed);
 
-            // Atom collision
-            for (let j = atoms.length - 1; j >= 0; j--) {
-                if (n.mesh.position.distanceTo(atoms[j].group.position) < ATOM_RADIUS) {
-                    fission(atoms[j]);
-                    atoms.splice(j, 1);
+            // "Magisk" absorption när stavarna är PÅ
+            if (controlRodsActive && n.active && activeNeutronCount > 1) {
+                // Multiplicera med delta och simSpeed för att få chansen per bildruta att bli korrekt över tid
+                if (Math.random() < (absorbProbPerSec * delta * simSpeed)) {
                     n.active = false;
-                    break;
+                    activeNeutronCount--; // Uppdatera räknaren så vi inte råkar döda den sista i samma frame
                 }
             }
 
-            // Control rod collision - kollar nu mot stavarnas FAKTISKA position istället för bara en toggle
+            // Atom collision
             if (n.active) {
-                for (let r of controlRods) {
-                    const dx = n.mesh.position.x - r.mesh.position.x;
-                    const dz = n.mesh.position.z - r.mesh.position.z;
-                    // Kollar så att neutronen befinner sig inom stavens radie OCH höjd
-                    if (dx*dx + dz*dz < absorbDistSq && Math.abs(n.mesh.position.y - r.mesh.position.y) < 50) {
-                        n.active = false; break;
+                for (let j = atoms.length - 1; j >= 0; j--) {
+                    if (n.mesh.position.distanceTo(atoms[j].group.position) < ATOM_RADIUS) {
+                        fission(atoms[j]);
+                        atoms.splice(j, 1);
+                        n.active = false;
+                        activeNeutronCount--;
+                        break;
                     }
                 }
             }
@@ -354,7 +356,6 @@
             }
         }
 
-        // Fragment & Label updates
         activeFragments.forEach((f, i) => {
             f.group.position.addScaledVector(f.velocity, simSpeed);
             f.life -= delta * simSpeed;

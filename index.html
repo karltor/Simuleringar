@@ -21,20 +21,26 @@
     .setting-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; }
     .setting-label input { cursor: pointer; }
 
-    /* CSS GRID: Ännu tajtare (230px min-bredd för laptops) */
+    /* CSS GRID: Tajt och responsivt */
     .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; width: 100%; align-items: start; }
     
     .subject-block { background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e1e4e8; }
     
+    /* Huvudrubriker */
     .subject-title { background: #007bff; color: white; padding: 6px 10px; margin: 0; font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 5px 5px 0 0; user-select: none; }
-    
     .content-wrapper { display: none; padding: 6px; }
     
+    /* Underkategorier (Mapparna) */
     .category-group { margin-bottom: 6px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
     .category-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     
-    .category-name { font-weight: 700; color: #444; display: block; margin: 2px 0; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .category-name { font-weight: 700; color: #444; margin: 2px 0 4px 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; padding: 4px; border-radius: 4px; transition: background 0.2s; }
+    .category-name:hover { background: #f8f9fa; color: #007bff; }
     
+    /* Behållaren för själva länkarna under en mapp */
+    .category-links { display: none; padding-left: 5px; }
+    
+    /* Länkarna */
     .sim-link { display: block; padding: 4px 6px; margin: 2px 0; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: #0366d6; font-size: 0.85rem; border: 1px solid transparent; }
     .sim-link:hover { background: #f0f8ff; border-color: #cce5ff; text-decoration: underline; }
     
@@ -56,67 +62,114 @@
 <div class='subject-block' data-subject='Biologi'>
 <div class='subject-title'>Biologi <span>-</span></div>
 <div class='content-wrapper active'>
-<span class='category-name'>📂 Centrala Nervsystemet</span>
+<div class='category-group' data-category='Centrala Nervsystemet'>
+<div class='category-name'><span>📂 Centrala Nervsystemet</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Biologi-Centrala Nervsystemet-Nervsignaler & Hormoner.html" target="_blank">Nervsignaler & Hormoner</a>
-<span class='category-name'>📂 Ekologi</span>
+</div></div>
+<div class='category-group' data-category='Ekologi'>
+<div class='category-name'><span>📂 Ekologi</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Biologi-Ekologi-Abiotiska och biotiska faktorer.html" target="_blank">Abiotiska och biotiska faktorer</a>
 <a class='sim-link' href="./Biologi-Ekologi-Anrikning av Miljögifter.html" target="_blank">Anrikning av Miljögifter</a>
+</div></div>
 </div></div>
 <div class='subject-block' data-subject='Fysik'>
 <div class='subject-title'>Fysik <span>-</span></div>
 <div class='content-wrapper active'>
-<span class='category-name'>📂 Astronomi</span>
+<div class='category-group' data-category='Astronomi'>
+<div class='category-name'><span>📂 Astronomi</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Astronomi-Spektroskopi och exoplaneters gaser.html" target="_blank">Spektroskopi och exoplaneters gaser</a>
 <a class='sim-link' href="./Fysik-Astronomi-Transitmetoden.html" target="_blank">Transitmetoden</a>
-<span class='category-name'>📂 Elektromagnetism</span>
+</div></div>
+<div class='category-group' data-category='Elektromagnetism'>
+<div class='category-name'><span>📂 Elektromagnetism</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Elektromagnetism-AC Lampa.html" target="_blank">AC Lampa</a>
-<span class='category-name'>📂 Krafter</span>
+</div></div>
+<div class='category-group' data-category='Krafter'>
+<div class='category-name'><span>📂 Krafter</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Krafter-Fritt Fall sidled.html" target="_blank">Fritt Fall sidled</a>
 <a class='sim-link' href="./Fysik-Krafter-Fritt Fall.html" target="_blank">Fritt Fall</a>
 <a class='sim-link' href="./Fysik-Krafter-Tröghetslagen.html" target="_blank">Tröghetslagen</a>
 <a class='sim-link' href="./Fysik-Krafter-Tyngdacceleration.html" target="_blank">Tyngdacceleration</a>
-<span class='category-name'>📂 Ljud</span>
+</div></div>
+<div class='category-group' data-category='Ljud'>
+<div class='category-name'><span>📂 Ljud</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Ljud-Dopplereffekten.html" target="_blank">Dopplereffekten</a>
-<span class='category-name'>📂 Optik</span>
+</div></div>
+<div class='category-group' data-category='Optik'>
+<div class='category-name'><span>📂 Optik</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Optik-Våglängd.html" target="_blank">Våglängd</a>
-<span class='category-name'>📂 Värmelära</span>
+</div></div>
+<div class='category-group' data-category='Värmelära'>
+<div class='category-name'><span>📂 Värmelära</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Fysik-Värmelära-Tid och Temperatur Diagram.html" target="_blank">Tid och Temperatur Diagram</a>
+</div></div>
 </div></div>
 <div class='subject-block' data-subject='Kemi'>
 <div class='subject-title'>Kemi <span>-</span></div>
 <div class='content-wrapper active'>
-<span class='category-name'>📂 Grunder</span>
+<div class='category-group' data-category='Grunder'>
+<div class='category-name'><span>📂 Grunder</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Kemi-Grunder-Kemiska föreningar.html" target="_blank">Kemiska föreningar</a>
+</div></div>
 </div></div>
 <div class='subject-block' data-subject='Matematik'>
 <div class='subject-title'>Matematik <span>-</span></div>
 <div class='content-wrapper active'>
-<span class='category-name'>📂 Geometri</span>
+<div class='category-group' data-category='Geometri'>
+<div class='category-name'><span>📂 Geometri</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Geometri-Cirkel.html" target="_blank">Cirkel</a>
 <a class='sim-link' href="./Matematik-Geometri-Likformighet och kongruens.html" target="_blank">Likformighet och kongruens</a>
 <a class='sim-link' href="./Matematik-Geometri-Pythagoras Golf.html" target="_blank">Pythagoras Golf</a>
-<span class='category-name'>📂 Problemlösning</span>
+</div></div>
+<div class='category-group' data-category='Problemlösning'>
+<div class='category-name'><span>📂 Problemlösning</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Problemlösning-Lösenord.html" target="_blank">Lösenord</a>
-<span class='category-name'>📂 Sannolikhetslära</span>
+</div></div>
+<div class='category-group' data-category='Sannolikhetslära'>
+<div class='category-name'><span>📂 Sannolikhetslära</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Sannolikhetslära-2 Tiosidiga Tärningar.html" target="_blank">2 Tiosidiga Tärningar</a>
 <a class='sim-link' href="./Matematik-Sannolikhetslära-Falsk Tärning.html" target="_blank">Falsk Tärning</a>
-<span class='category-name'>📂 Statistik</span>
+</div></div>
+<div class='category-group' data-category='Statistik'>
+<div class='category-name'><span>📂 Statistik</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Statistik-Diagram.html" target="_blank">Diagram</a>
-<span class='category-name'>📂 Taluppfattning</span>
+</div></div>
+<div class='category-group' data-category='Taluppfattning'>
+<div class='category-name'><span>📂 Taluppfattning</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Taluppfattning-Bråk högre eller lägre.html" target="_blank">Bråk högre eller lägre</a>
 <a class='sim-link' href="./Matematik-Taluppfattning-Hitta Kvadratroten.html" target="_blank">Hitta Kvadratroten</a>
 <a class='sim-link' href="./Matematik-Taluppfattning-Multiplicera med 10.html" target="_blank">Multiplicera med 10</a>
 <a class='sim-link' href="./Matematik-Taluppfattning-Potenser.html" target="_blank">Potenser</a>
 <a class='sim-link' href="./Matematik-Taluppfattning-Primtal.html" target="_blank">Primtal</a>
 <a class='sim-link' href="./Matematik-Taluppfattning-Ränta på Ränta.html" target="_blank">Ränta på Ränta</a>
-<span class='category-name'>📂 Övrigt</span>
+</div></div>
+<div class='category-group' data-category='Övrigt'>
+<div class='category-name'><span>📂 Övrigt</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Matematik-Övrigt-Countdown.html" target="_blank">Countdown</a>
 <a class='sim-link' href="./Matematik-Övrigt-Klockan.html" target="_blank">Klockan</a>
+</div></div>
 </div></div>
 <div class='subject-block' data-subject='Övrigt'>
 <div class='subject-title'>Övrigt <span>-</span></div>
 <div class='content-wrapper active'>
-<span class='category-name'>📂 Gruppövningar</span>
+<div class='category-group' data-category='Gruppövningar'>
+<div class='category-name'><span>📂 Gruppövningar</span> <span>-</span></div>
+<div class='category-links active'>
 <a class='sim-link' href="./Övrigt-Gruppövningar-Jeopardy.html" target="_blank">Jeopardy</a>
   </div>
   <script>
@@ -126,7 +179,6 @@
       modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
     }
 
-    // Stäng modalen om man klickar utanför
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('settings-modal');
       const btn = document.querySelector('.settings-btn');
@@ -136,58 +188,67 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-      // --- 2. Arkiverings-logik (Visa/Dölj Hela Ämnen) ---
-      const blocks = Array.from(document.querySelectorAll('.subject-block'));
-      const settingsList = document.getElementById('settings-list');
       const hiddenSubjects = JSON.parse(localStorage.getItem('hidden-subjects') || '[]');
+      const settingsList = document.getElementById('settings-list');
 
-      blocks.forEach(block => {
+      // --- 2. Huvudämnen: Arkivering och Dragspel ---
+      document.querySelectorAll('.subject-block').forEach(block => {
+        const titleEl = block.querySelector('.subject-title');
+        const content = block.querySelector('.content-wrapper');
+        const span = titleEl.querySelector('span');
         const subjectName = block.getAttribute('data-subject');
         
-        // Dölj om den är sparad som dold i localstorage
-        if (hiddenSubjects.includes(subjectName)) {
-          block.style.display = 'none';
-        }
+        // Arkiveringslogik (Kugghjulet)
+        if (hiddenSubjects.includes(subjectName)) block.style.display = 'none';
 
-        // Skapa checkbox i inställningar
         const label = document.createElement('label');
         label.className = 'setting-label';
-        const isChecked = !hiddenSubjects.includes(subjectName);
-        label.innerHTML = `<input type="checkbox" ${isChecked ? 'checked' : ''}> ${subjectName}`;
+        label.innerHTML = `<input type="checkbox" ${!hiddenSubjects.includes(subjectName) ? 'checked' : ''}> ${subjectName}`;
         
         label.querySelector('input').addEventListener('change', (e) => {
           if (e.target.checked) {
             block.style.display = 'block';
-            // Ta bort från dolda listan
             const index = hiddenSubjects.indexOf(subjectName);
             if (index > -1) hiddenSubjects.splice(index, 1);
           } else {
             block.style.display = 'none';
-            // Lägg till i dolda listan
             hiddenSubjects.push(subjectName);
           }
           localStorage.setItem('hidden-subjects', JSON.stringify(hiddenSubjects));
         });
-        
         settingsList.appendChild(label);
-      });
 
-      // --- 3. Dragspels-logik (Spara minimerade/expanderade block) ---
-      document.querySelectorAll('.subject-title').forEach(titleEl => {
-        const subjectName = titleEl.parentElement.getAttribute('data-subject');
-        const content = titleEl.nextElementSibling;
-        const span = titleEl.querySelector('span');
-        const storageKey = 'toggle-state-' + subjectName;
-
-        // Läs in sparat tillstånd (Standard är 'open' om inget finns sparat)
-        const savedState = localStorage.getItem(storageKey);
-        if (savedState === 'closed') {
+        // Dragspelslogik Huvudämne
+        const storageKey = 'toggle-subject-' + subjectName;
+        if (localStorage.getItem(storageKey) === 'closed') {
           content.classList.remove('active');
           span.innerText = '+';
         }
 
-        // Klick-event för att öppna/stänga
         titleEl.addEventListener('click', () => {
+          content.classList.toggle('active');
+          const isOpen = content.classList.contains('active');
+          span.innerText = isOpen ? '-' : '+';
+          localStorage.setItem(storageKey, isOpen ? 'open' : 'closed');
+        });
+      });
+
+      // --- 3. Underkategorier (Mapparna): Dragspelslogik ---
+      document.querySelectorAll('.category-name').forEach(catEl => {
+        const content = catEl.nextElementSibling; // div.category-links
+        const span = catEl.querySelectorAll('span')[1]; // Det andra span-elementet är +/- tecknet
+        const categoryName = catEl.parentElement.getAttribute('data-category');
+        const subjectName = catEl.closest('.subject-block').getAttribute('data-subject');
+        
+        // Skapa en helt unik nyckel för just denna undermapp (ex. toggle-cat-Matematik-Taluppfattning)
+        const storageKey = 'toggle-cat-' + subjectName + '-' + categoryName;
+
+        if (localStorage.getItem(storageKey) === 'closed') {
+          content.classList.remove('active');
+          span.innerText = '+';
+        }
+
+        catEl.addEventListener('click', () => {
           content.classList.toggle('active');
           const isOpen = content.classList.contains('active');
           span.innerText = isOpen ? '-' : '+';

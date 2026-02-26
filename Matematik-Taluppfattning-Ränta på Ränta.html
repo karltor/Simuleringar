@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sparande kalkylator</title>
+  <style>
+    body {
+      padding-left: 5%; /* Add left padding */
+      padding-right: 5%; /* Add right padding */
+    }
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    canvas {
+      max-height: 60vh; /* Adjusts the canvas height to 70% of the viewport height */
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%; 
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sparande kalkylator</h1>
+
+  <label for="monthlySavings">Sparande per månad (SEK):</label>
+  <input type="number" id="monthlySavings" placeholder="Ange sparande per månad">
+
+  <br><br>
+
+  <label for="annualReturn">Förväntad årlig avkastning (%):</label>
+  <input type="number" id="annualReturn" placeholder="Ange förväntad årlig avkastning">
+  <div class="tooltip">(?)
+    <span class="tooltiptext">Årlig avkastning är den genomsnittliga procentuella ökningen av dina investeringar varje år.</span>
+  </div>
+
+  <br><br>
+
+  <label for="years">Antal år:</label>
+  <input type="number" id="years" placeholder="Ange antal år">
+
+  <br><br>
+
+  <button onclick="calculateSavings()">Beräkna sparad summa</button>
+
+  <p id="result"></p>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const calculateSavings = () => {
+      const v = (id) => parseFloat(document.getElementById(id).value);
+      const [ms, ar, y] = ["monthlySavings", "annualReturn", "years"].map(v);
+      if ([ms, ar, y].some(isNaN)) return alert("Vänligen fyll i alla fält.");
+
+      const mr = Math.pow(1 + ar / 100, 1 / 12) - 1;
+      const m = y * 12;
+      const [sn, sw] = [
+        ms * m,
+        [...Array(m)].reduce((acc) => (acc + ms) * (1 + mr), 0),
+      ].map((v) => Math.round(v / 100) * 100);
+
+      document.getElementById("result").innerHTML = `Totalt sparad utan ränta: ${sn.toLocaleString("sv-SE")} SEK<br>Totalt sparad med ränta: ${sw.toLocaleString("sv-SE")} SEK`;
+
+      const years = Array.from({ length: y }, (_, i) => i + 1);
+      const noInterestSavings = years.map((year) => ms * year * 12);
+      const withInterestSavings = years.map((year) => {
+        const months = year * 12;
+        return [...Array(months)].reduce((acc) => (acc + ms) * (1 + mr), 0);
+      });
+
+      drawChart(years, noInterestSavings, withInterestSavings);
+    };
+
+    const drawChart = (years, noInterestSavings, withInterestSavings) => {
+      const ctx = document.getElementById("savingsChart").getContext("2d");
+      if (window.myChart) {
+        window.myChart.destroy();
+      }
+
+      window.myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: years,
+          datasets: [
+            {
+              label: "Sparande utan ränta",
+              data: noInterestSavings,
+              borderColor: "rgba(75, 192, 192, 1)",
+              borderWidth: 2,
+              fill: false,
+            },
+            {
+              label: "Sparande med ränta",
+              data: withInterestSavings,
+              borderColor: "rgba(255, 99, 132, 1)",
+              borderWidth: 2,
+              fill: false,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                font: {
+                  size: 16 // Adjust font size here for better visibility on large screens
+                }
+              }
+            }
+          }
+        },
+      });
+    };
+  </script>
+<canvas id="savingsChart"></canvas>
+
+</body>
+</html>

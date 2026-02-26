@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transitmetoden - Interaktiv Simulering</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; color: white; }
+        
+        #info-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 320px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #controls-bottom-left {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        #graph-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 440px;
+            height: 260px;
+            background: rgba(10, 10, 25, 0.95);
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            z-index: 10;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 0.9rem;
+        }
+
+        .toggle-container input { cursor: pointer; width: 18px; height: 18px; }
+
+        h1 { margin: 0 0 8px 0; font-size: 1.2rem; color: #f1c40f; }
+        p { margin: 0; font-size: 0.85rem; line-height: 1.4; color: #ccc; }
+        
+        canvas#graphCanvas { width: 100%; height: 200px; margin-top: 5px; background: #05050a; border-radius: 4px; }
+        
+        .graph-header {
+            font-size: 11px; 
+            margin-bottom: 5px; 
+            color: #aaa; 
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .highlight { color: #f1c40f; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="info-overlay">
+        <h1>Exoplanet-jakt</h1>
+        <p>Vi ser sällan planeterna direkt. Istället mäter vi stjärnans <span class="highlight">luminositet</span>.</p>
+        <p style="margin-top:8px;">I "Zooma ut"-läge ser du hur svagt flimret är i verkligheten när en planet passerar.</p>
+    </div>
+
+    <div id="controls-bottom-left">
+        <label class="toggle-container">
+            <input type="checkbox" id="togglePlanet" checked> Visa Planet
+        </label>
+        <label class="toggle-container">
+            <input type="checkbox" id="toggleAsteroids"> Asteroidbälte
+        </label>
+        <label class="toggle-container">
+            <input type="checkbox" id="toggleMeteors" checked> Slumpmässiga objekt
+        </label>
+        <label class="toggle-container" style="color: #5dade2;">
+            <input type="checkbox" id="toggleZoom"> Zooma ut (Realistisk skala)
+        </label>
+    </div>
+
+    <div id="graph-container">
+        <div class="graph-header">
+            <span>Relativ Ljusstyrka</span>
+            <label class="toggle-container" style="font-size: 10px; gap: 5px;">
+                <input type="checkbox" id="toggleHighlight" checked style="width:14px; height:14px;"> Visa Transit-zoner
+            </label>
+        </div>
+        <canvas id="graphCanvas"></canvas>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let star, planet, starGlow, starCorona;
+        let asteroids = [];
+        let meteors = [];
+        
+        const starRadius = 3;
+        const planetOrbitRadius = 12;
+        const planetSpeed = 0.015;
+        let planetAngle = 0;
+        
+        const canvas = document.getElementById('graphCanvas');
+        const ctx = canvas.getContext('2d');
+        let lightData = []; 
+        const maxDataPoints = 400;
+        let frameCount = 0;
+        const sampleRate = 5;
+
+        const planetCheckbox = document.getElementById('togglePlanet');
+        const asteroidCheckbox = document.getElementById('toggleAsteroids');
+        const meteorCheckbox = document.getElementById('toggleMeteors');
+        const zoomCheckbox = document.getElementById('toggleZoom');
+        const highlightCheckbox = document.getElementById('toggleHighlight');
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
+            camera.position.set(0, 10, 28);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.minDistance = 5;
+            controls.maxDistance = 1500;
+
+            // --- STJÄRNAN ---
+            const starGroup = new THREE.Group();
+            const starGeo = new THREE.SphereGeometry(starRadius, 48, 48);
+            const starMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffaa00, 
+                emissive: 0xff6600, 
+                emissiveIntensity: 1.5 
+            });
+            star = new THREE.Mesh(starGeo, starMat);
+            starGroup.add(star);
+
+            const coronaGeo = new THREE.SphereGeometry(starRadius + 0.2, 32, 32);
+            const coronaMat = new THREE.MeshBasicMaterial({ 
+                color: 0xffcc00, 
+                transparent: true, 
+                opacity: 0.3,
+                wireframe: true 
+            });
+            starCorona = new THREE.Mesh(coronaGeo, coronaMat);
+            starGroup.add(starCorona);
+            scene.add(starGroup);
+
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: createGlowTexture(),
+                color: 0xffaa00,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+            starGlow = new THREE.Sprite(spriteMaterial);
+            starGlow.scale.set(12, 12, 1);
+            scene.add(starGlow);
+
+            // Planet
+            const planetGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+            const planetMaterial = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1 });
+            planet = new THREE.Mesh(planetGeometry, planetMaterial);
+            scene.add(planet);
+
+            // Asteroidbälte
+            const astGeo = new THREE.SphereGeometry(0.12, 6, 6);
+            const astMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa });
+            for(let i=0; i<40; i++) {
+                let a = new THREE.Mesh(astGeo, astMat);
+                a.userData = {
+                    angle: Math.random() * Math.PI * 2,
+                    speed: 0.005 + Math.random() * 0.01,
+                    radius: 10 + Math.random() * 5,
+                    y: (Math.random() - 0.5) * 1.0
+                };
+                asteroids.push(a);
+                scene.add(a);
+            }
+
+            const light = new THREE.PointLight(0xffffff, 2.5, 200);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x222222));
+
+            createBackgroundStars();
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function createGlowTexture() {
+            const c = document.createElement('canvas');
+            c.width = 128; c.height = 128;
+            const context = c.getContext('2d');
+            const grad = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+            grad.addColorStop(0, 'white');
+            grad.addColorStop(0.2, 'rgba(255, 200, 0, 0.8)');
+            grad.addColorStop(0.5, 'rgba(255, 100, 0, 0.2)');
+            grad.addColorStop(1, 'transparent');
+            context.fillStyle = grad;
+            context.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(c);
+        }
+
+        function createBackgroundStars() {
+            const geo = new THREE.BufferGeometry();
+            const pos = [];
+            for (let i = 0; i < 4000; i++) {
+                pos.push(THREE.MathUtils.randFloatSpread(1500), THREE.MathUtils.randFloatSpread(1500), THREE.MathUtils.randFloatSpread(1500));
+            }
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x888888, size: 0.6 })));
+        }
+
+        function spawnMeteor() {
+            if (!meteorCheckbox.checked) return;
+            const geo = new THREE.SphereGeometry(0.15, 6, 6);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const m = new THREE.Mesh(geo, mat);
+            const side = Math.random() > 0.5 ? 1 : -1;
+            m.position.set(60 * side, (Math.random() - 0.5) * 40, (Math.random() - 0.5) * 40);
+            m.userData.velocity = new THREE.Vector3(-0.4 * side, (Math.random()-0.5)*0.1, (Math.random()-0.5)*0.1);
+            m.userData.life = 300;
+            meteors.push(m);
+            scene.add(m);
+        }
+
+        function calculateIntensity() {
+            let totalIntensity = 1.0;
+            let planetTransiting = false;
+            const camPos = camera.position;
+            const starPos = star.position;
+            const distS = camPos.distanceTo(starPos);
+            
+            // DYNAMISK TRÖSKEL: Räknar ut stjärnans vinkelradie sett från kameran
+            // tan(vinkel) = motstående / närliggande. För små vinklar är vinkel ≈ starRadius / distS
+            const currentTransitThreshold = Math.atan(starRadius / distS);
+
+            const isZoomed = zoomCheckbox.checked;
+            const baseDip = isZoomed ? 0.02 : 0.45; 
+
+            if (planetCheckbox.checked) {
+                const distP = camPos.distanceTo(planet.position);
+                // Bara om planeten är mellan kameran och stjärnan
+                if (distP < distS) {
+                    const dirS = new THREE.Vector3().subVectors(starPos, camPos).normalize();
+                    const dirP = new THREE.Vector3().subVectors(planet.position, camPos).normalize();
+                    const angle = dirS.angleTo(dirP);
+                    
+                    if (angle < currentTransitThreshold) {
+                        totalIntensity -= Math.max(0, baseDip * (1 - (angle / currentTransitThreshold)));
+                        planetTransiting = true;
+                    }
+                }
+            }
+
+            const objects = [...(asteroidCheckbox.checked ? asteroids : []), ...meteors];
+            objects.forEach(obj => {
+                const distO = camPos.distanceTo(obj.position);
+                const distS_obj = camPos.distanceTo(starPos);
+                if (distO < distS_obj) {
+                    const dirS = new THREE.Vector3().subVectors(starPos, camPos).normalize();
+                    const dirO = new THREE.Vector3().subVectors(obj.position, camPos).normalize();
+                    const angleO = dirS.angleTo(dirO);
+                    // Asteroider är små, så de har en fast liten tröskel
+                    if (angleO < (currentTransitThreshold * 0.3)) totalIntensity -= (isZoomed ? 0.002 : 0.015);
+                }
+            });
+
+            totalIntensity += (Math.random() - 0.5) * (isZoomed ? 0.001 : 0.005);
+            
+            return { intensity: totalIntensity, transiting: planetTransiting };
+        }
+
+        function drawGraph() {
+            const w = canvas.width = canvas.clientWidth;
+            const h = canvas.height = canvas.clientHeight;
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i=0; i<=4; i++) {
+                ctx.moveTo(0, h * i/4); ctx.lineTo(w, h * i/4);
+            }
+            ctx.stroke();
+
+            if (highlightCheckbox.checked) {
+                ctx.fillStyle = 'rgba(46, 204, 113, 0.15)'; 
+                const pointWidth = w / maxDataPoints;
+                for (let i = 0; i < lightData.length; i++) {
+                    if (lightData[i].transiting) {
+                        const x = (i / (maxDataPoints - 1)) * w;
+                        ctx.fillRect(x, 0, Math.ceil(pointWidth) + 1, h);
+                    }
+                }
+            }
+
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = '#f1c40f';
+            ctx.beginPath();
+            for (let i = 0; i < lightData.length; i++) {
+                const x = (i / (maxDataPoints - 1)) * w;
+                let val = lightData[i].intensity;
+                
+                if(zoomCheckbox.checked) val = 1.0 - (1.0 - val) * 8; 
+
+                const y = h - (val * h * 0.7) - (h * 0.15);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+
+            const targetDistance = zoomCheckbox.checked ? 280 : 28;
+            const currentDistance = camera.position.length();
+            if (Math.abs(currentDistance - targetDistance) > 0.1) {
+                const newDist = currentDistance + (targetDistance - currentDistance) * 0.05;
+                camera.position.setLength(newDist);
+            }
+
+            star.rotation.y += 0.005;
+            starCorona.rotation.x += 0.002;
+            starCorona.rotation.z += 0.003;
+            const pulse = 1 + Math.sin(frameCount * 0.05) * 0.02;
+            starGlow.scale.set(12 * pulse, 12 * pulse, 1);
+
+            planetAngle += planetSpeed;
+            planet.position.set(Math.cos(planetAngle) * planetOrbitRadius, 0, Math.sin(planetAngle) * planetOrbitRadius);
+            planet.visible = planetCheckbox.checked;
+
+            asteroids.forEach(a => {
+                a.userData.angle += a.userData.speed;
+                a.position.set(Math.cos(a.userData.angle) * a.userData.radius, a.userData.y, Math.sin(a.userData.angle) * a.userData.radius);
+                a.visible = asteroidCheckbox.checked;
+            });
+
+            if (frameCount % 60 === 0 && Math.random() > 0.5) spawnMeteor();
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                const m = meteors[i];
+                m.position.add(m.userData.velocity);
+                m.userData.life--;
+                if (m.userData.life <= 0) {
+                    scene.remove(m);
+                    meteors.splice(i, 1);
+                }
+            }
+
+            controls.update();
+
+            if (frameCount % sampleRate === 0) {
+                const dataPoint = calculateIntensity();
+                lightData.push(dataPoint);
+                if (lightData.length > maxDataPoints) lightData.shift();
+            }
+
+            drawGraph();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

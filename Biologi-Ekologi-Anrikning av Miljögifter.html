@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biomagnification Game</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const phytoPlanktonCount = 200;
+const zooPlanktonCount = 20;
+const herringCount = 2;
+
+let phytoPlankton = [];
+let zooPlankton = [];
+let herrings = [];
+
+class Organism {
+    constructor(x, y, radius, color, poisonPegs = 0) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.vx = Math.random() * 2 - 1; // Random velocity
+        this.vy = Math.random() * 2 - 1;
+        this.poisonPegs = poisonPegs;
+    }
+
+    draw() {
+        // Draw the organism
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+
+        // Draw poison pegs
+        for (let i = 0; i < this.poisonPegs; i++) {
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.x + (this.radius + 10) * Math.cos(i * 2 * Math.PI / this.poisonPegs), this.y + (this.radius + 10) * Math.sin(i * 2 * Math.PI / this.poisonPegs));
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Boundary collision
+        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+            this.vx *= -1;
+        }
+        if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
+            this.vy *= -1;
+        }
+
+        this.draw();
+    }
+}
+
+function init() {
+    phytoPlankton = [];
+    zooPlankton = [];
+    herrings = [];
+
+    for (let i = 0; i < phytoPlanktonCount; i++) {
+        let radius = 5; // 10px diameter
+        let x = Math.random() * (canvas.width - radius * 2) + radius;
+        let y = Math.random() * (canvas.height - radius * 2) + radius;
+        phytoPlankton.push(new Organism(x, y, radius, 'green', 1));
+    }
+
+    for (let i = 0; i < zooPlanktonCount; i++) {
+        let radius = 10; // 20px diameter
+        let x = Math.random() * (canvas.width - radius * 2) + radius;
+        let y = Math.random() * (canvas.height - radius * 2) + radius;
+        zooPlankton.push(new Organism(x, y, radius, 'yellow'));
+    }
+
+    for (let i = 0; i < herringCount; i++) {
+        let radius = 50; // 100px diameter
+        let x = Math.random() * (canvas.width - radius * 2) + radius;
+        let y = Math.random() * (canvas.height - radius * 2) + radius;
+        herrings.push(new Organism(x, y, radius, 'red'));
+    }
+}
+
+function getDistance(x1, y1, x2, y2) {
+    let xDistance = x2 - x1;
+    let yDistance = y2 - y1;
+    return Math.sqrt(Math.pow(xDistance, 2) + Math.pow(yDistance, 2));
+}
+
+function checkCollisions() {
+    for (let i = zooPlankton.length - 1; i >= 0; i--) {
+        for (let j = phytoPlankton.length - 1; j >= 0; j--) {
+            if (getDistance(zooPlankton[i].x, zooPlankton[i].y, phytoPlankton[j].x, phytoPlankton[j].y) < zooPlankton[i].radius + phytoPlankton[j].radius) {
+                zooPlankton[i].poisonPegs += phytoPlankton[j].poisonPegs;
+                phytoPlankton.splice(j, 1); // Remove the eaten phytoplankton
+            }
+        }
+    }
+
+    for (let i = herrings.length - 1; i >= 0; i--) {
+        for (let j = zooPlankton.length - 1; j >= 0; j--) {
+            if (getDistance(herrings[i].x, herrings[i].y, zooPlankton[j].x, zooPlankton[j].y) < herrings[i].radius + zooPlankton[j].radius) {
+                herrings[i].poisonPegs += zooPlankton[j].poisonPegs;
+                zooPlankton.splice(j, 1); // Remove the eaten zooplankton
+            }
+        }
+    }
+}
+
+function replenishOrganisms() {
+    while (phytoPlankton.length < phytoPlanktonCount) {
+        let radius = 5; // 10px diameter
+        let x = Math.random() * (canvas.width - radius * 2) + radius;
+        let y = Math.random() * (canvas.height - radius * 2) + radius;
+        phytoPlankton.push(new Organism(x, y, radius, 'green', 1));
+    }
+
+    while (zooPlankton.length < zooPlanktonCount) {
+        let radius = 10; // 20px diameter
+        let x = Math.random() * (canvas.width - radius * 2) + radius;
+        let y = Math.random() * (canvas.height - radius * 2) + radius;
+        zooPlankton.push(new Organism(x, y, radius, 'yellow'));
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    phytoPlankton.forEach(p => p.update());
+    zooPlankton.forEach(z => z.update());
+    herrings.forEach(h => h.update());
+
+    checkCollisions();
+    replenishOrganisms();
+}
+
+init();
+animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pythagoras Golf</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const IconTrophy = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+    );
+    const IconTarget = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+    );
+    const IconRefresh = () => (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+    );
+    const IconMove = () => (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    );
+
+    const noiseGLSL = `
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+      float snoise(vec2 v) {
+        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+        vec2 i  = floor(v + dot(v, C.yy) );
+        vec2 x0 = v -   i + dot(i, C.xx);
+        vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+        vec4 x12 = x0.xyxy + C.xxzz;
+        x12.xy -= i1;
+        i = mod289(i);
+        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+        m = m*m ; m = m*m ;
+        vec3 x = 2.0 * fract(p * C.www) - 1.0;
+        vec3 h = abs(x) - 0.5;
+        vec3 ox = floor(x + 0.5);
+        vec3 a0 = x - ox;
+        m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+        vec3 g;
+        g.x  = a0.x  * x0.x  + h.x  * x0.y;
+        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+        return 130.0 * dot(m, g);
+      }
+    `;
+
+    const App = () => {
+      const containerRef = useRef(null);
+      const [distanceInput, setDistanceInput] = useState('');
+      const [gameState, setGameState] = useState('playing');
+      const [attempts, setAttempts] = useState(0);
+      const [message, setMessage] = useState('Beräkna avståndet till flaggan!');
+      const [level, setLevel] = useState(1);
+
+      const [targetCoords, setTargetCoords] = useState({ x: 0, y: 0 });
+      const [playerCoords, setPlayerCoords] = useState({ x: 0, y: 0 });
+
+      const [stats, setStats] = useState(() => {
+        const saved = localStorage.getItem('pythagorasStats');
+        return saved ? JSON.parse(saved) : { totalRounds: 0, totalScore: 0, hioCount: 0 };
+      });
+
+      const camState = useRef({
+        azimuth: Math.PI / 4,
+        polar: Math.PI / 3,
+        distance: 14,
+        isDragging: false,
+        prevMouseX: 0,
+        prevMouseY: 0
+      });
+
+      const playerRef = useRef(null);
+      const flagRef = useRef(null);
+      const bodyRef = useRef(null);
+      const uniformsRef = useRef({ uTime: { value: 0 } });
+
+      useEffect(() => {
+        localStorage.setItem('pythagorasStats', JSON.stringify(stats));
+      }, [stats]);
+
+      useEffect(() => {
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        containerRef.current.appendChild(renderer.domElement);
+
+        const skyGeo = new THREE.SphereGeometry(300, 32, 32);
+        const skyMat = new THREE.ShaderMaterial({
+          side: THREE.BackSide,
+          uniforms: { uTime: uniformsRef.current.uTime },
+          vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+              vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+              vWorldPosition = worldPosition.xyz;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform float uTime;
+            varying vec3 vWorldPosition;
+            ${noiseGLSL}
+            void main() {
+              vec3 normalizedPos = normalize(vWorldPosition);
+              float height = normalizedPos.y;
+              vec3 topColor = vec3(0.2, 0.5, 0.8);
+              vec3 bottomColor = vec3(0.7, 0.9, 1.0);
+              vec3 finalColor = mix(bottomColor, topColor, max(0.0, height));
+              float n = snoise(normalizedPos.xz * 1.5 + uTime * 0.05) * 0.03;
+              finalColor += n;
+              gl_FragColor = vec4(finalColor, 1.0);
+            }
+          `
+        });
+        scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+        const floorGeo = new THREE.PlaneGeometry(120, 120);
+        const floorMat = new THREE.ShaderMaterial({
+          uniforms: { uTime: uniformsRef.current.uTime },
+          vertexShader: `
+            varying vec2 vUv;
+            void main() {
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform float uTime;
+            varying vec2 vUv;
+            ${noiseGLSL}
+            void main() {
+              float n1 = snoise(vUv * 8.0 + uTime * 0.02);
+              float n2 = snoise(vUv * 16.0 - uTime * 0.01);
+              float n = (n1 + n2) * 0.5;
+              vec3 grassDark = vec3(0.1, 0.25, 0.05);
+              vec3 grassLight = vec3(0.18, 0.35, 0.1);
+              vec3 dirt = vec3(0.3, 0.2, 0.1);
+              vec3 color = mix(grassDark, grassLight, n * 0.5 + 0.5);
+              color = mix(color, dirt, clamp(n2 * 0.3, 0.0, 1.0));
+              gl_FragColor = vec4(color, 1.0);
+            }
+          `
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.01;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(60, 60, 0xffffff, 0xffffff);
+        gridHelper.material.opacity = 0.35;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        const playerGroup = new THREE.Group();
+        const bodyGeom = new THREE.SphereGeometry(0.5, 32, 32);
+        bodyGeom.scale(1.1, 0.85, 1.1);
+        const bodyMat = new THREE.MeshPhongMaterial({ color: 0x3b82f6, shininess: 80 });
+        const body = new THREE.Mesh(bodyGeom, bodyMat);
+        body.position.y = 0.4;
+        bodyRef.current = body;
+        playerGroup.add(body);
+
+        const eyeGeom = new THREE.SphereGeometry(0.08, 12, 12);
+        const eyeMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const pupilMat = new THREE.MeshPhongMaterial({ color: 0x000000 });
+        [-1, 1].forEach(side => {
+          const eye = new THREE.Mesh(eyeGeom, eyeMat);
+          eye.position.set(0.2 * side, 0.55, 0.35);
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), pupilMat);
+          pupil.position.set(0.2 * side, 0.55, 0.42);
+          playerGroup.add(eye, pupil);
+        });
+        scene.add(playerGroup);
+        playerRef.current = playerGroup;
+
+        const flagGroup = new THREE.Group();
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 2), new THREE.MeshPhongMaterial({ color: 0xe2e8f0 }));
+        pole.position.y = 1;
+        flagGroup.add(pole);
+        const cloth = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.05), new THREE.MeshPhongMaterial({ color: 0xef4444 }));
+        cloth.position.set(0.4, 1.7, 0);
+        flagGroup.add(cloth);
+        scene.add(flagGroup);
+        flagRef.current = flagGroup;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+        sun.position.set(10, 20, 10);
+        scene.add(sun);
+
+        const spawn = () => {
+          let tx, ty;
+          do {
+            tx = Math.floor(Math.random() * 20) - 10;
+            ty = Math.floor(Math.random() * 20) - 10;
+          } while (Math.abs(tx) < 4 && Math.abs(ty) < 4);
+
+          setTargetCoords({ x: tx, y: ty });
+          playerGroup.position.set(0, 0, 0);
+          flagGroup.position.set(tx, 0, ty);
+          setPlayerCoords({ x: 0, y: 0 });
+
+          const dir = new THREE.Vector3().subVectors(flagGroup.position, playerGroup.position).normalize();
+          camState.current.azimuth = Math.atan2(-dir.x, -dir.z);
+        };
+        spawn();
+        window._spawnFlag = spawn;
+
+        const onMouseDown = (e) => {
+          camState.current.isDragging = true;
+          camState.current.prevMouseX = e.clientX;
+          camState.current.prevMouseY = e.clientY;
+        };
+        const onMouseMove = (e) => {
+          if (!camState.current.isDragging) return;
+          const deltaX = e.clientX - camState.current.prevMouseX;
+          const deltaY = e.clientY - camState.current.prevMouseY;
+          camState.current.azimuth -= deltaX * 0.005;
+          camState.current.polar = Math.max(0.1, Math.min(Math.PI / 2.1, camState.current.polar - deltaY * 0.005));
+          camState.current.prevMouseX = e.clientX;
+          camState.current.prevMouseY = e.clientY;
+        };
+        const onMouseUp = () => camState.current.isDragging = false;
+        const onWheel = (e) => {
+          e.preventDefault();
+          camState.current.distance = Math.max(4, Math.min(60, camState.current.distance + e.deltaY * 0.02));
+        };
+
+        const container = containerRef.current;
+        container.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        container.addEventListener('wheel', onWheel, { passive: false });
+
+        const animate = () => {
+          requestAnimationFrame(animate);
+          uniformsRef.current.uTime.value += 0.016;
+
+          if (playerRef.current) {
+            const pPos = playerRef.current.position;
+            const state = camState.current;
+            const x = pPos.x + state.distance * Math.sin(state.polar) * Math.sin(state.azimuth);
+            const y = pPos.y + state.distance * Math.cos(state.polar);
+            const z = pPos.z + state.distance * Math.sin(state.polar) * Math.cos(state.azimuth);
+            camera.position.set(x, y, z);
+            camera.lookAt(pPos.x, pPos.y + 0.5, pPos.z);
+
+            setPlayerCoords({ x: Number(pPos.x.toFixed(1)), y: Number(pPos.z.toFixed(1)) });
+            if (bodyRef.current) bodyRef.current.scale.y = 0.85 + Math.sin(Date.now() * 0.006) * 0.04;
+          }
+          renderer.render(scene, camera);
+        };
+        animate();
+
+        const handleResize = () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+          container.removeEventListener('mousedown', onMouseDown);
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+          container.removeEventListener('wheel', onWheel);
+          window.removeEventListener('resize', handleResize);
+          renderer.dispose();
+        };
+      }, []);
+
+      const handleMove = () => {
+        const val = parseFloat(distanceInput);
+        if (isNaN(val)) return;
+        setGameState('moving');
+
+        const start = playerRef.current.position.clone();
+        const target = flagRef.current.position.clone();
+        const direction = new THREE.Vector3().subVectors(target, start).normalize();
+        const dest = start.clone().add(direction.multiplyScalar(val));
+
+        const startTime = performance.now();
+        const step = (now) => {
+          const progress = Math.min((now - startTime) / 1200, 1);
+          const ease = 1 - Math.pow(1 - progress, 3);
+          playerRef.current.position.lerpVectors(start, dest, ease);
+          if (progress < 1) requestAnimationFrame(step);
+          else {
+            const finalDist = playerRef.current.position.distanceTo(target);
+            if (finalDist < 0.8) {
+              const roundScore = attempts === 0 ? 6 : Math.max(1, 4 - attempts);
+              setStats(prev => ({
+                totalRounds: prev.totalRounds + 1,
+                totalScore: prev.totalScore + roundScore,
+                hioCount: prev.hioCount + (attempts === 0 ? 1 : 0)
+              }));
+              setMessage(attempts === 0 ? "HOLE IN ONE!" : `Mål på ${attempts + 1} slag!`);
+              setGameState('won');
+            } else {
+              setAttempts(a => a + 1);
+              setMessage("Miss! Räkna igen...");
+              setGameState('playing');
+            }
+            setDistanceInput('');
+          }
+        };
+        requestAnimationFrame(step);
+      };
+
+      const nextHole = () => {
+        setLevel(l => l + 1);
+        setAttempts(0);
+        setGameState('playing');
+        setMessage('Beräkna avståndet!');
+        window._spawnFlag();
+      };
+
+      const hioPercent = stats.totalRounds > 0 ? ((stats.hioCount / stats.totalRounds) * 100).toFixed(0) : 0;
+      const avgPoints = stats.totalRounds > 0 ? (stats.totalScore / stats.totalRounds).toFixed(1) : 0;
+
+      return (
+        <div className="relative w-full h-screen overflow-hidden font-sans text-slate-800 cursor-move select-none">
+          <div ref={containerRef} className="absolute inset-0" />
+
+          <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-start pointer-events-none">
+            <div className="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-2xl border border-white/40 pointer-events-auto min-w-[200px]">
+              <h1 className="text-sm font-bold flex items-center gap-2 mb-2 text-slate-700">
+                <IconTarget /> Pythagoras Golf
+              </h1>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] font-black text-slate-500 uppercase tracking-tighter">
+                <span>Hål</span> <span className="text-slate-800 font-mono">{level}</span>
+                <span>Totalt</span> <span className="text-blue-600 font-mono">{stats.totalScore}</span>
+                <span>HIO %</span> <span className="text-emerald-600 font-mono">{hioPercent}%</span>
+                <span>Snitt</span> <span className="text-amber-600 font-mono">{avgPoints}</span>
+              </div>
+            </div>
+
+            <div className="bg-white/80 backdrop-blur-xl p-4 rounded-3xl shadow-2xl border border-white/40 pointer-events-auto text-right min-w-[150px]">
+              <div className="mb-2">
+                <p className="text-[9px] uppercase font-black text-slate-400">Position</p>
+                <p className="text-sm font-mono font-bold text-slate-700 underline decoration-blue-400/30">X: {playerCoords.x}, Y: {playerCoords.y}</p>
+              </div>
+              <div>
+                <p className="text-[9px] uppercase font-black text-red-400">Mål</p>
+                <p className="text-sm font-mono font-bold text-red-600 underline decoration-red-400/30">X: {targetCoords.x}, Y: {targetCoords.y}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xs px-4 pointer-events-none">
+            <div className="bg-white/70 backdrop-blur-2xl p-6 rounded-[2.5rem] shadow-2xl border border-white/50 pointer-events-auto">
+              <p className="text-xs font-bold text-slate-700 text-center mb-4 min-h-[1rem] italic opacity-80">{message}</p>
+
+              {gameState === 'won' ? (
+                <button onClick={nextHole}
+                  className="w-full bg-emerald-600/90 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-200 transition-all active:scale-95">
+                  NÄSTA HÅL <IconRefresh />
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <input type="number" step="0.01" value={distanceInput} onChange={(e) => setDistanceInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleMove()} placeholder="Längd..."
+                    disabled={gameState === 'moving'}
+                    className="flex-1 bg-white/50 border border-white/80 rounded-2xl py-3 px-5 outline-none font-mono text-base focus:bg-white/90 transition-all shadow-inner" />
+                  <button onClick={handleMove} disabled={gameState === 'moving' || !distanceInput}
+                    className="bg-blue-600/90 hover:bg-blue-700 text-white px-5 rounded-2xl shadow-lg shadow-blue-200 active:scale-95 transition-all">
+                    <IconMove />
+                  </button>
+                </div>
+              )}
+
+              <div className="mt-5 flex justify-center items-center">
+                <div className="bg-white/50 text-amber-700 px-4 py-1.5 rounded-full font-black text-[10px] border border-white/80 uppercase flex items-center gap-2 shadow-sm">
+                  <IconTrophy /> Hole in one: 6P
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute bottom-6 left-6 pointer-events-none text-[9px] font-black text-slate-500/50 uppercase flex flex-col gap-1 tracking-widest">
+            <span>Vänsterklick för rotation</span>
+            <span>Scroll för zoom</span>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

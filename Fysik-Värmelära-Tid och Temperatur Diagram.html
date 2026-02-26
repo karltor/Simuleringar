@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Temperatur Linjediagram</title>
+    <style>
+        /* Centrerar innehållet */
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            position: relative; /* För att kunna positionera export-knappen absolut */
+        }
+        /* Stil för container som håller tabellen och knappen */
+        .table-container {
+            display: inline-flex;
+            align-items: flex-start;
+            overflow-x: auto;
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        /* Stil för tabellen */
+        table {
+            border-collapse: collapse;
+            margin: 0;
+        }
+        td, th {
+            border: 1px solid #ccc;
+            padding: 5px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        /* Stil för raderubriker */
+        .row-header {
+            background-color: #f9f9f9;
+            font-weight: bold;
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+        input {
+            width: 60px;
+            text-align: center;
+            border: 1px solid #ccc;
+        }
+        /* Ta bort upp och ner pilar från inmatningsfälten */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        /* Plusknappens stil */
+        .add-column {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+        /* Instruktionsstil */
+        .instructions {
+            margin-bottom: 10px;
+        }
+        /* Diagrambehållare */
+        #chartContainer {
+            width: 80%;
+            margin: 10px auto;
+            position: relative;
+            height: calc(90vh - 200px); /* Dynamisk höjd */
+        }
+        /* Platshållarmeddelande */
+        #placeholderMessage {
+            color: grey;
+            font-size: 18px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        /* Justerar canvas-storleken */
+        canvas#linjeDiagram {
+            max-width: 100%;
+            height: 100% !important;
+        }
+        /* Stil för "Exportera Diagram"-knappen */
+        .export-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            z-index: 2;
+        }
+    </style>
+    <!-- Inkludera Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+
+    <!-- Exportera Diagram-knapp -->
+    <button class="export-button" onclick="exportChart()">Exportera Diagram</button>
+
+    <h1>Temperatur Linjediagram</h1>
+
+    <div class="instructions">
+        <p>Skriv in temperaturvärdena i inmatningsrutorna nedan. Klicka på "+"-knappen för att lägga till fler tidsintervall om det behövs.</p>
+    </div>
+
+    <div class="table-container">
+        <table id="dataTable">
+            <tr>
+                <th class="row-header">Tid</th>
+                <!-- Tidsrubriker kommer att läggas in här -->
+            </tr>
+            <tr>
+                <th class="row-header">Temperatur</th>
+                <!-- Temperaturinmatningar kommer att läggas in här -->
+            </tr>
+        </table>
+        <span class="add-column" onclick="addColumn()">+ Lägg till fler kolumner</span>
+    </div>
+
+    <div id="chartContainer">
+        <canvas id="linjeDiagram"></canvas>
+        <div id="placeholderMessage">Diagrammet visas när du skrivit in första värdet.</div>
+    </div>
+
+    <!-- Inkludera Chart.js-biblioteket -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inkludera jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Inkludera Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        // Initiera variabler
+        let timeIntervals = [];
+        let maxTime = 400;
+        let interval = 20;
+
+        // Funktion för att generera initial tabell
+        function generateTable() {
+            const timeRow = document.querySelector('#dataTable tr:nth-child(1)');
+            const tempRow = document.querySelector('#dataTable tr:nth-child(2)');
+
+            // Skapa tidsrubriker och inmatningsrutor
+            for (let time = 0; time <= maxTime; time += interval) {
+                addColumnToTable(time);
+            }
+        }
+
+        // Funktion för att lägga till en kolumn
+        function addColumn() {
+            maxTime += interval;
+            addColumnToTable(maxTime);
+        }
+
+        // Funktion för att lägga till en kolumn till tabellen
+        function addColumnToTable(time) {
+            const timeRow = document.querySelector('#dataTable tr:nth-child(1)');
+            const tempRow = document.querySelector('#dataTable tr:nth-child(2)');
+
+            // Tidsrubrik
+            const th = document.createElement('th');
+            th.innerText = time;
+            timeRow.appendChild(th);
+
+            // Temperaturinmatning
+            const td = document.createElement('td');
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'temp-input';
+            input.placeholder = 'Temp';
+            input.min = 0;
+            input.max = 110;
+
+            // Lägg till validering på inmatningsfältet
+            input.addEventListener('input', function() {
+                if (this.value !== '') {
+                    let value = parseFloat(this.value);
+                    if (value < 0) this.value = 0;
+                    if (value > 110) this.value = 110;
+                }
+                updateChart();
+            });
+
+            td.appendChild(input);
+            tempRow.appendChild(td);
+
+            timeIntervals.push(time);
+        }
+
+        // Standard fontstorlekar för webbplatsen
+        const defaultFontSizes = {
+            title: 16,
+            ticks: 12,
+            legend: 14
+        };
+
+        // Större fontstorlekar för exporten
+        const exportFontSizes = {
+            title: 48,
+            ticks: 36,
+            legend: 42
+        };
+
+        // Initiera diagrammet
+        let ctx = document.getElementById('linjeDiagram').getContext('2d');
+        let linjeDiagram = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Temperatur',
+                    data: [],
+                    borderColor: 'blue',
+                    fill: false,
+                    tension: 0.1,
+                    pointStyle: 'circle',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 20,
+                        bottom: 20,
+                        left: 20,
+                        right: 20
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Tid (sekunder)',
+                            font: {
+                                size: defaultFontSizes.title
+                            }
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                            font: {
+                                size: defaultFontSizes.ticks
+                            }
+                        },
+                        grid: {
+                            display: true
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 110,
+                        title: {
+                            display: true,
+                            text: 'Temperatur (°C)',
+                            font: {
+                                size: defaultFontSizes.title
+                            }
+                        },
+                        ticks: {
+                            stepSize: 10,
+                            font: {
+                                size: defaultFontSizes.ticks
+                            }
+                        },
+                        grid: {
+                            display: true,
+                            color: function(context) {
+                                if (context.tick.value === 100) {
+                                    return '#000'; // Tydligare linje vid 100
+                                } else {
+                                    return '#ccc'; // Tunna linjer vid andra värden
+                                }
+                            },
+                            lineWidth: function(context) {
+                                if (context.tick.value === 100) {
+                                    return 2; // Tjockare linje vid 100
+                                } else {
+                                    return 1; // Tunnare linjer vid andra värden
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            font: {
+                                size: defaultFontSizes.legend
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Funktion för att uppdatera diagrammet
+        function updateChart() {
+            const inputs = document.querySelectorAll('.temp-input');
+            let data = [];
+
+            inputs.forEach((input, index) => {
+                if (input.value !== '') {
+                    data.push({ x: timeIntervals[index], y: parseFloat(input.value) });
+                }
+            });
+
+            // Sortera data efter x-värdet (tid)
+            data.sort((a, b) => a.x - b.x);
+
+            // Uppdatera diagramdata
+            linjeDiagram.data.datasets[0].data = data;
+            linjeDiagram.update();
+
+            // Visa eller dölj platshållarmeddelande och diagram
+            const placeholderMessage = document.getElementById('placeholderMessage');
+
+            if (data.length > 0) {
+                document.getElementById('linjeDiagram').style.display = 'block';
+                placeholderMessage.style.display = 'none';
+            } else {
+                document.getElementById('linjeDiagram').style.display = 'none';
+                placeholderMessage.style.display = 'block';
+            }
+        }
+
+        // Funktion för att exportera diagrammet till urklipp
+        function exportChart() {
+            // Kontrollera om Clipboard API stöds
+            if (!navigator.clipboard || !navigator.clipboard.write) {
+                toastr.error('Din webbläsare stöder inte kopiering till urklipp.');
+                return;
+            }
+
+            // Spara nuvarande fontstorlekar
+            const currentFontSizes = {
+                xTitle: linjeDiagram.options.scales.x.title.font.size,
+                xTicks: linjeDiagram.options.scales.x.ticks.font.size,
+                yTitle: linjeDiagram.options.scales.y.title.font.size,
+                yTicks: linjeDiagram.options.scales.y.ticks.font.size,
+                legend: linjeDiagram.options.plugins.legend.labels.font.size
+            };
+
+            // Uppdatera fontstorlekar för export
+            linjeDiagram.options.scales.x.title.font.size = exportFontSizes.title;
+            linjeDiagram.options.scales.x.ticks.font.size = exportFontSizes.ticks;
+            linjeDiagram.options.scales.y.title.font.size = exportFontSizes.title;
+            linjeDiagram.options.scales.y.ticks.font.size = exportFontSizes.ticks;
+            linjeDiagram.options.plugins.legend.labels.font.size = exportFontSizes.legend;
+
+            // Uppdatera diagrammet med nya fontstorlekar
+            linjeDiagram.update();
+
+            // Vänta tills diagrammet har uppdaterats
+            setTimeout(() => {
+                linjeDiagram.canvas.toBlob(function(blob) {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item]).then(function() {
+                        toastr.success('Diagrammet har kopierats. Du kan nu klistra in det med Ctrl+V.');
+                    }, function(err) {
+                        toastr.error('Misslyckades med att kopiera diagrammet.');
+                    });
+
+                    // Återställ fontstorlekarna
+                    linjeDiagram.options.scales.x.title.font.size = currentFontSizes.xTitle;
+                    linjeDiagram.options.scales.x.ticks.font.size = currentFontSizes.xTicks;
+                    linjeDiagram.options.scales.y.title.font.size = currentFontSizes.yTitle;
+                    linjeDiagram.options.scales.y.ticks.font.size = currentFontSizes.yTicks;
+                    linjeDiagram.options.plugins.legend.labels.font.size = currentFontSizes.legend;
+
+                    // Uppdatera diagrammet igen
+                    linjeDiagram.update();
+                });
+            }, 500); // Liten fördröjning för att säkerställa att diagrammet har uppdaterats
+        }
+
+        // Toastr inställningar
+        toastr.options = {
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+
+        // Generera initiala tabellen vid sidans laddning
+        window.onload = generateTable;
+    </script>
+</body>
+</html>

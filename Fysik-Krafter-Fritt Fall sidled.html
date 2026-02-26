@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tyngdacceleration</title>
+  <style>
+    :root{ --bg:#0f172a; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --accent2:#3b82f6; --accent3:#ef4444; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:#0b1220}
+
+    /* Layout */
+    main{display:grid;grid-template-columns:1fr 360px;gap:16px;min-height:100vh;padding:12px}
+    @media (max-width:980px){ main{grid-template-columns:1fr} }
+
+    .bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:10px 12px}
+    .title{font-weight:800}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .toolbar button{background:#0ea5e9;border:none;color:white;padding:8px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+    .toolbar button.secondary{background:#334155}
+
+    #stageWrap{position:relative;border-radius:16px;overflow:hidden;background:#0b1220;border:1px solid #1f2937;min-height:calc(100vh - 110px)}
+    #stage{display:block;width:100%;height:100%;touch-action:none}
+
+    /* Legend (färginfon) uppe till höger i fallytan */
+    .legend{position:absolute;right:12px;top:12px;background:rgba(2,6,23,.66);border:1px solid #1f2937;padding:8px 10px;border-radius:12px;font-size:14px;backdrop-filter: blur(6px)}
+    .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
+    .chip{width:14px;height:14px;border-radius:999px;display:inline-block}
+    .chip.blue{background:var(--accent2)} .chip.green{background:var(--accent)} .chip.red{background:var(--accent3)}
+
+    aside{background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:14px;overflow:auto;max-height:calc(100vh - 110px)}
+    .card{background:rgba(2,6,23,.7);border:1px solid #1f2937;border-radius:12px;padding:12px}
+    .card h3{margin:0 0 8px 0;font-size:16px}
+    .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:8px 0}
+    input[type="range"]{width:100%}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .note{color:#cbd5e1;font-size:14px}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="bar">
+      <div class="title">Tyngdacceleration</div>
+      <div class="toolbar">
+        <button id="btnStart">▶︎ Start</button>
+        <button id="btnPause" class="secondary">⏸ Paus</button>
+        <button id="btnStep" class="secondary">⏭ Stega 0,1 s</button>
+        <button id="btnReset" class="secondary">⟲ Reset</button>
+        <button id="btnToggleB" class="secondary">Visa B</button>
+        <button id="btnGiveVX" class="secondary">Ge B hor. fart</button>
+      </div>
+    </div>
+
+    <section id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div class="legend">
+        <div><span class="chip blue"></span> Boll A (släpps rakt ned)</div>
+        <div><span class="chip green"></span> Boll B (kan ha horisontell fart)</div>
+        <div><span class="chip red"></span> Hastighetspil (växer när v ökar)</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h3>Miljö & förutsättningar</h3>
+        <div class="row"><label>Tyngdacceleration g (m/s²)</label><span class="mono"><span id="gVal">9.82</span></span></div>
+        <input type="range" id="g" min="1" max="20" step="0.01" value="9.82" />
+        <div class="row"><label>Luftmotstånd β (1/s)</label><span class="mono"><span id="betaVal">0.00</span></span></div>
+        <input type="range" id="beta" min="0" max="1" step="0.01" value="0" />
+        <div class="row"><label>Fallhöjd H (m över mark)</label><span class="mono"><span id="HVal">50</span></span></div>
+        <input type="range" id="H" min="5" max="150" step="1" value="50" />
+        <label style="display:block;margin-top:8px"><input type="checkbox" id="showVectors" checked> Visa hastighetspilar</label>
+        <label style="display:block"><input type="checkbox" id="strobe" checked> Stroboskop (prickar var 0,2 s)</label>
+        <label style="display:block"><input type="checkbox" id="grid" checked> Rutnät & höjdmått</label>
+        <p class="note">0 m vid marken, ökande uppåt.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // === Elements ===
+    const stage = document.getElementById('stage');
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnStep = document.getElementById('btnStep');
+    const btnReset = document.getElementById('btnReset');
+    const btnToggleB = document.getElementById('btnToggleB');
+    const btnGiveVX = document.getElementById('btnGiveVX');
+    const gSlider = document.getElementById('g');
+    const betaSlider = document.getElementById('beta');
+    const HSlider = document.getElementById('H');
+    const gVal = document.getElementById('gVal');
+    const betaVal = document.getElementById('betaVal');
+    const HVal = document.getElementById('HVal');
+    const showVectors = document.getElementById('showVectors');
+    const strobe = document.getElementById('strobe');
+    const grid = document.getElementById('grid');
+
+    // === HiDPI ===
+    function fitCanvas(cnv){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = cnv.getBoundingClientRect();
+      cnv.width = Math.round(rect.width * dpr);
+      cnv.height = Math.round(rect.height * dpr);
+      const ctx = cnv.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return ctx;
+    }
+
+    // === World ===
+    let g = parseFloat(gSlider.value), beta = parseFloat(betaSlider.value), H = parseFloat(HSlider.value);
+    let pxPerM = 10;
+    function makeBall(color){ return {x:0,y:0,vx:0,vy:0,r:14,color,alive:true,strobe:[],vHistory:[]}; }
+    const A = makeBall('#3b82f6');
+    const B = makeBall('#22c55e');
+    let showB = false;
+
+    let running=false, t=0; const dt=0.016; let strobeEvery=0.2, strobeAcc=0;
+
+    // === Layout ===
+    function layout(){
+      fitCanvas(stage);
+      const rect = stage.getBoundingClientRect();
+      const groundMargin = 30; // px
+      pxPerM = (rect.height - (groundMargin + 20)) / Math.max(H,5);
+    }
+
+    function reset(){
+      t=0; strobeAcc=0; running=false;
+      const rect = stage.getBoundingClientRect();
+      const startYpx = 20;
+      A.x = rect.width*0.35; A.y=startYpx; A.vx=0; A.vy=0; A.alive=true; A.strobe=[]; A.vHistory=[];
+      B.x = rect.width*0.65; B.y=startYpx; B.vx=0; B.vy=0; B.alive=true; B.strobe=[]; B.vHistory=[];
+      drawScene();
+    }
+
+    function giveHorizontal(){ B.vx = 12; }
+
+    // === Physics ===
+    function physicsStep(){
+      const rect = stage.getBoundingClientRect(); const groundY = rect.height - 30;
+      [A, showB?B:null].forEach(ball=>{
+        if(!ball || !ball.alive) return;
+        ball.vy += (g - beta*ball.vy) * dt;           // y-led
+        ball.y  += (ball.vy * pxPerM) * dt;
+        ball.vx += (-beta*ball.vx) * dt;              // x-led
+        ball.x  += (ball.vx * pxPerM) * dt;
+        if(ball.x - ball.r < 4){ ball.x = 4 + ball.r; ball.vx = Math.abs(ball.vx); }
+        if(ball.x + ball.r > rect.width - 4){ ball.x = rect.width - 4 - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if(ball.y + ball.r >= groundY){ ball.y = groundY - ball.r; ball.alive=false; ball.vy=0; ball.vx=0; }
+      });
+      // Stoppa tiden när A har landat
+      if(!A.alive) running = false;
+
+      // strobe – spara både x och y
+      strobeAcc += dt; if(strobeAcc>=strobeEvery){ strobeAcc=0; [A, showB?B:null].forEach(ball=>{ if(ball&&ball.alive) ball.strobe.push({t, x:ball.x, y:ball.y}); }); }
+      t += dt;
+    }
+
+    // === Drawing ===
+    function drawGrid(){
+      if(!grid.checked) return; const ctx = stage.getContext('2d');
+      const {width,height} = stage.getBoundingClientRect(); const groundY = height-30;
+      ctx.save(); ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui';
+      const stepM=10; for(let h=0; h<=H; h+=stepM){ const y=groundY - h*pxPerM; if(y<20) break; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); ctx.fillText(`${h} m`, 8, y-4); }
+      ctx.restore();
+    }
+
+    function drawScene(){
+      const ctx = stage.getContext('2d'); const {width,height} = stage.getBoundingClientRect();
+      ctx.clearRect(0,0,width,height); ctx.fillStyle='#0b1220'; ctx.fillRect(0,0,width,height); drawGrid();
+      ctx.fillStyle='#334155'; ctx.fillRect(0,height-30,width,30); // mark
+
+      // strobe
+      if(strobe.checked){
+        ctx.save(); ctx.fillStyle = A.color+'66'; A.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); });
+        if(showB){ ctx.fillStyle = B.color+'66'; B.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); }); }
+        ctx.restore();
+      }
+
+      // bollar
+      drawBall(A);
+      if(showB) drawBall(B);
+
+      // tidstext (uppdateras inte när running=false)
+      ctx.fillStyle='#e5e7eb'; ctx.font='14px system-ui';
+      ctx.fillText(`t = ${t.toFixed(2)} s`, 12, 22);
+      ctx.fillText(`g = ${g.toFixed(2)} m/s², β = ${beta.toFixed(2)} 1/s, H = ${H.toFixed(0)} m`, 12, 40);
+    }
+
+    function drawBall(ball){
+      const ctx = stage.getContext('2d');
+      ctx.save(); ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+      const grad = ctx.createRadialGradient(ball.x-6,ball.y-6,4,ball.x,ball.y,ball.r); grad.addColorStop(0,'#e2e8f0'); grad.addColorStop(1,ball.color); ctx.fillStyle=grad; ctx.fill();
+      if(showVectors.checked && ball.alive){ const scale=0.05; const vy_px = ball.vy*pxPerM*scale; const {width,height} = stage.getBoundingClientRect(); ctx.save(); ctx.beginPath(); ctx.rect(0,0,width-8,height-8); ctx.clip(); ctx.beginPath(); ctx.moveTo(ball.x+ball.r+8,ball.y); ctx.lineTo(ball.x+ball.r+8,ball.y+vy_px); ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.stroke(); ctx.font='12px ui-monospace,monospace'; ctx.fillStyle='#ef4444'; const vmag=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy); const tx=Math.min(ball.x+ball.r+12, width-70); const ty=Math.min(ball.y+vy_px+14, height-8); ctx.fillText(`v=${vmag.toFixed(1)} m/s`, tx, ty); ctx.restore(); }
+      ctx.restore();
+    }
+
+    // === Loop ===
+    function frame(){ if(running){ physicsStep(); } drawScene(); requestAnimationFrame(frame); }
+
+    // === Events ===
+    btnStart.onclick=()=> running=true; btnPause.onclick=()=> running=false; btnStep.onclick=()=>{ for(let i=0;i<Math.round(0.1/dt); i++) physicsStep(); drawScene(); }; btnReset.onclick=()=> reset(); btnToggleB.onclick=()=>{ showB=!showB; btnToggleB.textContent = showB? 'Dölj B' : 'Visa B'; }; btnGiveVX.onclick=()=> giveHorizontal();
+    gSlider.oninput=e=>{ g=parseFloat(e.target.value); gVal.textContent=g.toFixed(2); };
+    betaSlider.oninput=e=>{ beta=parseFloat(e.target.value); betaVal.textContent=beta.toFixed(2); };
+    HSlider.oninput=e=>{ H=parseFloat(e.target.value); HVal.textContent=H.toFixed(0); layout(); reset(); };
+    window.addEventListener('resize', ()=>{ layout(); reset(); });
+
+    // === Start ===
+    layout(); reset(); frame();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tyngdacceleration</title>
+  <style>
+    :root{ --bg:#0f172a; --ink:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --accent2:#3b82f6; --accent3:#ef4444; }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink);background:#0b1220}
+
+    /* Layout */
+    main{display:grid;grid-template-columns:1fr 360px;gap:16px;min-height:100vh;padding:12px}
+    @media (max-width:980px){ main{grid-template-columns:1fr} }
+
+    .bar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#0f172a;border:1px solid #1f2937;border-radius:14px;padding:10px 12px}
+    .title{font-weight:800}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .toolbar button{background:#0ea5e9;border:none;color:white;padding:8px 12px;border-radius:12px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+    .toolbar button.secondary{background:#334155}
+
+    #stageWrap{position:relative;border-radius:16px;overflow:hidden;background:#0b1220;border:1px solid #1f2937;min-height:calc(100vh - 110px)}
+    #stage{display:block;width:100%;height:100%;touch-action:none}
+
+    /* Legend (färginfon) uppe till höger i fallytan */
+    .legend{position:absolute;right:12px;top:12px;background:rgba(2,6,23,.66);border:1px solid #1f2937;padding:8px 10px;border-radius:12px;font-size:14px;backdrop-filter: blur(6px)}
+    .legend div{display:flex;align-items:center;gap:8px;margin:4px 0}
+    .chip{width:14px;height:14px;border-radius:999px;display:inline-block}
+    .chip.blue{background:var(--accent2)} .chip.green{background:var(--accent)} .chip.red{background:var(--accent3)}
+
+    aside{background:#0b1220;border:1px solid #1f2937;border-radius:16px;padding:14px;overflow:auto;max-height:calc(100vh - 110px)}
+    .card{background:rgba(2,6,23,.7);border:1px solid #1f2937;border-radius:12px;padding:12px}
+    .card h3{margin:0 0 8px 0;font-size:16px}
+    .row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;margin:8px 0}
+    input[type="range"]{width:100%}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .note{color:#cbd5e1;font-size:14px}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="bar">
+      <div class="title">Tyngdacceleration</div>
+      <div class="toolbar">
+        <button id="btnStart">▶︎ Start</button>
+        <button id="btnPause" class="secondary">⏸ Paus</button>
+        <button id="btnStep" class="secondary">⏭ Stega 0,1 s</button>
+        <button id="btnReset" class="secondary">⟲ Reset</button>
+        <button id="btnToggleB" class="secondary">Visa B</button>
+        <button id="btnGiveVX" class="secondary">Ge B hor. fart</button>
+      </div>
+    </div>
+
+    <section id="stageWrap">
+      <canvas id="stage"></canvas>
+      <div class="legend">
+        <div><span class="chip blue"></span> Boll A (släpps rakt ned)</div>
+        <div><span class="chip green"></span> Boll B (kan ha horisontell fart)</div>
+        <div><span class="chip red"></span> Hastighetspil (växer när v ökar)</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="card">
+        <h3>Miljö & förutsättningar</h3>
+        <div class="row"><label>Tyngdacceleration g (m/s²)</label><span class="mono"><span id="gVal">9.82</span></span></div>
+        <input type="range" id="g" min="1" max="20" step="0.01" value="9.82" />
+        <div class="row"><label>Luftmotstånd β (1/s)</label><span class="mono"><span id="betaVal">0.00</span></span></div>
+        <input type="range" id="beta" min="0" max="1" step="0.01" value="0" />
+        <div class="row"><label>Fallhöjd H (m över mark)</label><span class="mono"><span id="HVal">50</span></span></div>
+        <input type="range" id="H" min="5" max="150" step="1" value="50" />
+        <label style="display:block;margin-top:8px"><input type="checkbox" id="showVectors" checked> Visa hastighetspilar</label>
+        <label style="display:block"><input type="checkbox" id="strobe" checked> Stroboskop (prickar var 0,2 s)</label>
+        <label style="display:block"><input type="checkbox" id="grid" checked> Rutnät & höjdmått</label>
+        <p class="note">0 m vid marken, ökande uppåt.</p>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // === Elements ===
+    const stage = document.getElementById('stage');
+    const btnStart = document.getElementById('btnStart');
+    const btnPause = document.getElementById('btnPause');
+    const btnStep = document.getElementById('btnStep');
+    const btnReset = document.getElementById('btnReset');
+    const btnToggleB = document.getElementById('btnToggleB');
+    const btnGiveVX = document.getElementById('btnGiveVX');
+    const gSlider = document.getElementById('g');
+    const betaSlider = document.getElementById('beta');
+    const HSlider = document.getElementById('H');
+    const gVal = document.getElementById('gVal');
+    const betaVal = document.getElementById('betaVal');
+    const HVal = document.getElementById('HVal');
+    const showVectors = document.getElementById('showVectors');
+    const strobe = document.getElementById('strobe');
+    const grid = document.getElementById('grid');
+
+    // === HiDPI ===
+    function fitCanvas(cnv){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = cnv.getBoundingClientRect();
+      cnv.width = Math.round(rect.width * dpr);
+      cnv.height = Math.round(rect.height * dpr);
+      const ctx = cnv.getContext('2d');
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return ctx;
+    }
+
+    // === World ===
+    let g = parseFloat(gSlider.value), beta = parseFloat(betaSlider.value), H = parseFloat(HSlider.value);
+    let pxPerM = 10;
+    function makeBall(color){ return {x:0,y:0,vx:0,vy:0,r:14,color,alive:true,strobe:[],vHistory:[]}; }
+    const A = makeBall('#3b82f6');
+    const B = makeBall('#22c55e');
+    let showB = false;
+
+    let running=false, t=0; const dt=0.016; let strobeEvery=0.2, strobeAcc=0;
+
+    // === Layout ===
+    function layout(){
+      fitCanvas(stage);
+      const rect = stage.getBoundingClientRect();
+      const groundMargin = 30; // px
+      pxPerM = (rect.height - (groundMargin + 20)) / Math.max(H,5);
+    }
+
+    function reset(){
+      t=0; strobeAcc=0; running=false;
+      const rect = stage.getBoundingClientRect();
+      const startYpx = 20;
+      A.x = rect.width*0.35; A.y=startYpx; A.vx=0; A.vy=0; A.alive=true; A.strobe=[]; A.vHistory=[];
+      B.x = rect.width*0.65; B.y=startYpx; B.vx=0; B.vy=0; B.alive=true; B.strobe=[]; B.vHistory=[];
+      drawScene();
+    }
+
+    function giveHorizontal(){ B.vx = 12; }
+
+    // === Physics ===
+    function physicsStep(){
+      const rect = stage.getBoundingClientRect(); const groundY = rect.height - 30;
+      [A, showB?B:null].forEach(ball=>{
+        if(!ball || !ball.alive) return;
+        ball.vy += (g - beta*ball.vy) * dt;           // y-led
+        ball.y  += (ball.vy * pxPerM) * dt;
+        ball.vx += (-beta*ball.vx) * dt;              // x-led
+        ball.x  += (ball.vx * pxPerM) * dt;
+        if(ball.x - ball.r < 4){ ball.x = 4 + ball.r; ball.vx = Math.abs(ball.vx); }
+        if(ball.x + ball.r > rect.width - 4){ ball.x = rect.width - 4 - ball.r; ball.vx = -Math.abs(ball.vx); }
+        if(ball.y + ball.r >= groundY){ ball.y = groundY - ball.r; ball.alive=false; ball.vy=0; ball.vx=0; }
+      });
+      // Stoppa tiden när A har landat
+      if(!A.alive) running = false;
+
+      // strobe – spara både x och y
+      strobeAcc += dt; if(strobeAcc>=strobeEvery){ strobeAcc=0; [A, showB?B:null].forEach(ball=>{ if(ball&&ball.alive) ball.strobe.push({t, x:ball.x, y:ball.y}); }); }
+      t += dt;
+    }
+
+    // === Drawing ===
+    function drawGrid(){
+      if(!grid.checked) return; const ctx = stage.getContext('2d');
+      const {width,height} = stage.getBoundingClientRect(); const groundY = height-30;
+      ctx.save(); ctx.strokeStyle='#1f2937'; ctx.lineWidth=1; ctx.fillStyle='#94a3b8'; ctx.font='12px system-ui';
+      const stepM=10; for(let h=0; h<=H; h+=stepM){ const y=groundY - h*pxPerM; if(y<20) break; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke(); ctx.fillText(`${h} m`, 8, y-4); }
+      ctx.restore();
+    }
+
+    function drawScene(){
+      const ctx = stage.getContext('2d'); const {width,height} = stage.getBoundingClientRect();
+      ctx.clearRect(0,0,width,height); ctx.fillStyle='#0b1220'; ctx.fillRect(0,0,width,height); drawGrid();
+      ctx.fillStyle='#334155'; ctx.fillRect(0,height-30,width,30); // mark
+
+      // strobe
+      if(strobe.checked){
+        ctx.save(); ctx.fillStyle = A.color+'66'; A.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); });
+        if(showB){ ctx.fillStyle = B.color+'66'; B.strobe.forEach(s=>{ ctx.beginPath(); ctx.arc(s.x,s.y,3,0,Math.PI*2); ctx.fill(); }); }
+        ctx.restore();
+      }
+
+      // bollar
+      drawBall(A);
+      if(showB) drawBall(B);
+
+      // tidstext (uppdateras inte när running=false)
+      ctx.fillStyle='#e5e7eb'; ctx.font='14px system-ui';
+      ctx.fillText(`t = ${t.toFixed(2)} s`, 12, 22);
+      ctx.fillText(`g = ${g.toFixed(2)} m/s², β = ${beta.toFixed(2)} 1/s, H = ${H.toFixed(0)} m`, 12, 40);
+    }
+
+    function drawBall(ball){
+      const ctx = stage.getContext('2d');
+      ctx.save(); ctx.beginPath(); ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+      const grad = ctx.createRadialGradient(ball.x-6,ball.y-6,4,ball.x,ball.y,ball.r); grad.addColorStop(0,'#e2e8f0'); grad.addColorStop(1,ball.color); ctx.fillStyle=grad; ctx.fill();
+      if(showVectors.checked && ball.alive){ const scale=0.05; const vy_px = ball.vy*pxPerM*scale; const {width,height} = stage.getBoundingClientRect(); ctx.save(); ctx.beginPath(); ctx.rect(0,0,width-8,height-8); ctx.clip(); ctx.beginPath(); ctx.moveTo(ball.x+ball.r+8,ball.y); ctx.lineTo(ball.x+ball.r+8,ball.y+vy_px); ctx.strokeStyle='#ef4444'; ctx.lineWidth=3; ctx.stroke(); ctx.font='12px ui-monospace,monospace'; ctx.fillStyle='#ef4444'; const vmag=Math.sqrt(ball.vx*ball.vx+ball.vy*ball.vy); const tx=Math.min(ball.x+ball.r+12, width-70); const ty=Math.min(ball.y+vy_px+14, height-8); ctx.fillText(`v=${vmag.toFixed(1)} m/s`, tx, ty); ctx.restore(); }
+      ctx.restore();
+    }
+
+    // === Loop ===
+    function frame(){ if(running){ physicsStep(); } drawScene(); requestAnimationFrame(frame); }
+
+    // === Events ===
+    btnStart.onclick=()=> running=true; btnPause.onclick=()=> running=false; btnStep.onclick=()=>{ for(let i=0;i<Math.round(0.1/dt); i++) physicsStep(); drawScene(); }; btnReset.onclick=()=> reset(); btnToggleB.onclick=()=>{ showB=!showB; btnToggleB.textContent = showB? 'Dölj B' : 'Visa B'; }; btnGiveVX.onclick=()=> giveHorizontal();
+    gSlider.oninput=e=>{ g=parseFloat(e.target.value); gVal.textContent=g.toFixed(2); };
+    betaSlider.oninput=e=>{ beta=parseFloat(e.target.value); betaVal.textContent=beta.toFixed(2); };
+    HSlider.oninput=e=>{ H=parseFloat(e.target.value); HVal.textContent=H.toFixed(0); layout(); reset(); };
+    window.addEventListener('resize', ()=>{ layout(); reset(); });
+
+    // === Start ===
+    layout(); reset(); frame();
+  </script>
+</body>
+</html>

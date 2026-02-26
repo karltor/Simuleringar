@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Dopplereffekten</title>
+  <style>
+    body { overflow: hidden; }
+    .draggable { cursor: move; pointer-events:none;}
+  </style>
+  <style>
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.draggable {
+  cursor: move;
+  pointer-events: auto;
+}
+
+/* Modern Speed Slider */
+#speedSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 12px;
+  background: linear-gradient(to right, #3498db 0%, #2ecc71 50%, #e74c3c 100%);
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#speedSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 3px solid #34495e;
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#speedSlider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#speedSlider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+#speedSlider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border: 3px solid #34495e;
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+#speedSlider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#speedSlider::-moz-range-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+/* Volume Slider */
+input[type="range"]:not(#speedSlider) {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #bdc3c7;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]:not(#speedSlider)::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #3498db;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+input[type="range"]:not(#speedSlider)::-webkit-slider-thumb:hover {
+  background: #2980b9;
+}
+
+input[type="range"]:not(#speedSlider)::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #3498db;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+input[type="range"]:not(#speedSlider)::-moz-range-thumb:hover {
+  background: #2980b9;
+}
+
+/* Button hover effects */
+button {
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+</style>
+</head>
+
+<body>
+
+  <script>
+/* Doppler effect illustration with interactive microphone */
+document.body.style.overflow = 'hidden';
+
+// Speed slider
+let s = document.createElement('input');
+s.type = 'range'; 
+s.min = -6; 
+s.max = 6; 
+s.value = 0;
+s.id = 'speedSlider';
+s.style.position = 'absolute'; 
+s.style.bottom = '60px'; 
+s.style.left = '50%';
+s.style.transform = 'translateX(-50%)';
+s.style.width = '60%';
+document.body.appendChild(s);
+
+// Ambulance position
+let p = document.createElement('div');
+p.style.position = 'absolute'; 
+p.style.top = '50%'; 
+p.style.left = '5%';
+p.style.width = '1px'; 
+p.style.height = '1px'; 
+p.style.backgroundColor = 'transparent';
+document.body.appendChild(p);
+
+// Movement logic with proper looping in both directions
+let spd = 0, l = 50;
+let movementInterval = setInterval(() => { 
+    spd = parseFloat(s.value); 
+    l += spd / 100; 
+    
+    // Fix loop logic for both directions
+    if (l > 95) l = 5;
+    if (l < 5) l = 95;
+    
+    p.style.left = l + '%'; 
+}, 10);
+
+// Sound wave circles
+let c = [];
+let circleInterval = setInterval(() => {
+    let circle = document.createElement('div');
+    circle.style.cssText = `position: absolute; top: 50%; left: ${l}%; width: 0px; height: 0px; border-radius: 50%; border: 2px solid black; pointer-events: none;`;
+    document.body.appendChild(circle);
+    c.push(circle);
+}, 250);
+
+// Grow circles
+let growInterval = setInterval(() => { 
+    for (let i = 0; i < c.length; i++) { 
+        let circle = c[i];
+        let w = parseInt(circle.style.width) || 0;
+        let h = parseInt(circle.style.height) || 0;
+        w += 2; 
+        h += 2; 
+        circle.style.width = w + 'px'; 
+        circle.style.height = h + 'px'; 
+        circle.style.marginLeft = -w / 2 + 'px'; 
+        circle.style.marginTop = -h / 2 + 'px'; 
+    } 
+}, 10);
+
+// Remove old circles
+let removeInterval = setInterval(() => { 
+    for (let i = c.length - 1; i >= 0; i--) { 
+        let circle = c[i];
+        let w = parseInt(circle.style.width) || 0;
+        if (w > 800) { 
+            document.body.removeChild(circle); 
+            c.splice(i, 1); 
+        } 
+    } 
+}, 10);
+
+// Color circles based on direction
+let colorInterval = setInterval(() => { 
+    for (let i = 0; i < c.length; i++) { 
+        let circle = c[i];
+        let w = parseInt(circle.style.width) || 0;
+        let opacity = Math.max(0, 1 - w / 500);
+        let color = (spd > 0) ? 'rgba(255, 0, 0, ' : 'rgba(0, 0, 255, ';
+        circle.style.borderColor = color + opacity + ')'; 
+    } 
+}, 10);
+
+// Status text
+let st = document.createElement('div');
+st.style.position = 'absolute'; 
+st.style.bottom = '100px'; 
+st.style.left = '50%';
+st.style.transform = 'translateX(-50%)';
+st.style.fontSize = '16px';
+st.style.fontWeight = 'bold';
+st.style.textAlign = 'center';
+document.body.appendChild(st);
+
+setInterval(() => { 
+    let direction = spd > 0 ? 'höger' : (spd < 0 ? 'vänster' : 'stillastående');
+    st.innerHTML = `Hastighet: ${Math.abs(spd).toFixed(1)} px/s (${direction})`; 
+}, 100);
+
+// Ambulance image
+let img = document.createElement('img');
+img.src = 'doppler-ambulans.png';
+img.style.cssText = `position: absolute; top: 50%; left: ${l}%; max-width: 80px; height: auto; margin-left: -40px; margin-top: -40px; transform: scaleX(${spd >= 0 ? 1 : -1});`;
+document.body.appendChild(img);
+
+let imgInterval = setInterval(() => { 
+    img.style.left = l + '%'; 
+    img.style.transform = `scaleX(${spd >= 0 ? 1 : -1})`; // Flip image based on direction
+}, 10);
+
+// === WEB AUDIO API FOR DOPPLER EFFECT ===
+let audioContext;
+let oscillator;
+let gainNode;
+let isAudioOn = false;
+
+function initAudio() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        gainNode = audioContext.createGain();
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.value = 0.3; // Default volume
+    }
+}
+
+function startSound() {
+    if (isAudioOn) return;
+    initAudio();
+    
+    oscillator = audioContext.createOscillator();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 440; // Base frequency
+    oscillator.connect(gainNode);
+    oscillator.start();
+    isAudioOn = true;
+}
+
+function stopSound() {
+    if (!isAudioOn || !oscillator) return;
+    oscillator.stop();
+    oscillator = null;
+    isAudioOn = false;
+}
+
+function updateFrequency(freq) {
+    if (oscillator && isAudioOn) {
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+    }
+}
+
+function calculateDopplerFrequency(micX, micY, ambulanceX, ambulanceY, speed) {
+    const baseFreq = 440; // Hz
+    const soundSpeed = 100; // Effective sound speed in px/s for this simulation
+    
+    // Calculate vector from ambulance to microphone
+    const dx = micX - ambulanceX;
+    const dy = micY - ambulanceY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < 1) return baseFreq; // Avoid division by zero
+    
+    // Ambulance velocity vector (horizontal movement only)
+    const velocityX = speed; // px/s
+    const velocityY = 0;
+    
+    // Unit vector from ambulance to microphone
+    const unitX = dx / distance;
+    const unitY = dy / distance;
+    
+    // Radial velocity (velocity component towards microphone)
+    // Positive = moving towards mic, Negative = moving away
+    const radialVelocity = velocityX * unitX + velocityY * unitY;
+    
+    // Doppler formula: f_observed = f_source * c / (c - v_radial)
+    // where v_radial is positive when source approaches observer
+    const dopplerFactor = soundSpeed / (soundSpeed - radialVelocity);
+    let frequency = baseFreq * dopplerFactor;
+    
+    // Amplify the effect for educational purposes
+    const amplification = 2.0;
+    frequency = baseFreq + (frequency - baseFreq) * amplification;
+    
+    // Clamp to reasonable range
+    frequency = Math.max(300, Math.min(600, frequency));
+    
+    // Add distance-based volume (closer = louder)
+    const maxDistance = 600;
+    const volumeFactor = Math.max(0.05, Math.min(1, 1 - (distance / maxDistance)));
+    gainNode.gain.setValueAtTime(volumeFactor * volumeSlider.value / 100, audioContext.currentTime);
+    
+    return frequency;
+}
+
+// === MICROPHONE ===
+let mic = document.createElement('div');
+mic.style.cssText = `
+    position: absolute;
+    width: 40px;
+    height: 50px;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: move;
+    z-index: 1000;
+`;
+
+// Microphone icon (simple SVG-like design)
+mic.innerHTML = `
+    <div style="
+        width: 20px;
+        height: 30px;
+        background: #333;
+        border-radius: 10px 10px 0 0;
+        margin: 0 auto;
+        border: 3px solid #666;
+    "></div>
+    <div style="
+        width: 2px;
+        height: 10px;
+        background: #333;
+        margin: 0 auto;
+    "></div>
+    <div style="
+        width: 20px;
+        height: 3px;
+        background: #333;
+        margin: 0 auto;
+        border-radius: 2px;
+    "></div>
+`;
+
+document.body.appendChild(mic);
+
+// Dragging functionality
+let dragging = false;
+let offsetX, offsetY;
+
+mic.addEventListener('mousedown', (e) => {
+    dragging = true;
+    offsetX = e.clientX - mic.getBoundingClientRect().left;
+    offsetY = e.clientY - mic.getBoundingClientRect().top;
+    mic.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    e.preventDefault();
+    mic.style.left = (e.clientX - offsetX) + 'px';
+    mic.style.top = (e.clientY - offsetY) + 'px';
+    mic.style.transform = 'none'; // Remove centering transform while dragging
+});
+
+document.addEventListener('mouseup', () => {
+    dragging = false;
+    mic.style.cursor = 'move';
+});
+
+// Update frequency based on microphone position
+setInterval(() => {
+    if (!isAudioOn) return;
+    
+    const micRect = mic.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    
+    const micX = micRect.left + micRect.width / 2;
+    const micY = micRect.top + micRect.height / 2;
+    const ambulanceX = imgRect.left + imgRect.width / 2;
+    const ambulanceY = imgRect.top + imgRect.height / 2;
+    
+    const frequency = calculateDopplerFrequency(micX, micY, ambulanceX, ambulanceY, spd);
+    updateFrequency(frequency);
+}, 50);
+
+// === CONTROLS ===
+let controlsContainer = document.createElement('div');
+controlsContainer.style.cssText = `
+    position: absolute;
+    bottom: 140px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+`;
+
+// On/Off button
+let toggleButton = document.createElement('button');
+toggleButton.textContent = '🔇 Ljud: AV';
+toggleButton.style.cssText = `
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background: #e74c3c;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+`;
+
+toggleButton.addEventListener('click', () => {
+    if (isAudioOn) {
+        stopSound();
+        toggleButton.textContent = '🔇 Ljud: AV';
+        toggleButton.style.background = '#e74c3c';
+    } else {
+        startSound();
+        toggleButton.textContent = '🔊 Ljud: PÅ';
+        toggleButton.style.background = '#27ae60';
+    }
+});
+
+// Volume control
+let volumeContainer = document.createElement('div');
+volumeContainer.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
+
+let volumeLabel = document.createElement('span');
+volumeLabel.textContent = '🔉 Volym:';
+volumeLabel.style.fontSize = '14px';
+
+let volumeSlider = document.createElement('input');
+volumeSlider.type = 'range';
+volumeSlider.min = 0;
+volumeSlider.max = 100;
+volumeSlider.value = 30;
+volumeSlider.style.cssText = `
+    width: 100px;
+    cursor: pointer;
+`;
+
+let volumeValue = document.createElement('span');
+volumeValue.textContent = '30%';
+volumeValue.style.cssText = `
+    font-size: 14px;
+    min-width: 40px;
+`;
+
+volumeSlider.addEventListener('input', () => {
+    const vol = volumeSlider.value;
+    volumeValue.textContent = vol + '%';
+    if (gainNode) {
+        gainNode.gain.setValueAtTime(vol / 100, audioContext.currentTime);
+    }
+});
+
+volumeContainer.appendChild(volumeLabel);
+volumeContainer.appendChild(volumeSlider);
+volumeContainer.appendChild(volumeValue);
+
+controlsContainer.appendChild(toggleButton);
+controlsContainer.appendChild(volumeContainer);
+document.body.appendChild(controlsContainer);
+
+</script>
+
+</body>
+
+</html>

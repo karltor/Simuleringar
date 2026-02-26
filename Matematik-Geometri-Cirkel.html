@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dra för att ändra cirkelns storlek</title>
+    <style>
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    position: absolute;
+    top: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.circle-container {
+    position: absolute;  /* Gör cirkelcontainern absolut positionerad */
+    top: 50%;           /* Placera containerns toppkant i mitten av skärmen */
+    left: 50%;          /* Placera containerns vänsterkant i mitten av skärmen */
+    transform: translate(-50%, -50%); /* Förskjut cirkelcontainern uppåt och åt vänster med hälften av dess storlek så att dess mittpunkt är i mitten av skärmen */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.circle {
+    width: 100px;
+    height: 100px;
+    border: 10px solid black;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f2f2f2;  /* Bakgrundsfärg inuti cirkeln */
+}
+
+
+#area {
+    font-size: 14px;
+}
+
+#radius, #circumference {
+    display: block;
+    margin-top: 5px;
+}
+
+</style>
+</head>
+<body>
+    <h1>Dra i cirkeln för att ändra dess radie</h1>
+    <div class="circle-container">
+        <div class="circle" id="circle">
+            <span id="area"></span>
+        </div>
+        <span id="radius">Radie: 0 cm</span>
+        <span id="circumference">Omkrets: 0 cm</span>
+    </div>
+
+    <script>
+let circle = document.getElementById('circle');
+let radiusOutput = document.getElementById('radius');
+let areaOutput = document.getElementById('area');
+let circumferenceOutput = document.getElementById('circumference');
+
+// Denna funktion initierar cirkelns initiala värden när sidan laddas.
+function initializeCircle() {
+    let rect = circle.getBoundingClientRect();
+    let distance = rect.width / 2;
+    updateCircleMetrics(distance);
+}
+
+circle.addEventListener('mousedown', function(event) {
+    document.addEventListener('mousemove', resizeCircle);
+    document.addEventListener('mouseup', stopResizing);
+});
+
+function resizeCircle(event) {
+    let rect = circle.getBoundingClientRect();
+    let distance = Math.sqrt(Math.pow((event.clientX - rect.left - (rect.width / 2)), 2) + Math.pow((event.clientY - rect.top - (rect.height / 2)), 2));
+    updateCircleMetrics(distance);
+}
+
+function updateCircleMetrics(distance) {
+    let radius = Math.round(distance / 10) / 10;
+    let circleDiameter = radius * 2 * 100;
+
+    circle.style.width = circleDiameter + 'px';
+    circle.style.height = circleDiameter + 'px';
+
+    let area = Math.PI * Math.pow(radius, 2);
+    let circumference = 2 * Math.PI * radius;
+
+    radiusOutput.textContent = `Radius: ${radius.toFixed(1)} cm`;
+    areaOutput.textContent = `Area: ${area.toFixed(2)} cm²`;
+    circumferenceOutput.textContent = `Omkrets: ${circumference.toFixed(2)} cm`;
+}
+
+function stopResizing() {
+    document.removeEventListener('mousemove', resizeCircle);
+}
+
+// Initierar cirkelns värden när sidan laddas.
+initializeCircle();
+
+</script>
+</body>
+</html>

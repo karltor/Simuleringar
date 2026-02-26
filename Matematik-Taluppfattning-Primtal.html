@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* CSS-stilar */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 20px;
+            text-align: center;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 5px;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        .cell {
+            padding: 13.5px; /* Minskat med 10% från 15px */
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+            user-select: none;
+            font-size: 21.6px; /* Ökat med 20% från 18px */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell.removed {
+            background-color: #d1d1d1;
+            color: #aaa;
+            text-decoration: line-through;
+            animation: fadeOut 0.5s forwards;
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        #buttons {
+            margin: 20px;
+        }
+
+        #buttons button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #buttons button:hover {
+            background-color: #eee;
+        }
+
+        /* Tooltip-stil */
+        button {
+            position: relative;
+        }
+
+        button:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+            font-size: 12px;
+            border-radius: 3px;
+            white-space: nowrap;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div id="buttons">
+        <button onclick="removeMultiples(2)" data-tooltip="Tar bort alla tal som är multipler av 2">Ta bort multipler av 2</button>
+        <button onclick="removeMultiples(3)" data-tooltip="Tar bort alla tal som är multipler av 3">Ta bort multipler av 3</button>
+        <button onclick="removeMultiples(5)" data-tooltip="Tar bort alla tal som är multipler av 5">Ta bort multipler av 5</button>
+        <button onclick="removeMultiples(7)" data-tooltip="Tar bort alla tal som är multipler av 7">Ta bort multipler av 7</button>
+        <button onclick="highlightPrimes()" data-tooltip="Markerar endast primtal">Visa endast primtal</button>
+        <button onclick="resetGrid()">Återställ</button>
+    </div>
+    <div id="grid">
+        <!-- Celler genereras dynamiskt med JavaScript -->
+    </div>
+
+    <script>
+        // Generera rutnätet
+        const grid = document.getElementById('grid');
+
+        for (let i = 1; i <= 100; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.textContent = i;
+            grid.appendChild(cell);
+        }
+
+        function removeMultiples(n) {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const number = parseInt(cell.textContent);
+                if (number !== n && number % n === 0) {
+                    cell.classList.add('removed');
+                }
+            });
+        }
+
+        function resetGrid() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('removed');
+            });
+        }
+
+        function highlightPrimes() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const number = parseInt(cell.textContent);
+                if (!isPrime(number)) {
+                    cell.classList.add('removed');
+                } else {
+                    cell.classList.remove('removed');
+                }
+            });
+        }
+
+        function isPrime(num) {
+            if (num <= 1) return false;
+            if (num <= 3) return true;
+
+            if (num % 2 === 0 || num % 3 === 0) return false;
+
+            for (let i = 5; i * i <= num; i += 6) {
+                if (num % i === 0 || num % (i + 2) === 0) return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informationsöverföring i Kroppen</title>
+<style>
+  .container {
+    text-align: center;
+    margin-bottom: 20px; /* Adds distance between elements */
+  }
+  .pipe {
+    position: relative;
+    width: 90%;
+    margin: auto;
+    height: 50px; /* Height of the top pipe */
+    border: 1px solid black;
+    overflow: hidden;
+    margin-bottom: 40px; /* Distance between the pipes */
+  }
+  .dot {
+    position: absolute;
+    width: 10px; /* Adjusted size */
+    height: 10px; /* Adjusted size */
+    background-color: blue;
+    border-radius: 50%;
+  }
+  #bottomPipe {
+    height: 100px; /* Height of the bottom pipe */
+  }
+  .title {
+    font-size: 24px;
+    margin: 20px 0;
+  }
+  .explanation {
+    font-size: 18px;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">Nervsignal</div>
+  <div id="topPipe" class="pipe"></div>
+  <p class="explanation">Nervsignaler skickar snabb information för omedelbara reaktioner.</p>
+</div>
+<div class="container">
+  <div class="title">Hormoner</div>
+  <div id="bottomPipe" class="pipe"></div>
+  <p class="explanation">Hormoner transporterar information långsamt för att reglera kroppens långsiktiga processer.</p>
+</div>
+<script>
+  function moveDot(dot, container, baseSpeed) {
+    let pos = Math.random() * container.clientWidth; // Initial horizontal position
+    let containerWidth = container.clientWidth;
+    const speedVariation = baseSpeed * 0.1;
+    const speed = baseSpeed + (Math.random() * (speedVariation * 2) - speedVariation);
+
+    // Set a random vertical position
+    dot.style.top = `${Math.random() * (container.clientHeight - dot.offsetHeight)}px`;
+
+    function animate() {
+      pos += speed;
+      if (pos > containerWidth) {
+        pos = -dot.offsetWidth;
+        // Randomize vertical position when dot resets
+        dot.style.top = `${Math.random() * (container.clientHeight - dot.offsetHeight)}px`;
+      }
+      dot.style.left = pos + 'px';
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // Single dot for the top pipe
+  const topPipe = document.getElementById('topPipe');
+  const singleDot = document.createElement('div');
+  singleDot.classList.add('dot');
+  topPipe.appendChild(singleDot);
+  moveDot(singleDot, topPipe, 6, 0); // No vertical range for the top pipe
+
+  // Multiple dots for the bottom pipe
+  const bottomPipe = document.getElementById('bottomPipe');
+  const numberOfDots = 60;
+  for (let i = 0; i < numberOfDots; i++) {
+    let dot = document.createElement('div');
+    dot.classList.add('dot');
+    bottomPipe.appendChild(dot);
+    moveDot(dot, bottomPipe, 0.2, 40); // Vertical range of 40px
+  }
+
+</script>
+</body>
+</html>

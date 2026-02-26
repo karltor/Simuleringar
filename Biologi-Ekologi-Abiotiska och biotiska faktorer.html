@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Educational Drag and Drop</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+  <body style="background-color: #476f4a;">
+
+
+
+<!-- Main container for the layout -->
+<div class="flex flex-col items-center justify-center min-h-screen">
+
+  <!-- Top container for the drop zones and draggable items -->
+  <div class="flex justify-around items-start w-full max-w-4xl p-4">
+
+    <!-- Abiotic factors drop zone -->
+    <div id="abiotic" class="w-1/3 bg-white border-2 border-gray-400 rounded-lg min-h-96">
+      <p class="text-center py-2">Abiotiska faktorer</p>
+    </div>
+    <!-- Draggable items -->
+    <div class="factors-container grid grid-cols-3 gap-1 px-1 w-auto">
+      <!-- Draggable items will be appended here by JavaScript -->
+    </div>
+
+
+
+    <!-- Biotic factors drop zone -->
+    <div id="biotic" class="w-1/3 bg-white border-2 border-gray-400 rounded-lg min-h-96">
+      <p class="text-center py-2">Biotiska faktorer</p>
+      <!-- Items will be dropped here -->
+    </div>
+  </div>
+
+  <!-- RÄTTA button -->
+  <div class="mt-4">
+    <button id="check" class="bg-white border-2 border-gray-400 rounded-md py-2 px-4 cursor-pointer">RÄTTA</button>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const abioticContainer = document.getElementById('abiotic');
+  const bioticContainer = document.getElementById('biotic');
+  const factorsContainer = document.querySelector('.factors-container');
+
+  // Define correct answers here
+  const answers = {
+    'Sniglar': 'biotic',
+    'Solstrålning': 'abiotic',
+    'Ekorrar': 'biotic',
+    'Vatten': 'abiotic',
+    'Träd': 'biotic',
+    'Jord': 'abiotic',
+    'Bakterier': 'biotic',
+    'Temperatur': 'abiotic',
+    'Vind': 'abiotic',
+    'Blommor': 'biotic',
+    'Fåglar': 'biotic',
+    'Berg': 'abiotic',
+    'Svampar': 'biotic',
+    'Luftfuktighet': 'abiotic',
+    'Fiskar': 'biotic',
+    // Lägg till fler faktorer vid behov
+  };
+
+
+  // Dynamically create draggable items from the 'answers'
+  // Dynamically create draggable items from the 'answers'
+  Object.keys(answers).forEach(key => {
+    const draggableElement = document.createElement('div');
+    draggableElement.id = key;
+    draggableElement.textContent = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize the first letter
+    draggableElement.className = 'draggable bg-white border-2 border-gray-400 rounded-md p-2 my-2 cursor-pointer text-center'; // Added text-center class here
+    factorsContainer.appendChild(draggableElement);
+    enableDragging(draggableElement); // Enable dragging for the new element
+  });
+
+
+  function enableDragging(element) {
+    element.setAttribute('draggable', true);
+    element.addEventListener('dragstart', handleDragStart);
+    element.addEventListener('dragend', handleDragEnd);
+  }
+
+  function enableDropping(element) {
+    element.addEventListener('dragover', handleDragOver);
+    element.addEventListener('drop', handleDrop);
+  }
+
+  function handleDragStart(e) {
+    e.dataTransfer.setData('text/plain', e.target.id);
+    e.target.classList.add('dragging');
+  }
+
+  function handleDragEnd(e) {
+    e.target.classList.remove('dragging');
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    const draggableElement = document.getElementById(id);
+
+    // Kontrollera om 'e.target' är en av de definierade containrarna (abiotic eller biotic)
+    let targetContainer = e.target;
+    while (!targetContainer.id || (targetContainer.id !== 'abiotic' && targetContainer.id !== 'biotic')) {
+      targetContainer = targetContainer.parentNode; // Klättra upp i DOM-trädet för att hitta rätt container
+
+      // Säkerhetskontroll för att undvika oändlig loop om containern inte hittas
+      if (targetContainer.nodeName === 'BODY') {
+        return; // Avbryt funktionen om vi når 'body' elementet utan att hitta rätt container
+      }
+    }
+
+    // Lägg till det dragna elementet i den hittade containern
+    targetContainer.appendChild(draggableElement);
+  }
+
+
+  [abioticContainer, bioticContainer].forEach(enableDropping);
+
+  document.getElementById('check').addEventListener('click', () => {
+    let isCorrect = true;
+    Object.entries(answers).forEach(([key, value]) => {
+      const factor = document.getElementById(key);
+      if ((value === 'abiotic' && !abioticContainer.contains(factor)) ||
+          (value === 'biotic' && !bioticContainer.contains(factor))) {
+        isCorrect = false;
+      }
+    });
+
+    if (isCorrect) {
+      alert('Bra jobbat, alla rätt!');
+    } else {
+      alert('Inte helt rätt, försök igen!');
+    }
+  });
+});
+
+</script>
+</body>
+</html>

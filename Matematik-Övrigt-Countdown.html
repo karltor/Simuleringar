@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>replit</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <script>
+/* Create a box 80% wide 15% height 5% margin from top. slightly round the edges of the box. Divide the inside of the box into 6 slots where integers can be shown. */
+var box = document.createElement('div');
+box.style.width = '100%';
+box.style.height = '15%';
+box.style.marginTop = '5%';
+box.style.borderRadius = '5px';
+box.style.backgroundColor = '#f0f0f0';
+box.style.display = 'flex';
+box.style.flexDirection = 'row';
+box.style.justifyContent = 'space-around';
+box.style.alignItems = 'center';
+document.body.appendChild(box);
+/* In the center vertically and 15% of center to the left, add a button called "Stort Tal". If clicked, randomly print 10, 25, 50 or 100 in the box. If clicked again, the next number should be printed 10% to the right of the last print. */
+var button = document.createElement('button');
+button.innerHTML = 'Stort Tal';
+button.style.marginLeft = '15%';
+button.style.marginTop = '15%';
+button.style.fontSize = '1.5em';
+button.style.borderRadius = '5px';
+button.style.backgroundColor = '#f0f0f0';
+button.style.border = 'none';
+button.style.padding = '10px';
+button.style.cursor = 'pointer';
+document.body.appendChild(button);
+var numbers = [10, 25, 50, 100];
+var lastNumber = 5;
+button.addEventListener('click', function() {
+  var number = numbers[Math.floor(Math.random() * numbers.length)];
+  var numberElement = document.createElement('div');
+  numberElement.innerHTML = number;
+  numberElement.style.fontSize = '2.5em';
+  numberElement.style.marginLeft = lastNumber + '%';
+  lastNumber = 5;
+  box.appendChild(numberElement);
+});
+/* In the center vertically and 15% of center to the right, add a button called "Litet tal Tal". If clicked, randomly print an integer 1-9 in the box. If clicked again, the next number should be printed 10% to the right of the last print. */
+var button2 = document.createElement('button');
+button2.innerHTML = 'Litet Tal';
+button2.style.marginRight = '15%';
+button2.style.marginTop = '15%';
+button2.style.fontSize = '1.5em';
+button2.style.borderRadius = '5px';
+button2.style.backgroundColor = '#f0f0f0';
+button2.style.border = 'none';
+button2.style.padding = '10px';
+button2.style.cursor = 'pointer';
+document.body.appendChild(button2);
+var lastNumber2 = 5;
+button2.addEventListener('click', function() {
+  var number = Math.floor(Math.random() * 9) + 1;
+  var numberElement = document.createElement('div');
+  numberElement.innerHTML = number;
+  numberElement.style.fontSize = '2.5em';
+  numberElement.style.marginLeft = lastNumber2 + '%';
+  lastNumber2 = 5;
+  box.appendChild(numberElement);
+});
+/* Add a button in the bottom right called "Återställ". If clicked, clear numberElement. */
+var button3 = document.createElement('button');
+button3.innerHTML = 'Återställ';
+button3.style.position = 'absolute';
+button3.style.bottom = '5%';
+button3.style.right = '5%';
+button3.style.fontSize = '1.5em';
+button3.style.borderRadius = '5px';
+button3.style.backgroundColor = '#f0f0f0';
+button3.style.border = 'none';
+button3.style.padding = '10px';
+button3.style.cursor = 'pointer';
+document.body.appendChild(button3);
+button3.addEventListener('click', function() {
+  while (box.firstChild) {
+    box.removeChild(box.firstChild);
+  }
+});
+/* Add a box with slightly rounded squares in the center right, 200px by 100 px. Below the box with 5% margin, add a button called "Mål". When mål is pressed, randomly generate a prime number between 101 and 999 inside the box. */
+var box2 = document.createElement('div');
+box2.style.width = '200px';
+box2.style.height = '100px';
+box2.style.marginLeft = '60%';
+box2.style.marginTop = '-10%';
+box2.style.borderRadius = '5px';
+box2.style.backgroundColor = '#f0f0f0';
+box2.style.display = 'flex';
+box2.style.flexDirection = 'row';
+box2.style.justifyContent = 'space-around';
+box2.style.alignItems = 'center';
+document.body.appendChild(box2);
+var button4 = document.createElement('button');
+button4.innerHTML = 'Mål';
+button4.style.marginTop = '5%';
+button4.style.fontSize = '1.5em';
+button4.style.borderRadius = '5px';
+button4.style.backgroundColor = '#f0f0f0';
+button4.style.marginLeft = '61%';
+button4.style.marginTop = '1%';
+button4.style.border = 'none';
+button4.style.padding = '10px';
+button4.style.cursor = 'pointer';
+document.body.appendChild(button4);
+/* When button4 is pressed, Clear contents of box2 if there is any and add a random integer 101-999 in the center of box2. */
+button4.addEventListener('click', function() {
+  while (box2.firstChild) {
+    box2.removeChild(box2.firstChild);
+  }
+  var number = Math.floor(Math.random() * 899) + 101;
+  var numberElement = document.createElement('div');
+  numberElement.innerHTML = number;
+  numberElement.style.fontSize = '3.5em';
+  box2.appendChild(numberElement);
+});
+/* button3 should also clear box2. */
+button3.addEventListener('click', function() {
+  while (box2.firstChild) {
+    box2.removeChild(box2.firstChild);
+  }
+});
+</script>
+
+</body>
+
+</html>

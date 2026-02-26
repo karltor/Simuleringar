@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <title>Multiplikation och Division med 10</title>
+  <style>
+    :root { --gap: 4; }
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; text-align: center; background:#f9f9f9; margin:0; }
+    h1 { margin: 16px 0 8px; }
+    .row { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; margin: 0 0 8px; }
+    input[type="number"] { font-size:18px; padding:6px 10px; width:120px; }
+    button { padding: 14px 22px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; background: #007acc; color: white; transition: .15s; }
+    button:hover { background:#0062b3; }
+    .controls { margin: 10px 0 6px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+    #wrap { width: 680px; max-width: calc(100vw - 24px); margin: 10px auto 0; }
+    #fence { width:100%; height: 440px; border: 3px solid #333; border-radius: 10px; background: #fff; padding: 8px; }
+    #canvas { width: 100%; height: 100%; display:block; }
+
+    .calculation { margin: 8px 0 2px; font-size: 22px; font-weight: bold; }
+    .note { font-size: 14px; color:#555; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Multiplikation och Division med 10</h1>
+
+  <div class="row">
+    <label for="startValue">Startvärde:</label>
+    <input type="number" id="startValue" value="50" step="1" />
+    <button onclick="setStart()">Starta om</button>
+  </div>
+
+  <div class="controls">
+    <button onclick="multiplyByTen()">MULTIPLICERA med 10</button>
+    <button onclick="divideByTen()">DELA med 10</button>
+  </div>
+
+  <div id="wrap">
+    <div id="fence"><canvas id="canvas"></canvas></div>
+  </div>
+
+  <div class="calculation" id="calculation"></div>
+  <div class="note">10 bollar per rad. Fraktioner ritas som del av en cirkel (t.ex. 0,5, 0,05, 0,005 ...). Inga avrundningar i beräkningarna.</div>
+
+  <script>
+    // ======== Exakt decimalhantering med strängar (ingen avrundning) ========
+    // Vi håller värdet som en sträng i decimalform (punkt som decimaltecken internt)
+    let valueStr = '50'; // intern form, t.ex. '0.5', '12', '100.05'
+
+    const fence = document.getElementById('fence');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const calcDisplay = document.getElementById('calculation');
+
+    const COLS = 10; // 10 per rad, som du önskar
+
+    function sv(xStr){ // visning med kommatecken
+      return xStr.replace('.', ',');
+    }
+
+    function normDecimal(str){
+      // Trim, byt eventuellt komma till punkt, ta bort ledande + och onödiga nollor
+      str = String(str).trim().replace(',', '.');
+      if (str === '' || str === '.') return '0';
+      if (str[0] === '+') str = str.slice(1);
+      // Hantera ledande nollor i heltalsdelen
+      let neg = false; // vi förväntar inte negativa här, men stöd ändå
+      if (str[0] === '-') { neg = true; str = str.slice(1); }
+      if (!str.includes('.')) {
+        str = String(BigInt(str || '0')); // normalisera heltal
+      } else {
+        let [a,b] = str.split('.');
+        a = a === '' ? '0' : String(BigInt(a || '0'));
+        // trimma slut-nollor i decimaldel
+        b = b.replace(/0+$/,'');
+        str = b.length ? a + '.' + b : a;
+      }
+      if (neg && str !== '0') str = '-' + str;
+      return str;
+    }
+
+    function shiftDecimal(str, places){
+      // Flytta decimalpunkten places steg (positivt = *10, negativt = /10) utan avrundning
+      str = normDecimal(str);
+      let neg = false; if (str[0] === '-') { neg = true; str = str.slice(1); }
+      let [a,b=''] = str.split('.');
+      let digits = a + b; // bara siffror
+      // Sätt in decimal på ny position
+      let pos = a.length + places;
+      if (pos <= 0) {
+        // behöver lägga till ledande nollor
+        digits = '0'.repeat(1 - pos) + digits;
+        pos = 1;
+      }
+      if (pos >= digits.length) {
+        // behöver lägga till släpande nollor
+        digits = digits + '0'.repeat(pos - digits.length);
+      }
+      const intPart = digits.slice(0, pos) || '0';
+      const fracPart = digits.slice(pos);
+      let out = fracPart ? (intPart + '.' + fracPart) : intPart;
+      out = normDecimal(out);
+      if (neg && out !== '0') out = '-' + out;
+      return out;
+    }
+
+    function toNumber(str){ // endast för grafikberäkningar
+      return Number(str);
+    }
+
+    // ======== Ritning på canvas (snabb för tusentals bollar) ========
+    function resizeCanvas(){
+      const r = fence.getBoundingClientRect();
+      // Matcha CSS-pixelstorlek
+      canvas.width = Math.floor(r.width);
+      canvas.height = Math.floor(r.height);
+    }
+
+    function drawBalls(strVal){
+      resizeCanvas();
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0,0,W,H);
+
+      const val = toNumber(strVal);
+      const nFull = Math.floor(val + 1e-12);
+      const frac = Math.max(0, Math.min(1, val - nFull));
+      const hasPartial = frac > 0 && val >= 0; // inga negativa fall här
+
+      const count = nFull + (hasPartial ? 1 : 0);
+
+      // Ge 10 per rad, dynamisk cellstorlek så allt får plats på höjden.
+      const cols = COLS;
+      const rows = Math.max(1, Math.ceil(count / cols));
+
+      // Dynamiskt gap (i pixlar) beroende på storlek
+      const baseGap = 4; // px
+      const totGapX = baseGap * (cols - 1) + 2; // lite marginal
+      const totGapY = baseGap * (rows - 1) + 2;
+
+      const cellW = (W - totGapX) / cols;
+      const cellH = (H - totGapY) / rows;
+      const cell = Math.max(2, Math.min(cellW, cellH));
+      const r = Math.max(1, (cell * 0.5) - 1);
+
+      const gapX = baseGap, gapY = baseGap;
+
+      // Förbered färger
+      const colorBall = '#f39c12';
+      const colorRest = '#e6e6e6';
+      const colorStroke = '#cccccc';
+
+      // Rita alla heltalsbollar
+      for (let i = 0; i < nFull; i++) {
+        const c = i % cols;
+        const rIndex = (i / cols) | 0;
+        const cx = Math.round(c * (cell + gapX) + r + 1);
+        const cy = Math.round(rIndex * (cell + gapY) + r + 1);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = colorBall;
+        ctx.fill();
+      }
+
+      // Rita fraktionsboll
+      if (hasPartial) {
+        const i = nFull;
+        const c = i % cols;
+        const rIndex = (i / cols) | 0;
+        const cx = Math.round(c * (cell + gapX) + r + 1);
+        const cy = Math.round(rIndex * (cell + gapY) + r + 1);
+
+        // Bakgrund (grå cirkel)
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fillStyle = colorRest;
+        ctx.fill();
+
+        // Orange sektor motsvarande fraktionen
+        const angle = Math.PI * 2 * frac;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + angle, false);
+        ctx.closePath();
+        ctx.fillStyle = colorBall;
+        ctx.fill();
+
+        // Tunn kant
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = colorStroke;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    // ======== UI-uppdateringar ========
+    function updateCalculation(before, op, after){
+      calcDisplay.textContent = `${sv(before)} ${op} 10 = ${sv(after)}`;
+    }
+
+    function multiplyByTen(){
+      const before = valueStr;
+      valueStr = shiftDecimal(valueStr, +1); // *10 exakt
+      drawBalls(valueStr);
+      updateCalculation(before, '×', valueStr);
+    }
+
+    function divideByTen(){
+      const before = valueStr;
+      valueStr = shiftDecimal(valueStr, -1); // /10 exakt
+      drawBalls(valueStr);
+      updateCalculation(before, '÷', valueStr);
+    }
+
+    function setStart(){
+      const raw = document.getElementById('startValue').value;
+      // Tillåt komma in och normalisera
+      valueStr = normDecimal(raw === '' ? '50' : raw);
+      drawBalls(valueStr);
+      calcDisplay.textContent = `Startvärde: ${sv(valueStr)}`;
+    }
+
+    // Skala vid fönsterstorleksändring
+    window.addEventListener('resize', ()=> drawBalls(valueStr));
+
+    // Initiera
+    setStart();
+  </script>
+</body>
+</html>

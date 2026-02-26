@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klockan - Övning</title>
+    <style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    color: white;
+    font-size: 2em;
+    margin-bottom: 8px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.compact-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9em;
+}
+
+.streak-compact {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 0.85em;
+}
+
+.mode-compact {
+    background: #4CAF50;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: bold;
+}
+
+.mode-indicator.advanced {
+    background: #FF6B35;
+}
+
+.tutorial-btn-compact {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tutorial-btn-compact:hover {
+    background: #1976D2;
+    transform: translateY(-1px);
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: 10px;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.clock-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    max-width: 300px;
+    justify-self: end;
+}
+
+#clockSvg {
+    width: 100%;
+    height: 100%;
+    max-width: 400px;
+    max-height: 400px;
+}
+
+.clock-numbers .number {
+    font-size: 24px;
+    font-weight: bold;
+    fill: #333;
+}
+
+.minute-markers line {
+    stroke: #ccc;
+    stroke-width: 1;
+}
+
+.minute-markers .five-minute {
+    stroke: #666;
+    stroke-width: 2;
+}
+
+.hour-markers line {
+    stroke: #333;
+    stroke-width: 3;
+}
+
+.input-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    justify-self: center;
+}
+
+.input-section h2 {
+    color: #333;
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.instruction {
+    font-size: 1.3em;
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.time-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.time-input input {
+    width: 96px;
+    height: 60px;
+    font-size: 1.4em;
+    text-align: center;
+    border: 3px solid #ddd;
+    border-radius: 15px;
+    background: white;
+    transition: all 0.3s ease;
+}
+
+.time-input input:focus {
+    outline: none;
+    border-color: #2196F3;
+    box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+}
+
+.time-input input.correct {
+    border-color: #4CAF50;
+    background-color: #E8F5E8;
+}
+
+.time-input input.incorrect {
+    border-color: #f44336;
+    background-color: #FFEBEE;
+}
+
+.separator {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+.feedback {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.feedback.correct {
+    background: #E8F5E8;
+    color: #2E7D32;
+    border: 2px solid #4CAF50;
+}
+
+.feedback.incorrect {
+    background: #FFEBEE;
+    color: #C62828;
+    border: 2px solid #f44336;
+}
+
+.feedback.partial {
+    background: #FFF3E0;
+    color: #F57C00;
+    border: 2px solid #FF9800;
+}
+
+.buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 25px;
+}
+
+.check-btn, .new-time-btn {
+    padding: 15px 30px;
+    font-size: 1.2em;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.check-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.check-btn:hover {
+    background: #388E3C;
+    transform: translateY(-2px);
+}
+
+.new-time-btn {
+    background: #FF9800;
+    color: white;
+}
+
+.new-time-btn:hover {
+    background: #F57C00;
+    transform: translateY(-2px);
+}
+
+/* Numpad Styles */
+.numpad-section {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    justify-self: start;
+}
+
+.numpad-section h3 {
+    color: #333;
+    font-size: 1.4em;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    max-width: 240px;
+}
+
+.numpad-btn {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5em;
+    font-weight: bold;
+    border: none;
+    border-radius: 15px;
+    background: #f8f9fa;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.numpad-btn:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.numpad-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.backspace-btn {
+    background: #FF6B35 !important;
+    color: white !important;
+}
+
+.backspace-btn:hover {
+    background: #E55A2B !important;
+}
+
+.clear-btn {
+    background: #6C757D !important;
+    color: white !important;
+}
+
+.clear-btn:hover {
+    background: #5A6268 !important;
+}
+
+/* Difficulty Selector */
+.difficulty-selector {
+    position: relative;
+    display: inline-block;
+}
+
+.difficulty-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    padding: 8px 0;
+    min-width: 180px;
+    display: none;
+    z-index: 1000;
+}
+
+.difficulty-selector:hover .difficulty-menu {
+    display: block;
+}
+
+.difficulty-option {
+    display: flex;
+    align-items: center;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    gap: 8px;
+}
+
+.difficulty-option:hover {
+    background: #f5f5f5;
+}
+
+.difficulty-option.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.difficulty-option.locked:hover {
+    background: transparent;
+}
+
+.difficulty-name {
+    font-weight: bold;
+    color: #333;
+    font-size: 0.9em;
+}
+
+.difficulty-desc {
+    font-size: 0.75em;
+    color: #666;
+    margin-left: auto;
+}
+
+.lock-icon {
+    font-size: 0.8em;
+}
+
+/* Feedback under clock */
+.clock-container .feedback {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.85em;
+    line-height: 1.3;
+    text-align: center;
+    max-width: 280px;
+    min-height: 20px;
+}
+
+/* Tutorial Styles */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.tutorial-content {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    max-width: 700px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.tutorial-content h2 {
+    color: #333;
+    font-size: 1.8em;
+    margin-bottom: 15px;
+}
+
+.tutorial-step {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin: 15px 0;
+    min-height: 200px;
+}
+
+.tutorial-step h3 {
+    color: #2196F3;
+    font-size: 1.5em;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.tutorial-clock {
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 15px;
+    flex-shrink: 0;
+}
+
+.tutorial-text {
+    flex: 1;
+    text-align: left;
+}
+
+.tutorial-text p {
+    font-size: 1em;
+    line-height: 1.5;
+    color: #666;
+    margin: 10px 0;
+}
+
+.tutorial-text strong {
+    color: #e74c3c;
+    font-size: 1.1em;
+}
+
+.tutorial-text ul {
+    text-align: left;
+    margin: 15px 0;
+}
+
+.tutorial-text li {
+    margin: 8px 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.tutorial-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.nav-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.nav-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.nav-btn:not(:disabled):hover {
+    background: #1976D2;
+}
+
+#stepIndicator {
+    font-weight: bold;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.close-tutorial {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+}
+
+.close-tutorial:hover {
+    background: #388E3C;
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        justify-items: center;
+    }
+    
+    .clock-container {
+        justify-self: center;
+        max-width: 350px;
+    }
+    
+    .input-section {
+        max-width: 400px;
+        width: 90vw;
+    }
+    
+    .numpad-section {
+        justify-self: center;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .game-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .time-input input {
+        width: 60px;
+        height: 50px;
+        font-size: 1.5em;
+    }
+    
+    .buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .tutorial-content {
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .clock-container {
+        max-width: 300px;
+        width: 85vw;
+    }
+    
+    .input-section {
+        max-width: 350px;
+        width: 85vw;
+        padding: 25px;
+    }
+    
+    .numpad-section {
+        max-width: 280px;
+        width: 85vw;
+        padding: 20px;
+    }
+    
+    .numpad {
+        max-width: 200px;
+    }
+    
+    .numpad-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.3em;
+    }
+}
+
+/* Clock hand animations */
+#hourHand, #minuteHand {
+    transition: transform 0.5s ease-in-out;
+    transform-origin: 200px 200px;
+}
+
+/* Advanced mode styling */
+.advanced-mode #hourHand,
+.advanced-mode #minuteHand {
+    stroke: #333 !important;
+}
+</style>
+</head>
+<body>
+    <!-- Tutorial Popup -->
+    <div id="tutorialOverlay" class="tutorial-overlay">
+        <div class="tutorial-content">
+            <h2>Lär dig läsa klockan!</h2>
+            <div id="tutorialStep" class="tutorial-step">
+                <div class="step-content">
+                    <h3>Steg 1: Titta på timvisaren</h3>
+                    <p>Den korta, blå visaren visar vilken timme det är. Om den pekar mellan två siffror, så är det den mindre siffran som gäller.</p>
+                    <div class="tutorial-clock">
+                        <svg width="200" height="200" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="90" fill="white" stroke="#333" stroke-width="2"/>
+                            <!-- Clock numbers -->
+                            <g class="clock-numbers">
+                                <text x="100" y="25" text-anchor="middle" dy="0.3em">12</text>
+                                <text x="160" y="105" text-anchor="middle" dy="0.3em">3</text>
+                                <text x="100" y="185" text-anchor="middle" dy="0.3em">6</text>
+                                <text x="40" y="105" text-anchor="middle" dy="0.3em">9</text>
+                            </g>
+                            <!-- Hour hand example -->
+                            <line id="tutorialHourHand" x1="100" y1="100" x2="100" y2="60" stroke="blue" stroke-width="4" stroke-linecap="round"/>
+                            <circle cx="100" cy="100" r="5" fill="#333"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="tutorial-nav">
+                <button id="prevStep" class="nav-btn" disabled>Föregående</button>
+                <span id="stepIndicator">1 av 4</span>
+                <button id="nextStep" class="nav-btn">Nästa</button>
+            </div>
+            <button id="closeTutorial" class="close-tutorial">Stäng och börja öva!</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="compact-header">
+            <h1>Träna på att läsa klockan</h1>
+            <div class="header-controls">
+                <span class="streak-compact">Rätt i rad: <span id="streak">0</span></span>
+                <div class="difficulty-selector">
+                    <span id="modeIndicator" class="mode-compact">Grundläggande</span>
+                    <div class="difficulty-menu" id="difficultyMenu">
+                        <div class="difficulty-option" data-level="0">
+                            <span class="difficulty-name">Grundläggande</span>
+                            <span class="difficulty-desc">5-minutersintervall</span>
+                        </div>
+                        <div class="difficulty-option" data-level="1">
+                            <span class="lock-icon" id="hardLock">🔒</span>
+                            <span class="difficulty-name">Svårt</span>
+                            <span class="difficulty-desc">Vilken minut som helst</span>
+                        </div>
+                        <div class="difficulty-option" data-level="2">
+                            <span class="lock-icon" id="expertLock">🔒</span>
+                            <span class="difficulty-name">Expert</span>
+                            <span class="difficulty-desc">Inga siffror</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="showTutorial" class="tutorial-btn-compact">Guide</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="clock-container">
+                <svg id="clockSvg" width="400" height="400" viewBox="0 0 400 400">
+                    <!-- Clock face -->
+                    <circle cx="200" cy="200" r="180" fill="white" stroke="#333" stroke-width="4"/>
+                    
+                    <!-- Minute markers -->
+                    <g id="minuteMarkers" class="minute-markers"></g>
+                    
+                    <!-- Hour markers -->
+                    <g id="hourMarkers" class="hour-markers"></g>
+                    
+                    <!-- Numbers -->
+                    <g class="clock-numbers">
+                        <text x="200" y="40" text-anchor="middle" dy="0.3em" class="number">12</text>
+                        <text x="287" y="66" text-anchor="middle" dy="0.3em" class="number">1</text>
+                        <text x="334" y="134" text-anchor="middle" dy="0.3em" class="number">2</text>
+                        <text x="360" y="200" text-anchor="middle" dy="0.3em" class="number">3</text>
+                        <text x="334" y="266" text-anchor="middle" dy="0.3em" class="number">4</text>
+                        <text x="287" y="334" text-anchor="middle" dy="0.3em" class="number">5</text>
+                        <text x="200" y="360" text-anchor="middle" dy="0.3em" class="number">6</text>
+                        <text x="113" y="334" text-anchor="middle" dy="0.3em" class="number">7</text>
+                        <text x="66" y="266" text-anchor="middle" dy="0.3em" class="number">8</text>
+                        <text x="40" y="200" text-anchor="middle" dy="0.3em" class="number">9</text>
+                        <text x="66" y="134" text-anchor="middle" dy="0.3em" class="number">10</text>
+                        <text x="113" y="66" text-anchor="middle" dy="0.3em" class="number">11</text>
+                    </g>
+                    
+                    <!-- Clock hands -->
+                    <line id="hourHand" x1="200" y1="200" x2="200" y2="108" stroke="blue" stroke-width="6" stroke-linecap="round"/>
+                    <line id="minuteHand" x1="200" y1="200" x2="200" y2="68" stroke="red" stroke-width="4" stroke-linecap="round"/>
+                    
+                    <!-- Center dot -->
+                    <circle cx="200" cy="200" r="8" fill="#333"/>
+                </svg>
+                
+                <!-- Feedback under clock -->
+                <div class="feedback" id="feedback"></div>
+            </div>
+
+            <div class="input-section">
+                <h2>Vad är klockan?</h2>
+                <p class="instruction">Skriv in tiden som visas på klockan:</p>
+                
+                <div class="time-input">
+                    <input type="number" id="hourInput" min="0" max="23" maxlength="2" placeholder="Timme">
+                    <span class="separator">:</span>
+                    <input type="number" id="minuteInput" min="0" max="59" maxlength="2" placeholder="Minut">
+                </div>
+                
+                <div class="buttons">
+                    <button id="checkAnswer" class="check-btn">Kontrollera svaret</button>
+                    <button id="newTime" class="new-time-btn">Ny tid</button>
+                </div>
+            </div>
+
+            <div class="numpad-section">
+                <h3>Nummertangentbord</h3>
+                <div class="numpad">
+                    <button class="numpad-btn" data-number="1">1</button>
+                    <button class="numpad-btn" data-number="2">2</button>
+                    <button class="numpad-btn" data-number="3">3</button>
+                    <button class="numpad-btn" data-number="4">4</button>
+                    <button class="numpad-btn" data-number="5">5</button>
+                    <button class="numpad-btn" data-number="6">6</button>
+                    <button class="numpad-btn" data-number="7">7</button>
+                    <button class="numpad-btn" data-number="8">8</button>
+                    <button class="numpad-btn" data-number="9">9</button>
+                    <button class="numpad-btn backspace-btn" data-action="backspace">←</button>
+                    <button class="numpad-btn" data-number="0">0</button>
+                    <button class="numpad-btn clear-btn" data-action="clear">C</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+class ClockTrainer {
+    constructor() {
+        this.currentHour = 1;
+        this.currentMinute = 0;
+        this.streak = 0;
+        this.consecutiveErrors = 0;
+        
+        // Difficulty levels: 0=Normal, 1=Hard, 2=Expert
+        this.difficultyLevel = 0;
+        this.difficultyNames = ['Grundläggande', 'Svårt', 'Expert'];
+        
+        this.tutorialStep = 1;
+        this.maxTutorialSteps = 4;
+        
+        this.initializeElements();
+        this.setupEventListeners();
+        this.createClockMarkers();
+        this.updateDifficultyDisplay();
+        this.updateDifficultyLocks();
+        this.generateNewTime();
+        this.showTutorial();
+    }
+
+    initializeElements() {
+        this.hourHand = document.getElementById('hourHand');
+        this.minuteHand = document.getElementById('minuteHand');
+        this.hourInput = document.getElementById('hourInput');
+        this.minuteInput = document.getElementById('minuteInput');
+        this.feedback = document.getElementById('feedback');
+        this.streakDisplay = document.getElementById('streak');
+        this.modeIndicator = document.getElementById('modeIndicator');
+        this.checkBtn = document.getElementById('checkAnswer');
+        this.newTimeBtn = document.getElementById('newTime');
+        
+        // Tutorial elements
+        this.tutorialOverlay = document.getElementById('tutorialOverlay');
+        this.tutorialStep = document.getElementById('tutorialStep');
+        this.stepIndicator = document.getElementById('stepIndicator');
+        this.prevStepBtn = document.getElementById('prevStep');
+        this.nextStepBtn = document.getElementById('nextStep');
+        this.closeTutorialBtn = document.getElementById('closeTutorial');
+        this.showTutorialBtn = document.getElementById('showTutorial');
+        
+        // Numpad elements
+        this.numpadBtns = document.querySelectorAll('.numpad-btn');
+        
+        // Track which input is currently active for numpad
+        this.currentActiveInput = this.hourInput;
+        
+        // Difficulty selector elements
+        this.difficultyOptions = document.querySelectorAll('.difficulty-option');
+        this.hardLock = document.getElementById('hardLock');
+        this.expertLock = document.getElementById('expertLock');
+        
+        // Track unlocked levels
+        this.unlockedLevels = [true, false, false]; // Only basic unlocked initially
+    }
+
+    setupEventListeners() {
+        this.checkBtn.addEventListener('click', () => this.checkAnswer());
+        this.newTimeBtn.addEventListener('click', () => this.generateNewTime());
+        
+        // Allow Enter key to check answer
+        [this.hourInput, this.minuteInput].forEach(input => {
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.checkAnswer();
+            });
+            
+            input.addEventListener('input', (e) => {
+                this.handleInputChange(e);
+            });
+        });
+
+        // Tutorial event listeners
+        this.showTutorialBtn.addEventListener('click', () => this.showTutorial());
+        this.closeTutorialBtn.addEventListener('click', () => this.hideTutorial());
+        this.prevStepBtn.addEventListener('click', () => this.previousTutorialStep());
+        this.nextStepBtn.addEventListener('click', () => this.nextTutorialStep());
+        
+        // Close tutorial with ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.tutorialOverlay.style.display !== 'none') {
+                this.hideTutorial();
+            }
+        });
+
+        // Input focus tracking
+        this.hourInput.addEventListener('focus', () => {
+            this.currentActiveInput = this.hourInput;
+        });
+        this.minuteInput.addEventListener('focus', () => {
+            this.currentActiveInput = this.minuteInput;
+        });
+        
+        // Numpad event listeners  
+        this.numpadBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => this.handleNumpadClick(e));
+        });
+        
+        // Difficulty selector event listeners
+        this.difficultyOptions.forEach(option => {
+            option.addEventListener('click', (e) => this.handleDifficultyClick(e));
+        });
+        
+        // Auto-advance when typing in inputs
+        this.hourInput.addEventListener('input', (e) => {
+            if (e.target.value.length === 2) {
+                this.minuteInput.focus();
+                this.minuteInput.select();
+                this.currentActiveInput = this.minuteInput;
+            }
+        });
+    }
+
+    createClockMarkers() {
+        const minuteMarkersGroup = document.getElementById('minuteMarkers');
+        const hourMarkersGroup = document.getElementById('hourMarkers');
+        
+        // Create minute markers
+        for (let i = 0; i < 60; i++) {
+            const angle = (i * 6) - 90; // 6 degrees per minute, offset by 90
+            const isFiveMinute = i % 5 === 0;
+            const length = isFiveMinute ? 20 : 10;
+            const startRadius = 180 - length;
+            const endRadius = 180;
+            
+            const x1 = 200 + Math.cos(angle * Math.PI / 180) * startRadius;
+            const y1 = 200 + Math.sin(angle * Math.PI / 180) * startRadius;
+            const x2 = 200 + Math.cos(angle * Math.PI / 180) * endRadius;
+            const y2 = 200 + Math.sin(angle * Math.PI / 180) * endRadius;
+            
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            marker.setAttribute('x1', x1);
+            marker.setAttribute('y1', y1);
+            marker.setAttribute('x2', x2);
+            marker.setAttribute('y2', y2);
+            
+            if (isFiveMinute) {
+                marker.classList.add('five-minute');
+            }
+            
+            minuteMarkersGroup.appendChild(marker);
+        }
+    }
+
+    generateNewTime() {
+        // Clear inputs and feedback
+        this.hourInput.value = '';
+        this.minuteInput.value = '';
+        this.feedback.textContent = '';
+        this.feedback.className = 'feedback';
+        this.hourInput.className = '';
+        this.minuteInput.className = '';
+        
+        // Generate time based on difficulty level (always 1-12 for analog display)
+        this.currentHour = Math.floor(Math.random() * 12) + 1;
+        
+        if (this.difficultyLevel === 0) {
+            // Normal mode: minutes divisible by 5
+            const minuteOptions = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+            this.currentMinute = minuteOptions[Math.floor(Math.random() * minuteOptions.length)];
+        } else {
+            // Hard and Expert modes: any minute
+            this.currentMinute = Math.floor(Math.random() * 60);
+        }
+        
+        this.drawClock();
+        
+        // Auto-focus hour input and select all text
+        setTimeout(() => {
+            this.hourInput.focus();
+            this.hourInput.select();
+        }, 100);
+    }
+
+    drawClock() {
+        // Calculate angles for hands
+        const minuteAngle = (this.currentMinute * 6) - 90; // 6 degrees per minute
+        const hourAngle = ((this.currentHour % 12) * 30) + (this.currentMinute * 0.5) - 90; // 30 degrees per hour + minute adjustment
+        
+        // Set hand positions (15% longer)
+        const hourLength = 92;  // Shorter for hour hand (was 80, now 92)
+        const minuteLength = 138; // Longer for minute hand (was 120, now 138)
+        
+        const hourX = 200 + Math.cos(hourAngle * Math.PI / 180) * hourLength;
+        const hourY = 200 + Math.sin(hourAngle * Math.PI / 180) * hourLength;
+        const minuteX = 200 + Math.cos(minuteAngle * Math.PI / 180) * minuteLength;
+        const minuteY = 200 + Math.sin(minuteAngle * Math.PI / 180) * minuteLength;
+        
+        this.hourHand.setAttribute('x2', hourX);
+        this.hourHand.setAttribute('y2', hourY);
+        this.minuteHand.setAttribute('x2', minuteX);
+        this.minuteHand.setAttribute('y2', minuteY);
+        
+        // Update hand colors and numbers visibility based on difficulty
+        if (this.difficultyLevel === 2) {
+            // Expert mode: hide numbers and use neutral colors
+            this.hourHand.setAttribute('stroke', '#333');
+            this.minuteHand.setAttribute('stroke', '#333');
+            const numbers = document.querySelectorAll('.clock-numbers .number');
+            numbers.forEach(num => num.style.display = 'none');
+        } else {
+            // Normal and Hard modes: show numbers and colored hands
+            this.hourHand.setAttribute('stroke', 'blue');
+            this.minuteHand.setAttribute('stroke', 'red');
+            const numbers = document.querySelectorAll('.clock-numbers .number');
+            numbers.forEach(num => num.style.display = 'block');
+        }
+    }
+
+    handleInputChange(e) {
+        const input = e.target;
+        const value = input.value;
+        
+        // Limit to 2 digits and auto-advance
+        if (value.length >= 2) {
+            if (input === this.hourInput) {
+                this.minuteInput.focus();
+            }
+        }
+        
+        // Ensure values stay within bounds
+        if (input === this.hourInput && parseInt(value) > 23) {
+            input.value = '23';
+        } else if (input === this.minuteInput && parseInt(value) > 59) {
+            input.value = '59';
+        }
+    }
+    
+    checkAnswer() {
+        const userHour = parseInt(this.hourInput.value);
+        const userMinute = parseInt(this.minuteInput.value);
+        
+        if (isNaN(userHour) || isNaN(userMinute)) {
+            this.feedback.textContent = 'Fyll i både timme och minut!';
+            this.feedback.className = 'feedback incorrect';
+            return;
+        }
+        
+        // Convert 24-hour to 12-hour for comparison
+        const userHour12 = userHour === 0 ? 12 : (userHour > 12 ? userHour - 12 : userHour);
+        
+        const hourCorrect = userHour12 === this.currentHour;
+        const minuteCorrect = userMinute === this.currentMinute;
+        
+        // Visual feedback for inputs
+        this.hourInput.className = hourCorrect ? 'correct' : 'incorrect';
+        this.minuteInput.className = minuteCorrect ? 'correct' : 'incorrect';
+        
+        if (hourCorrect && minuteCorrect) {
+            this.handleCorrectAnswer(userHour, userMinute);
+        } else {
+            this.handleIncorrectAnswer(hourCorrect, minuteCorrect, userHour);
+        }
+    }
+
+    handleCorrectAnswer(userHour, userMinute) {
+        this.streak++;
+        this.consecutiveErrors = 0;
+        this.streakDisplay.textContent = this.streak;
+        
+        // Format what user answered
+        const userAnswer = `${userHour.toString().padStart(2, '0')}:${userMinute.toString().padStart(2, '0')}`;
+        
+        // Calculate the alternative based on the actual clock time
+        let alternative;
+        if (this.currentHour === userHour) {
+            // User gave the actual hour, show 24-hour alternative
+            if (this.currentHour === 0) {
+                alternative = `${userAnswer} (eller 12:${userMinute.toString().padStart(2, '0')})`;
+            } else if (this.currentHour <= 12) {
+                let alt24 = this.currentHour + 12;
+                if (alt24 === 24) alt24 = 12; // Handle edge case
+                alternative = `${userAnswer} (eller ${alt24.toString().padStart(2, '0')}:${userMinute.toString().padStart(2, '0')})`;
+            } else {
+                // currentHour > 12, user gave 24-hour format, show 12-hour alternative
+                let alt12 = this.currentHour - 12;
+                alternative = `${userAnswer} (eller ${alt12.toString().padStart(2, '0')}:${userMinute.toString().padStart(2, '0')})`;
+            }
+        } else {
+            // User gave alternative format, show the actual hour
+            let actualTime = `${this.currentHour.toString().padStart(2, '0')}:${this.currentMinute.toString().padStart(2, '0')}`;
+            alternative = `${userAnswer} (eller ${actualTime})`;
+        }
+        
+        // Show what user answered plus alternative
+        this.feedback.textContent = `🎉 Helt rätt! Klockan är ${alternative}`;
+        this.feedback.className = 'feedback correct';
+        
+        // Check for difficulty promotion
+        // Promote if streak is divisible by 5 and we haven't maxed out difficulty
+        if (this.streak % 5 === 0 && this.difficultyLevel < 2) {
+            this.promoteDifficulty();
+            return; // Don't auto-generate new time, promoteDifficulty handles it
+        }
+        
+        // Auto-generate new time after 2 seconds
+        setTimeout(() => this.generateNewTime(), 2000);
+    }
+
+    handleIncorrectAnswer(hourCorrect, minuteCorrect, userHour) {
+        this.streak = 0;
+        this.consecutiveErrors++;
+        this.streakDisplay.textContent = this.streak;
+        
+        // Demote difficulty after 2 consecutive errors
+        if (this.consecutiveErrors >= 2 && this.difficultyLevel > 0) {
+            this.demoteDifficulty();
+            this.consecutiveErrors = 0;
+        }
+        
+        // Provide educational feedback without showing the answer
+        let feedbackText = '';
+        
+        // Get hand colors based on difficulty level
+        const hourHandColor = this.difficultyLevel === 2 ? 'grå' : 'blå';
+        const minuteHandColor = this.difficultyLevel === 2 ? 'grå' : 'röd';
+        
+        if (!hourCorrect && !minuteCorrect) {
+            // Both wrong - give hour tips
+            feedbackText = `❌ Både timme och minut behöver ses över. 💡 Tips för timmar: Den korta ${hourHandColor} visaren visar timmen. Om den pekar mellan två siffror, välj den mindre siffran!`;
+        } else if (hourCorrect && !minuteCorrect) {
+            // Hour right, minute wrong - give minute tips
+            feedbackText = `✅ Timmen är rätt! ❌ Men minuten behöver justeras. 💡 Tips: Varje siffra på klockan = 5 minuter. Räkna: siffra × 5. Till exempel: visaren på 3 = 3 × 5 = 15 minuter.`;
+        } else if (!hourCorrect && minuteCorrect) {
+            // Minute right, hour wrong - give hour tips again
+            feedbackText = `✅ Minuten är rätt! ❌ Men timmen behöver justeras. 💡 Tips: Titta på den korta ${hourHandColor} visaren. Om den är mellan två siffror, välj den mindre!`;
+        }
+        
+        this.feedback.textContent = feedbackText;
+        this.feedback.className = hourCorrect || minuteCorrect ? 'feedback partial' : 'feedback incorrect';
+    }
+
+    handleNumpadClick(e) {
+        const btn = e.target;
+        const number = btn.dataset.number;
+        const action = btn.dataset.action;
+        
+        // Use the tracked active input
+        let activeInput = this.currentActiveInput || this.hourInput;
+        let autoAdvanced = false;
+        
+        if (number !== undefined) {
+            // Add number to active input
+            const currentValue = activeInput.value;
+            
+            if (currentValue.length < 2) {
+                activeInput.value = currentValue + number;
+                
+                // Auto-advance to minute input if hour is complete
+                if (activeInput === this.hourInput && activeInput.value.length === 2) {
+                    this.minuteInput.focus();
+                    this.minuteInput.select();
+                    this.currentActiveInput = this.minuteInput;
+                    autoAdvanced = true;
+                }
+                
+                // Trigger validation
+                this.handleInputChange({ target: activeInput });
+            }
+        } else if (action === 'backspace') {
+            // Remove last character
+            activeInput.value = activeInput.value.slice(0, -1);
+            this.handleInputChange({ target: activeInput });
+        } else if (action === 'clear') {
+            // Clear both inputs and focus hour
+            this.hourInput.value = '';
+            this.minuteInput.value = '';
+            this.hourInput.focus();
+            this.currentActiveInput = this.hourInput;
+            autoAdvanced = true; // Don't refocus since we're manually focusing
+            
+            // Clear visual feedback
+            this.hourInput.className = '';
+            this.minuteInput.className = '';
+        }
+        
+        // Keep focus on the correct input only if we didn't auto-advance
+        if (!autoAdvanced) {
+            activeInput.focus();
+        }
+    }
+    
+    handleDifficultyClick(e) {
+        const option = e.target.closest('.difficulty-option');
+        if (!option) return;
+        
+        const level = parseInt(option.dataset.level);
+        
+        // Check if level is unlocked
+        if (!this.unlockedLevels[level]) {
+            // Show message about needing to unlock
+            this.feedback.textContent = '🔒 Du måste klara 5 rätt i rad på föregående nivå för att låsa upp denna nivå!';
+            this.feedback.className = 'feedback incorrect';
+            return;
+        }
+        
+        // Switch to selected difficulty
+        this.difficultyLevel = level;
+        this.updateDifficultyDisplay();
+        this.generateNewTime();
+        
+        this.feedback.textContent = '🔄 Nivå ändrad! Ny tid genererad.';
+        this.feedback.className = 'feedback correct';
+    }
+    
+    updateDifficultyLocks() {
+        // Update lock icons based on unlocked levels
+        if (this.unlockedLevels[1]) {
+            this.hardLock.textContent = '✅';
+        } else {
+            this.hardLock.textContent = '🔒';
+        }
+        
+        if (this.unlockedLevels[2]) {
+            this.expertLock.textContent = '✅';
+        } else {
+            this.expertLock.textContent = '🔒';
+        }
+        
+        // Update option classes
+        this.difficultyOptions.forEach((option, index) => {
+            if (this.unlockedLevels[index]) {
+                option.classList.remove('locked');
+            } else {
+                option.classList.add('locked');
+            }
+        });
+    }
+
+    promoteDifficulty() {
+        this.difficultyLevel++;
+        this.unlockedLevels[this.difficultyLevel] = true;
+        this.updateDifficultyDisplay();
+        this.updateDifficultyLocks();
+        
+        let unlockMessage = '';
+        if (this.difficultyLevel === 1) {
+            unlockMessage = '🎯 Fantastiskt! Du har nått svårt läge! Nu kan minutvisaren peka på vilken minut som helst.';
+        } else if (this.difficultyLevel === 2) {
+            unlockMessage = '🏆 Otroligt! Expertläge aktiverat! Siffrorna är nu dolda - använd bara visarnas positioner!';
+        }
+        
+        this.feedback.textContent = unlockMessage;
+        this.feedback.className = 'feedback correct';
+        
+        // Keep unlock message visible longer (5 seconds)
+        setTimeout(() => {
+            this.generateNewTime();
+        }, 5000);
+    }
+
+    demoteDifficulty() {
+        this.difficultyLevel--;
+        this.updateDifficultyDisplay();
+        
+        if (this.difficultyLevel === 1) {
+            this.feedback.textContent = '📚 Tillbaka till svårt läge. Du kan jobba dig upp igen genom att svara rätt 5 gånger i rad!';
+        } else if (this.difficultyLevel === 0) {
+            this.feedback.textContent = '📚 Tillbaka till grundläggande läge. Träna mer så kommer du upp igen!';
+        }
+        this.feedback.className = 'feedback partial';
+    }
+
+    updateDifficultyDisplay() {
+        this.modeIndicator.textContent = this.difficultyNames[this.difficultyLevel];
+        if (this.difficultyLevel >= 1) {
+            this.modeIndicator.classList.add('advanced');
+        } else {
+            this.modeIndicator.classList.remove('advanced');
+        }
+    }
+
+    // Helper method to create tutorial clock SVG
+    createTutorialClockSVG(hour, minute, showHour = true, showMinute = true) {
+        const minuteAngle = (minute * 6) - 90;
+        const hourAngle = ((hour % 12) * 30) + (minute * 0.5) - 90;
+        
+        // Scaled down lengths for tutorial (50% of main clock)
+        const hourLength = 46;
+        const minuteLength = 69;
+        
+        const hourX = 100 + Math.cos(hourAngle * Math.PI / 180) * hourLength;
+        const hourY = 100 + Math.sin(hourAngle * Math.PI / 180) * hourLength;
+        const minuteX = 100 + Math.cos(minuteAngle * Math.PI / 180) * minuteLength;
+        const minuteY = 100 + Math.sin(minuteAngle * Math.PI / 180) * minuteLength;
+        
+        let handsHTML = '';
+        if (showHour) {
+            handsHTML += `<line x1="100" y1="100" x2="${hourX}" y2="${hourY}" stroke="blue" stroke-width="3" stroke-linecap="round"/>`;
+        }
+        if (showMinute) {
+            handsHTML += `<line x1="100" y1="100" x2="${minuteX}" y2="${minuteY}" stroke="red" stroke-width="2" stroke-linecap="round"/>`;
+        }
+        
+        return `
+            <svg width="200" height="200" viewBox="0 0 200 200">
+                <circle cx="100" cy="100" r="90" fill="white" stroke="#333" stroke-width="2"/>
+                <!-- Minute markers -->
+                <g class="minute-markers">
+                    ${Array.from({length: 60}, (_, i) => {
+                        const angle = (i * 6) - 90;
+                        const isFiveMinute = i % 5 === 0;
+                        const length = isFiveMinute ? 10 : 5;
+                        const startRadius = 90 - length;
+                        const x1 = 100 + Math.cos(angle * Math.PI / 180) * startRadius;
+                        const y1 = 100 + Math.sin(angle * Math.PI / 180) * startRadius;
+                        const x2 = 100 + Math.cos(angle * Math.PI / 180) * 90;
+                        const y2 = 100 + Math.sin(angle * Math.PI / 180) * 90;
+                        const className = isFiveMinute ? 'five-minute' : '';
+                        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${className}"/>`;
+                    }).join('')}
+                </g>
+                <!-- Numbers -->
+                <g class="clock-numbers">
+                    <text x="100" y="20" text-anchor="middle" dy="0.3em" class="number">12</text>
+                    <text x="143" y="33" text-anchor="middle" dy="0.3em" class="number">1</text>
+                    <text x="167" y="67" text-anchor="middle" dy="0.3em" class="number">2</text>
+                    <text x="180" y="100" text-anchor="middle" dy="0.3em" class="number">3</text>
+                    <text x="167" y="133" text-anchor="middle" dy="0.3em" class="number">4</text>
+                    <text x="143" y="167" text-anchor="middle" dy="0.3em" class="number">5</text>
+                    <text x="100" y="180" text-anchor="middle" dy="0.3em" class="number">6</text>
+                    <text x="57" y="167" text-anchor="middle" dy="0.3em" class="number">7</text>
+                    <text x="33" y="133" text-anchor="middle" dy="0.3em" class="number">8</text>
+                    <text x="20" y="100" text-anchor="middle" dy="0.3em" class="number">9</text>
+                    <text x="33" y="67" text-anchor="middle" dy="0.3em" class="number">10</text>
+                    <text x="57" y="33" text-anchor="middle" dy="0.3em" class="number">11</text>
+                </g>
+                ${handsHTML}
+                <circle cx="100" cy="100" r="4" fill="#333"/>
+            </svg>
+        `;
+    }
+
+    // Tutorial methods
+    showTutorial() {
+        this.currentTutorialStep = 1;
+        this.tutorialOverlay.style.display = 'flex';
+        this.updateTutorialStep();
+    }
+
+    hideTutorial() {
+        this.tutorialOverlay.style.display = 'none';
+    }
+
+    nextTutorialStep() {
+        if (this.currentTutorialStep < this.maxTutorialSteps) {
+            this.currentTutorialStep++;
+            this.updateTutorialStep();
+        }
+    }
+
+    previousTutorialStep() {
+        if (this.currentTutorialStep > 1) {
+            this.currentTutorialStep--;
+            this.updateTutorialStep();
+        }
+    }
+
+    updateTutorialStep() {
+        const steps = [
+            {
+                title: "Steg 1: Titta på timvisaren",
+                content: `
+                    <p>Den korta, blå visaren visar vilken timme det är. Om den pekar mellan två siffror, så är det den mindre siffran som gäller.</p>
+                    <div class="tutorial-clock">
+                        ${this.createTutorialClockSVG(1, 15, true, false)}
+                    </div>
+                    <p><strong>Här pekar timvisaren mellan 1 och 2, så klockan är någonstans mellan 1 och 2.</strong></p>
+                `
+            },
+            {
+                title: "Steg 2: Titta på minutvisaren",
+                content: `
+                    <p>Den långa, röda visaren visar minuterna. Varje siffra på klockan representerar 5 minuter.</p>
+                    <div class="tutorial-clock">
+                        ${this.createTutorialClockSVG(1, 15, false, true)}
+                    </div>
+                    <p><strong>Här pekar minutvisaren på 3, vilket betyder 15 minuter (3 × 5 = 15).</strong></p>
+                `
+            },
+            {
+                title: "Steg 3: Sätt ihop timme och minut",
+                content: `
+                    <p>Nu kombinerar vi båda visarna för att få hela tiden.</p>
+                    <div class="tutorial-clock">
+                        ${this.createTutorialClockSVG(1, 15, true, true)}
+                    </div>
+                    <p><strong>Timvisaren pekar mellan 1 och 2 (så det är 1), minutvisaren pekar på 3 (15 minuter).</strong></p>
+                    <p><strong>Tiden är 1:15 eller 13:15!</strong></p>
+                `
+            },
+            {
+                title: "Steg 4: Viktigt att komma ihåg",
+                content: `
+                    <p><strong>Tips för att läsa klockan:</strong></p>
+                    <ul style="text-align: left; margin: 20px 0;">
+                        <li>🔵 <strong>Blå timvisare:</strong> Kort och tjock - visar timmar</li>
+                        <li>🔴 <strong>Röd minutvisare:</strong> Lång och tunn - visar minuter</li>
+                        <li>📏 <strong>Minuträkning:</strong> Varje siffra = 5 minuter</li>
+                        <li>⏰ <strong>Timmar:</strong> Om visaren är mellan två siffror, välj den mindre</li>
+                    </ul>
+                    <p>I avancerat läge (efter 5 rätt i rad) kan minutvisaren peka på vilken minut som helst, inte bara på 5-minutersintervaller!</p>
+                `
+            }
+        ];
+
+        const step = steps[this.currentTutorialStep - 1];
+        
+        // Create new structure with clock on left and text on right
+        let clockHTML, textHTML;
+        
+        if (step.title.includes("Steg 1")) {
+            clockHTML = this.createTutorialClockSVG(1, 15, true, false);
+            textHTML = `
+                <h3>${step.title}</h3>
+                <p>Den korta, blå visaren visar vilken timme det är. Om den pekar mellan två siffror, så är det den mindre siffran som gäller.</p>
+                <p><strong>Här pekar timvisaren mellan 1 och 2, så klockan är någonstans mellan 1 och 2.</strong></p>
+            `;
+        } else if (step.title.includes("Steg 2")) {
+            clockHTML = this.createTutorialClockSVG(1, 15, false, true);
+            textHTML = `
+                <h3>${step.title}</h3>
+                <p>Den långa, röda visaren visar minuterna. Varje siffra på klockan representerar 5 minuter.</p>
+                <p><strong>Här pekar minutvisaren på 3, vilket betyder 15 minuter (3 × 5 = 15).</strong></p>
+            `;
+        } else if (step.title.includes("Steg 3")) {
+            clockHTML = this.createTutorialClockSVG(1, 15, true, true);
+            textHTML = `
+                <h3>${step.title}</h3>
+                <p>Nu kombinerar vi båda visarna för att få hela tiden.</p>
+                <p><strong>Timvisaren pekar mellan 1 och 2 (så det är 1), minutvisaren pekar på 3 (15 minuter).</strong></p>
+                <p><strong>Tiden är 1:15 eller 13:15!</strong></p>
+            `;
+        } else if (step.title.includes("Steg 4")) {
+            clockHTML = this.createTutorialClockSVG(3, 30, true, true);
+            textHTML = `
+                <h3>${step.title}</h3>
+                <p><strong>Tips för att läsa klockan:</strong></p>
+                <ul>
+                    <li>🔵 <strong>Blå timvisare:</strong> Kort och tjock - visar timmar</li>
+                    <li>🔴 <strong>Röd minutvisare:</strong> Lång och tunn - visar minuter</li>
+                    <li>📏 <strong>Minuträkning:</strong> Varje siffra = 5 minuter</li>
+                    <li>⏰ <strong>Timmar:</strong> Om visaren är mellan två siffror, välj den mindre</li>
+                </ul>
+                <p>I avancerat läge (efter 5 rätt i rad) kan minutvisaren peka på vilken minut som helst, inte bara på 5-minutersintervaller!</p>
+            `;
+        }
+        
+        this.tutorialStep.innerHTML = `
+            <div class="tutorial-clock">
+                ${clockHTML}
+            </div>
+            <div class="tutorial-text">
+                ${textHTML}
+            </div>
+        `;
+
+        this.stepIndicator.textContent = `${this.currentTutorialStep} av ${this.maxTutorialSteps}`;
+        this.prevStepBtn.disabled = this.currentTutorialStep === 1;
+        this.nextStepBtn.disabled = this.currentTutorialStep === this.maxTutorialSteps;
+    }
+}
+
+// Initialize the clock trainer when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new ClockTrainer();
+});
+</script>
+</body>
+</html>

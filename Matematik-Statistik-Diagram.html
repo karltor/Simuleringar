@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Interaktiv Datavisualisering</title>
+  <!-- Länka Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inkludera Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lägg till favicon -->
+  <link rel="icon" href="data:,">
+  <!-- Anpassa Tailwind-inställningar -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4A90E2',
+          },
+        },
+      },
+    }
+  </script>
+</head>
+<body class="bg-gray-100">
+
+<div class="max-w-7xl mx-auto p-4 space-y-6">
+  <div class="bg-white shadow rounded-lg p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center text-primary">Interaktiv Datavisualisering</h1>
+    <div class="mb-4">
+      <input 
+        id="questionInput"
+        placeholder="Ange din fråga (t.ex. 'Vilken är din favoritfärg?')" 
+        class="w-full p-3 border rounded mb-4 text-lg"
+      />
+      <button 
+        id="toggleTableBtn"
+        class="bg-primary hover:bg-blue-700 text-white px-6 py-3 rounded mb-4 w-full md:w-auto"
+      >
+        Dölj datatabell
+      </button>
+    </div>
+
+    <div id="dataTable" class="overflow-x-auto">
+      <table class="w-full border-collapse mb-4">
+        <thead>
+          <tr>
+            <th class="border p-3 bg-gray-200 text-left">Svarsalternativ</th>
+            <th class="border p-3 bg-gray-200 text-left">Frekvens</th>
+            <th class="border p-3 bg-gray-200">Åtgärd</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- Dynamiskt genererade rader kommer att placeras här -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Horisontell container för diagrammen -->
+  <div class="flex overflow-x-auto space-x-6">
+    <!-- Stapeldiagram -->
+    <div class="bg-white shadow rounded-lg p-6 min-w-[300px]">
+      <h2 class="text-xl font-semibold mb-4 text-center">Stapeldiagram</h2>
+      <canvas id="barChart" width="300" height="300"></canvas>
+    </div>
+
+    <!-- Cirkeldiagram -->
+    <div class="bg-white shadow rounded-lg p-6 min-w-[300px]">
+      <h2 class="text-xl font-semibold mb-4 text-center">Cirkeldiagram</h2>
+      <canvas id="pieChart" width="300" height="300"></canvas>
+    </div>
+
+    <!-- Linjediagram -->
+    <div class="bg-white shadow rounded-lg p-6 min-w-[300px]">
+      <h2 class="text-xl font-semibold mb-4 text-center">Linjediagram</h2>
+      <canvas id="lineChart" width="300" height="300"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Initial data
+  let data = [
+    { value: 'Röd', frekvens: 5 },
+    { value: 'Blå', frekvens: 3 },
+    { value: 'Grön', frekvens: 2 }
+  ];
+
+  let isTableExpanded = true;
+
+  const questionInput = document.getElementById('questionInput');
+  const toggleTableBtn = document.getElementById('toggleTableBtn');
+  const dataTable = document.getElementById('dataTable');
+  const tableBody = document.getElementById('tableBody');
+
+  // Funktion för att uppdatera tabellen
+  function updateTable() {
+    tableBody.innerHTML = '';
+    data.forEach((item, index) => {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-gray-100';
+
+      const valueCell = document.createElement('td');
+      valueCell.className = 'border p-3';
+      const valueInput = document.createElement('input');
+      valueInput.type = 'text';
+      valueInput.value = item.value;
+      valueInput.className = 'w-full p-2 border rounded text-center';
+      valueInput.addEventListener('input', (e) => {
+        item.value = e.target.value;
+        updateCharts();
+      });
+      valueCell.appendChild(valueInput);
+      row.appendChild(valueCell);
+
+      const freqCell = document.createElement('td');
+      freqCell.className = 'border p-3';
+      const freqInput = document.createElement('input');
+      freqInput.type = 'number';
+      freqInput.value = item.frekvens;
+      freqInput.min = '0';
+      freqInput.className = 'w-full p-2 border rounded text-center';
+      freqInput.addEventListener('input', (e) => {
+        item.frekvens = Number(e.target.value);
+        updateCharts();
+      });
+      freqCell.appendChild(freqInput);
+      row.appendChild(freqCell);
+
+      const actionCell = document.createElement('td');
+      actionCell.className = 'border p-3 text-center';
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'bg-red-500 hover:bg-red-700 text-white px-4 py-2 rounded';
+      removeBtn.textContent = 'Ta bort';
+      removeBtn.addEventListener('click', () => {
+        data.splice(index, 1);
+        updateTable();
+        updateCharts();
+      });
+      actionCell.appendChild(removeBtn);
+      row.appendChild(actionCell);
+
+      tableBody.appendChild(row);
+    });
+
+    // Lägg till rad för att lägga till nya data
+    const addRow = document.createElement('tr');
+
+    const newValueCell = document.createElement('td');
+    newValueCell.className = 'border p-3';
+    const newValueInput = document.createElement('input');
+    newValueInput.type = 'text';
+    newValueInput.placeholder = 'Nytt alternativ';
+    newValueInput.className = 'w-full p-2 border rounded text-center';
+    newValueCell.appendChild(newValueInput);
+    addRow.appendChild(newValueCell);
+
+    const newFreqCell = document.createElement('td');
+    newFreqCell.className = 'border p-3';
+    const newFreqInput = document.createElement('input');
+    newFreqInput.type = 'number';
+    newFreqInput.placeholder = 'Frekvens';
+    newFreqInput.min = '0';
+    newFreqInput.className = 'w-full p-2 border rounded text-center';
+    newFreqCell.appendChild(newFreqInput);
+    addRow.appendChild(newFreqCell);
+
+    const addActionCell = document.createElement('td');
+    addActionCell.className = 'border p-3 text-center';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'bg-green-500 hover:bg-green-700 text-white px-4 py-2 rounded';
+    addBtn.textContent = 'Lägg till';
+    addBtn.addEventListener('click', () => {
+      if (newValueInput.value && newFreqInput.value) {
+        data.push({
+          value: newValueInput.value,
+          frekvens: Number(newFreqInput.value)
+        });
+        newValueInput.value = '';
+        newFreqInput.value = '';
+        updateTable();
+        updateCharts();
+      }
+    });
+    addActionCell.appendChild(addBtn);
+    addRow.appendChild(addActionCell);
+
+    tableBody.appendChild(addRow);
+  }
+
+  toggleTableBtn.addEventListener('click', () => {
+    isTableExpanded = !isTableExpanded;
+    dataTable.style.display = isTableExpanded ? 'block' : 'none';
+    toggleTableBtn.textContent = isTableExpanded ? 'Dölj datatabell' : 'Visa datatabell';
+  });
+
+  // Funktion för att konvertera färgnamn till hex-koder
+  function getColorCode(colorName) {
+    const colorMap = {
+      'röd': '#FF0000',
+      'blå': '#0000FF',
+      'grön': '#008000',
+      'gul': '#FFFF00',
+      'rosa': '#FFC0CB',
+      'lila': '#800080',
+      'orange': '#FFA500',
+      'svart': '#000000',
+      'vit': '#FFFFFF',
+      'brun': '#A52A2A',
+      'grå': '#808080',
+      'turkos': '#40E0D0',
+      'beige': '#F5F5DC',
+      'cyan': '#00FFFF',
+      'magenta': '#FF00FF',
+      'lime': '#00FF00',
+      'silver': '#C0C0C0',
+      'guld': '#FFD700',
+      'marinblå': '#000080',
+      'olivgrön': '#808000',
+    };
+
+    return colorMap[colorName.toLowerCase()] || '#8884d8';
+  }
+
+  // Generera färger för diagrammen
+  function generateColors() {
+    return data.map((item, index) => getColorCode(item.value));
+  }
+
+  // Initialisera diagram
+  let barChart, pieChart, lineChart;
+
+  function initCharts() {
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    const ctxLine = document.getElementById('lineChart').getContext('2d');
+
+    barChart = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: data.map(item => item.value),
+        datasets: [{
+          label: 'Frekvens',
+          data: data.map(item => item.frekvens),
+          backgroundColor: '#4A90E2'
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    pieChart = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: data.map(item => item.value),
+        datasets: [{
+          data: data.map(item => item.frekvens),
+          backgroundColor: generateColors()
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false
+      }
+    });
+
+    lineChart = new Chart(ctxLine, {
+      type: 'line',
+      data: {
+        labels: data.map(item => item.value),
+        datasets: [{
+          label: 'Frekvens',
+          data: data.map(item => item.frekvens),
+          borderColor: '#4A90E2',
+          fill: false,
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function updateCharts() {
+    const labels = data.map(item => item.value);
+    const frekvenser = data.map(item => item.frekvens);
+    const colors = generateColors();
+
+    // Uppdatera Stapeldiagram
+    barChart.data.labels = labels;
+    barChart.data.datasets[0].data = frekvenser;
+    barChart.update();
+
+    // Uppdatera Cirkeldiagram
+    pieChart.data.labels = labels;
+    pieChart.data.datasets[0].data = frekvenser;
+    pieChart.data.datasets[0].backgroundColor = colors;
+    pieChart.update();
+
+    // Uppdatera Linjediagram
+    lineChart.data.labels = labels;
+    lineChart.data.datasets[0].data = frekvenser;
+    lineChart.update();
+  }
+
+  // Initiera allt
+  updateTable();
+  initCharts();
+</script>
+
+</body>
+</html>

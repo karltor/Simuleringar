@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jeopardy Game</title>
+    <style>
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Splash Screen Styles */
+#splash-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #1e90ff; /* Dodger Blue */
+  color: #fff;
+}
+
+#splash-screen h1 {
+  font-size: 4em;
+  margin-bottom: 40px;
+}
+
+#splash-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 40px;
+}
+
+#splash-screen button {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  cursor: pointer;
+  background-color: #fff;
+  color: #1e90ff;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+#splash-screen button:hover {
+  background-color: #f0f0f0;
+}
+
+#existing-boards {
+  margin-top: 40px;
+  text-align: center;
+}
+
+#existing-boards h2 {
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+#board-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+#board-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #fff;
+  color: #1e90ff;
+  padding: 10px 20px;
+  margin: 10px auto;
+  border-radius: 5px;
+  width: 100%;
+  max-width: 900px;
+  word-wrap: break-word;
+}
+
+#board-list li div {
+  display: flex;
+}
+
+#board-list li button {
+  margin-left: 10px;
+  padding: 5px 15px;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: opacity 0.3s;
+}
+
+#board-list li button:hover {
+  opacity: 0.8;
+}
+
+/* Edit Mode Styles */
+#edit-mode {
+  padding: 40px;
+}
+
+#edit-mode button {
+  padding: 10px 20px;
+  font-size: 1em;
+  margin: 5px;
+  cursor: pointer;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+#edit-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-gap: 10px;
+  margin-top: 20px;
+}
+
+#edit-grid input {
+  border: 1px solid #ccc;
+  padding: 15px;
+  text-align: center;
+  font-size: 1em;
+  border-radius: 5px;
+}
+
+.incomplete {
+  border: 2px solid red;
+}
+
+/* Play Mode Styles */
+#play-mode {
+  padding: 20px;
+}
+
+#game-name {
+  text-align: center;
+  font-size: 3em;
+  margin-bottom: 20px;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-gap: 5px;
+  margin-top: 20px;
+}
+
+.category-cell, .question-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.category-cell {
+  background-color: #1e90ff;
+  color: #fff;
+  padding: 20px;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  border-radius: 5px;
+}
+
+.question-cell {
+  background-color: #f0f0f0;
+  color: #1e90ff;
+  padding: 20px;
+  font-size: 1.5em;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.question-cell:hover {
+  background-color: #e0e0e0;
+}
+
+.question-cell.clicked {
+  background-color: #999;
+  cursor: default;
+}
+
+/* Teams Section Styles */
+#teams {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #1e90ff;
+  padding: 10px 0;
+}
+
+#teams h2 {
+  color: #fff;
+  text-align: center;
+  margin: 0;
+}
+
+#team-list {
+  display: flex;
+  justify-content: space-around;
+}
+
+.team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+}
+
+.team input {
+  text-align: center;
+  font-size: 1.2em;
+  margin-bottom: 5px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #fff;
+  color: #fff;
+}
+
+.team input:focus {
+  outline: none;
+}
+
+.team p {
+  font-size: 1.2em;
+  margin: 0;
+}
+
+/* Question Popup Styles */
+#question-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#question-content {
+  background-color: #fff;
+  padding: 30px;
+  width: 60%;
+  max-width: 800px;
+  position: relative;
+  border-radius: 10px;
+  text-align: center;
+}
+
+#close-popup {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 2em;
+}
+
+#question-text {
+  font-size: 2em;
+  margin-bottom: 30px;
+}
+
+#adjust-points {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+}
+
+.adjust-team {
+  display: flex;
+  align-items: center;
+}
+
+.adjust-team p {
+  font-size: 1.2em;
+  margin: 0 10px 0 0;
+}
+
+.adjust-team button {
+  margin: 0 5px;
+  padding: 10px 15px;
+  font-size: 1em;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.adjust-team button:hover {
+  opacity: 0.8;
+}
+
+/* End Screen Styles */
+#end-screen {
+  padding: 40px;
+  text-align: center;
+}
+
+#end-screen h1 {
+  font-size: 4em;
+  margin-bottom: 20px;
+}
+
+#results {
+  margin-top: 20px;
+}
+
+#results h2 {
+  font-size: 2em;
+  color: #1e90ff;
+  margin-bottom: 20px;
+}
+
+#results .team-result {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+}
+
+/* Key Popup (Share Key) */
+#key-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#key-content {
+  background-color: #fff;
+  padding: 30px;
+  width: 40%;
+  max-width: 600px;
+  position: relative;
+  border-radius: 10px;
+  text-align: center;
+}
+
+#close-key-popup {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  cursor: pointer;
+  font-size: 2em;
+}
+
+#share-key {
+  width: 100%;
+  height: 150px;
+  margin-bottom: 20px;
+  font-size: 1em;
+  padding: 10px;
+  resize: none;
+}
+
+#copy-key-button {
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: #1e90ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+#copy-key-button:hover {
+  opacity: 0.8;
+}
+
+/* Button Styles */
+button {
+  transition: background-color 0.3s, opacity 0.3s;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: default;
+}
+
+/* Scrollbar Styles (Optional) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e90ff;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+</style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <h1>Jeopardy Game</h1>
+        <div id="splash-buttons">
+            <button id="create-board">Create New Board</button>
+            <button id="import-board">Importera</button>
+        </div>
+        <div id="existing-boards">
+            <h2>Existing Boards</h2>
+            <ul id="board-list"></ul>
+        </div>
+    </div>
+
+    <!-- Edit Mode -->
+    <div id="edit-mode" style="display: none;">
+        <button id="save-board">Save Board</button>
+        <button id="return-main">Return to Main Page</button>
+        <div id="edit-grid"></div>
+    </div>
+
+    <!-- Play Mode -->
+    <div id="play-mode" style="display: none;">
+        <h1 id="game-name"></h1>
+        <div id="game-board"></div>
+        <div id="teams">
+            <h2>Teams</h2>
+            <div id="team-list"></div>
+        </div>
+    </div>
+
+    <!-- Question Popup -->
+    <div id="question-popup" style="display: none;">
+        <div id="question-content">
+            <span id="close-popup">&times;</span>
+            <p id="question-text"></p>
+            <div id="adjust-points"></div>
+        </div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" style="display: none;">
+        <h1>Game Over</h1>
+        <div id="results"></div>
+        <button id="back-to-main">Return to Main Page</button>
+    </div>
+
+    <!-- Nyckel Popup (för delning) -->
+    <div id="key-popup" style="display: none;">
+        <div id="key-content">
+            <span id="close-key-popup">&times;</span>
+            <h2>Här är din nyckel</h2>
+            <textarea id="share-key" readonly></textarea>
+            <button id="copy-key-button">Kopiera nyckel</button>
+        </div>
+    </div>
+
+    <script>
+// Filnamn: script.js
+
+// Global variables
+let boards = [];
+let currentBoard = null;
+let teams = [];
+let teamScores = {};
+let viewedQuestions = {};
+let totalQuestions = 30; // 6 categories * 5 questions
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadBoards();
+    setupEventListeners();
+});
+
+function loadBoards() {
+    // Load boards from localStorage
+    const storedBoards = JSON.parse(localStorage.getItem('jeopardyBoards')) || [];
+    boards = storedBoards;
+    displayBoardList();
+}
+
+function saveBoards() {
+    localStorage.setItem('jeopardyBoards', JSON.stringify(boards));
+}
+
+function displayBoardList() {
+    const boardList = document.getElementById('board-list');
+    boardList.innerHTML = '';
+
+    if (boards.length === 0) {
+        const noBoardsMsg = document.createElement('li');
+        noBoardsMsg.textContent = 'No existing boards. Create a new one!';
+        boardList.appendChild(noBoardsMsg);
+    } else {
+        boards.forEach((board, index) => {
+            if (board && board.name && board.categories && board.questions) {
+                const li = document.createElement('li');
+                li.textContent = board.name.length > 20 ? board.name.substring(0, 17) + '...' : board.name;
+                const buttonsDiv = document.createElement('div');
+
+                const playBtn = document.createElement('button');
+                playBtn.textContent = 'Play';
+                playBtn.addEventListener('click', () => startGame(index));
+
+                const editBtn = document.createElement('button');
+                editBtn.textContent = 'Edit';
+                editBtn.addEventListener('click', () => editBoard(index));
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => deleteBoard(index));
+
+                const shareBtn = document.createElement('button');
+                shareBtn.textContent = 'Dela';
+                shareBtn.addEventListener('click', () => shareBoard(index));
+
+                buttonsDiv.appendChild(playBtn);
+                buttonsDiv.appendChild(editBtn);
+                buttonsDiv.appendChild(deleteBtn);
+                buttonsDiv.appendChild(shareBtn);
+
+                li.appendChild(buttonsDiv);
+                boardList.appendChild(li);
+            }
+        });
+    }
+}
+
+function shareBoard(index) {
+    const board = boards[index];
+    const boardKey = JSON.stringify(board);
+    // Visa popup med nyckeln
+    const keyPopup = document.getElementById('key-popup');
+    const shareKey = document.getElementById('share-key');
+    shareKey.value = boardKey;
+    keyPopup.style.display = 'flex';
+}
+
+function deleteBoard(index) {
+    if (confirm(`Are you sure you want to delete the board "${boards[index].name}"?`)) {
+        boards.splice(index, 1);
+        saveBoards();
+        displayBoardList();
+    }
+}
+
+function setupEventListeners() {
+    document.getElementById('create-board').addEventListener('click', createNewBoard);
+    document.getElementById('import-board').addEventListener('click', importBoard);
+    document.getElementById('save-board').addEventListener('click', saveCurrentBoard);
+    document.getElementById('return-main').addEventListener('click', () => {
+        saveCurrentBoard();
+        showSplashScreen();
+    });
+    document.getElementById('close-popup').addEventListener('click', closeQuestionPopup);
+    document.getElementById('question-popup').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('question-popup')) {
+            closeQuestionPopup();
+        }
+    });
+    document.getElementById('back-to-main').addEventListener('click', showSplashScreen);
+
+    document.getElementById('close-key-popup').addEventListener('click', closeKeyPopup);
+    document.getElementById('copy-key-button').addEventListener('click', copyKeyToClipboard);
+}
+
+function closeKeyPopup() {
+    const keyPopup = document.getElementById('key-popup');
+    keyPopup.style.display = 'none';
+}
+
+function copyKeyToClipboard() {
+    const shareKey = document.getElementById('share-key');
+    shareKey.select();
+    shareKey.setSelectionRange(0, 99999); // For mobile devices
+
+    document.execCommand('copy');
+    alert('Nyckeln är kopierad!');
+}
+
+function importBoard() {
+    const key = prompt('Klistra in nyckeln här:');
+    if (!key || key.trim() === '') return;
+
+    try {
+        const newBoard = JSON.parse(key);
+        if (newBoard && newBoard.name && newBoard.categories && newBoard.questions) {
+            // Kolla om board med samma namn redan finns
+            const existingIndex = boards.findIndex(b => b.name === newBoard.name);
+            if (existingIndex >= 0) {
+                if (confirm(`Ett board med namnet "${newBoard.name}" finns redan. Vill du ersätta det?`)) {
+                    boards[existingIndex] = newBoard;
+                } else {
+                    return;
+                }
+            } else {
+                boards.push(newBoard);
+            }
+            saveBoards();
+            displayBoardList();
+            alert('Board har importerats!');
+        } else {
+            alert('Ogiltig nyckel. Kunde inte importera.');
+        }
+    } catch (e) {
+        alert('Ogiltig nyckel. Kunde inte importera.');
+    }
+}
+
+function showSplashScreen() {
+    document.getElementById('splash-screen').style.display = 'block';
+    document.getElementById('edit-mode').style.display = 'none';
+    document.getElementById('play-mode').style.display = 'none';
+    document.getElementById('question-popup').style.display = 'none';
+    document.getElementById('end-screen').style.display = 'none';
+    displayBoardList();
+}
+
+function createNewBoard() {
+    currentBoard = {
+        name: 'New Game',
+        categories: Array(6).fill(''),
+        questions: Array(6).fill(null).map(() => Array(5).fill(''))
+    };
+    editCurrentBoard();
+}
+
+function editBoard(index) {
+    currentBoard = JSON.parse(JSON.stringify(boards[index]));
+    editCurrentBoard();
+}
+
+function editCurrentBoard() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('edit-mode').style.display = 'block';
+    const editGrid = document.getElementById('edit-grid');
+    editGrid.innerHTML = '';
+
+    // Input for game name
+    const nameInput = document.createElement('input');
+    nameInput.value = currentBoard.name;
+    nameInput.placeholder = 'Game Name';
+    nameInput.addEventListener('input', (e) => currentBoard.name = e.target.value);
+    nameInput.style.gridColumn = 'span 6';
+    editGrid.appendChild(nameInput);
+    editGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
+    editGrid.style.gridTemplateRows = 'repeat(6, auto)';
+
+    // Inputs for categories
+    currentBoard.categories.forEach((cat, i) => {
+        const catInput = document.createElement('input');
+        catInput.value = cat;
+        catInput.placeholder = `Category ${i + 1}`;
+        catInput.addEventListener('input', (e) => currentBoard.categories[i] = e.target.value);
+        editGrid.appendChild(catInput);
+    });
+
+    // Inputs for questions
+    for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 6; col++) {
+            const qInput = document.createElement('input');
+            qInput.value = currentBoard.questions[col][row];
+            qInput.placeholder = `Question ${row + 1}`;
+            qInput.addEventListener('input', (e) => currentBoard.questions[col][row] = e.target.value);
+            qInput.dataset.col = col;
+            qInput.dataset.row = row;
+            editGrid.appendChild(qInput);
+        }
+    }
+}
+
+function saveCurrentBoard() {
+    const editGrid = document.getElementById('edit-grid');
+    const inputs = editGrid.getElementsByTagName('input');
+    let incompleteFields = 0;
+
+    // Remove previous highlights
+    for (let input of inputs) {
+        input.classList.remove('incomplete');
+    }
+
+    for (let input of inputs) {
+        if (input.value.trim() === '' && input.placeholder.startsWith('Question')) {
+            input.classList.add('incomplete');
+            incompleteFields++;
+        }
+    }
+
+    if (incompleteFields > 0) {
+        alert('Some questions are incomplete!');
+    }
+
+    // Save to boards
+    const existingIndex = boards.findIndex(b => b.name === currentBoard.name);
+    if (existingIndex >= 0) {
+        boards[existingIndex] = currentBoard;
+    } else {
+        boards.push(currentBoard);
+    }
+    saveBoards();
+}
+
+function startGame(index) {
+    currentBoard = JSON.parse(JSON.stringify(boards[index]));
+    viewedQuestions = {};
+    document.getElementById('splash-screen').style.display = 'none';
+    promptForTeams();
+}
+
+function promptForTeams() {
+    let numTeams;
+    do {
+        numTeams = parseInt(prompt('Enter number of teams (2-5):'));
+    } while (isNaN(numTeams) || numTeams < 2 || numTeams > 5);
+
+    teams = [];
+    teamScores = {};
+    for (let i = 0; i < numTeams; i++) {
+        const teamName = prompt(`Enter name for Team ${i + 1}:`) || `Team ${i + 1}`;
+        teams.push(teamName);
+        teamScores[teamName] = 0;
+    }
+
+    setupGameBoard();
+}
+
+function setupGameBoard() {
+    document.getElementById('play-mode').style.display = 'block';
+    document.getElementById('game-name').textContent = currentBoard.name;
+
+    const gameBoard = document.getElementById('game-board');
+    gameBoard.innerHTML = '';
+    gameBoard.style.gridTemplateColumns = 'repeat(6, 1fr)';
+
+    // Categories
+    currentBoard.categories.forEach(cat => {
+        const catDiv = document.createElement('div');
+        catDiv.textContent = cat || 'Category';
+        catDiv.classList.add('category-cell');
+        gameBoard.appendChild(catDiv);
+    });
+
+    // Questions
+    for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 6; col++) {
+            const qDiv = document.createElement('div');
+            qDiv.textContent = (row + 1) * 100;
+            qDiv.classList.add('question-cell');
+            qDiv.dataset.col = col;
+            qDiv.dataset.row = row;
+            qDiv.addEventListener('click', handleQuestionClick);
+            gameBoard.appendChild(qDiv);
+        }
+    }
+
+    updateTeamsDisplay();
+}
+
+function updateTeamsDisplay() {
+    const teamList = document.getElementById('team-list');
+    teamList.innerHTML = '';
+    teams.forEach(team => {
+        const teamDiv = document.createElement('div');
+        teamDiv.classList.add('team');
+        const nameInput = document.createElement('input');
+        nameInput.value = team;
+        nameInput.addEventListener('input', (e) => {
+            const oldName = team;
+            const newName = e.target.value;
+            const index = teams.indexOf(team);
+            teams[index] = newName;
+            teamScores[newName] = teamScores[oldName];
+            delete teamScores[oldName];
+        });
+        const scoreP = document.createElement('p');
+        scoreP.textContent = `Points: ${teamScores[team]}`;
+        teamDiv.appendChild(nameInput);
+        teamDiv.appendChild(scoreP);
+        teamList.appendChild(teamDiv);
+    });
+}
+
+function handleQuestionClick(e) {
+    const cell = e.currentTarget;
+    const col = cell.dataset.col;
+    const row = cell.dataset.row;
+
+    if (viewedQuestions[`${col}-${row}`]) return; // Already viewed
+
+    viewedQuestions[`${col}-${row}`] = true;
+    cell.classList.add('clicked');
+    cell.textContent = ''; // Remove the value from the cell
+
+    showQuestionPopup(col, row);
+}
+
+function showQuestionPopup(col, row) {
+    document.getElementById('question-popup').style.display = 'flex';
+    const questionText = currentBoard.questions[col][row] || 'No question provided.';
+    document.getElementById('question-text').textContent = questionText;
+
+    const adjustPointsDiv = document.getElementById('adjust-points');
+    adjustPointsDiv.innerHTML = '';
+
+    teams.forEach(team => {
+        const teamDiv = document.createElement('div');
+        teamDiv.classList.add('adjust-team');
+        const teamNameP = document.createElement('p');
+        teamNameP.textContent = team;
+        const plusBtn = document.createElement('button');
+        plusBtn.textContent = '+';
+        plusBtn.addEventListener('click', () => adjustPoints(team, (parseInt(row) + 1) * 100));
+        const minusBtn = document.createElement('button');
+        minusBtn.textContent = '−';
+        minusBtn.addEventListener('click', () => adjustPoints(team, -(parseInt(row) + 1) * 100));
+        teamDiv.appendChild(teamNameP);
+        teamDiv.appendChild(plusBtn);
+        teamDiv.appendChild(minusBtn);
+        adjustPointsDiv.appendChild(teamDiv);
+    });
+}
+
+function adjustPoints(team, points) {
+    teamScores[team] += points;
+    updateTeamsDisplay();
+}
+
+function closeQuestionPopup() {
+    document.getElementById('question-popup').style.display = 'none';
+
+    // Check if game is over
+    if (Object.keys(viewedQuestions).length === totalQuestions) {
+        setTimeout(showEndScreen, 500);
+    }
+}
+
+function showEndScreen() {
+    document.getElementById('play-mode').style.display = 'none';
+    document.getElementById('end-screen').style.display = 'block';
+
+    const sortedTeams = Object.entries(teamScores).sort((a, b) => b[1] - a[1]);
+    const winner = sortedTeams[0];
+
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.innerHTML = `<h2>Winner: ${winner[0]} with ${winner[1]} points!</h2>`;
+
+    sortedTeams.slice(1).forEach(([team, score]) => {
+        const teamResultDiv = document.createElement('div');
+        teamResultDiv.classList.add('team-result');
+        teamResultDiv.textContent = `${team}: ${score} points`;
+        resultsDiv.appendChild(teamResultDiv);
+    });
+}
+
+</script>
+</body>
+</html>

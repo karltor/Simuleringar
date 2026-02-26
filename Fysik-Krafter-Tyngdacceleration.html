@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tyngdacceleration med Sluttande Plan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        img {
+            margin-bottom: 20px;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Beräkna Tyngdaccelerationen</h1>
+
+    <img src="triangel.png" alt="Triangelbild" id="triangleImage">
+
+    <form id="gravityForm">
+        <label for="height">Höjd (cm):</label>
+        <input type="number" id="height" step="0.01" required>
+
+        <label for="width">Bas (cm):</label>
+        <input type="number" id="width" step="0.01" required>
+
+        <label for="time">Tid (sekunder):</label>
+        <input type="number" id="time" step="0.01" required>
+
+        <button type="submit">Beräkna</button>
+    </form>
+
+    <p id="result"></p>
+
+    <script>
+document.getElementById('gravityForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    // Hämta användarens inmatning och konvertera från cm till meter
+    const height = parseFloat(document.getElementById('height').value) / 100;
+    const width = parseFloat(document.getElementById('width').value) / 100;
+    const time = parseFloat(document.getElementById('time').value);
+
+    const theta = Math.atan(height / width);
+    const distance = Math.sqrt(Math.pow(height, 2) + Math.pow(width, 2));
+    const a = (2 * distance) / Math.pow(time, 2);
+    const g = a / Math.sin(theta);
+
+    // Visa resultatet
+    document.getElementById('result').innerText = `Tyngdaccelerationen (g) är: ${g.toFixed(2)} m/s²`;
+});
+
+</script>
+</body>
+</html>

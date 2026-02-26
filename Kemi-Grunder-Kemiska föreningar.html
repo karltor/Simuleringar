@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Andetagets innehåll</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .grid-cell {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+    .grid-cols-40 {
+      display: grid;
+      grid-template-columns: repeat(40, min-content);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+  <h1 class="text-2xl font-semibold mb-2">Ett andetag</h1>
+  <p class="mb-4 text-sm text-gray-700">Varje ruta ≈ 12&nbsp;500&nbsp;000&nbsp;000&nbsp;000&nbsp;000&nbsp;000 molekyler</p>
+
+  <div id="grid" class="grid-cols-40 gap-[1px] bg-gray-300"></div>
+
+  <div id="legend" class="mt-6 flex flex-wrap gap-6 text-sm"></div>
+
+  <div id="info" class="mt-6 p-4 bg-white shadow rounded hidden max-w-md text-center"></div>
+
+  <script>
+    const grid = document.getElementById("grid");
+    const info = document.getElementById("info");
+    const legend = document.getElementById("legend");
+
+    const mainDistribution = [
+      { type: "kväve", count: 780, color: "bg-blue-500", label: "Kväve (78%)" },
+      { type: "syre", count: 209, color: "bg-green-500", label: "Syre (21%)" },
+      { type: "argon", count: 10, color: "bg-purple-500", label: "Argon (1%)" },
+      { type: "övrigt", count: 1, color: "bg-red-500", label: "Övrigt" }
+    ];
+
+    const otherDistribution = [
+      { type: "koldioxid", count: 950, color: "bg-red-400", label: "Koldioxid" },
+      { type: "neon", count: 20, color: "bg-pink-400", label: "Neon" },
+      { type: "helium", count: 10, color: "bg-yellow-300", label: "Helium" },
+      { type: "metan", count: 10, color: "bg-green-300", label: "Metan" },
+      { type: "krypton", count: 5, color: "bg-indigo-300", label: "Krypton" },
+      { type: "väte", count: 4, color: "bg-cyan-300", label: "Väte" },
+      { type: "ozon", count: 1, color: "bg-gray-500", label: "Ozon" }
+    ];
+
+    let inOtherView = false;
+
+    function renderLegend(distribution) {
+      legend.innerHTML = "";
+      distribution.forEach(d => {
+        const item = document.createElement("div");
+        item.className = "flex items-center gap-2";
+        item.innerHTML = `<div class='w-4 h-4 ${d.color}'></div>${d.label}`;
+        legend.appendChild(item);
+      });
+    }
+
+    function renderGrid(distribution) {
+      grid.innerHTML = "";
+      let cells = [];
+      distribution.forEach(d => {
+        for (let i = 0; i < d.count; i++) {
+          cells.push({ type: d.type, color: d.color });
+        }
+      });
+      cells = cells.sort(() => Math.random() - 0.5);
+
+      cells.forEach(cell => {
+        const div = document.createElement("div");
+        div.className = `grid-cell ${cell.color}`;
+
+        if (!inOtherView && cell.type === "övrigt") {
+          div.addEventListener("click", () => {
+            inOtherView = true;
+            renderGrid(otherDistribution);
+            renderLegend(otherDistribution);
+            info.innerHTML = `<button class=\"mt-4 px-3 py-1 bg-gray-200 rounded\">Tillbaka</button>`;
+            info.classList.remove("hidden");
+            info.querySelector("button").addEventListener("click", () => {
+              inOtherView = false;
+              info.classList.add("hidden");
+              renderGrid(mainDistribution);
+              renderLegend(mainDistribution);
+            });
+          });
+        }
+
+        grid.appendChild(div);
+      });
+    }
+
+    renderGrid(mainDistribution);
+    renderLegend(mainDistribution);
+  </script>
+</body>
+</html>

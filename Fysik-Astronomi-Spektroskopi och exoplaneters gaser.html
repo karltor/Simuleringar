@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utbildningsverktyg för spektroskopi</title>
+    <style>
+body, html {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+header {
+    background-color: #282c34;
+    color: white;
+    text-align: center;
+    padding: 10px;
+}
+main {
+    padding: 20px;
+}
+#spectrum-display svg {
+    width: 100%;
+    height: 300px;
+    border: 1px solid #ccc;
+}
+footer {
+    text-align: center;
+    padding: 10px;
+    background-color: #282c34;
+    color: white;
+}
+button {
+    padding: 10px;
+    margin: 10px;
+    cursor: pointer;
+    border: 5px solid transparent; /* Added default transparent border for buttons */
+}
+.tooltip {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    border: 1px solid #d3d3d3;
+    padding: 5px;
+    z-index: 1000;
+    max-width: 200px;
+}
+#modal {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center; /* Centers the modal content vertically */
+    justify-content: center; /* Centers the modal content horizontally */
+}
+#modal > div {
+    background: white;
+    width: 300px;
+    margin: auto; /* Updated to 'auto' for automatic vertical margin */
+    padding: 20px;
+    text-align: center;
+}
+
+</style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Spektroskopi och exoplaneters gaser</h1>
+    </header>
+    <main>
+        <section id="introduction">
+            <p>Lär dig om användningen av spektroskopi för att identifiera atmosfäriska gaser på exoplaneter.</p>
+        </section>
+        <section id="spectrum-display">
+            <svg></svg>
+        </section>
+        <section id="guessing-game">
+            <h2>Gissa gaserna!</h2>
+            <div id="quiz-section"></div>
+        </section>
+      <div id="modal" style="display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+          <div style="background: white; width: 300px; margin: 100px auto; padding: 20px; text-align: center;">
+              <p id="modal-message"></p>
+              <p id="countdown"></p>
+          </div>
+      </div>
+
+        <section id="results">
+            <h2>Resultat</h2>
+            <div id="results-summary"></div>
+        </section>
+    </main>
+    <footer>
+        <p>Karls Simulatorer</p>
+    </footer>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const spectrumSvg = d3.select('#spectrum-display svg').attr('height', '150');
+  const quizSection = document.getElementById('quiz-section');
+  const resultsSummary = document.getElementById('results-summary');
+  const fullWidth = spectrumSvg.node().getBoundingClientRect().width;
+  const nmToPixel = d => Math.log10(d / 280) / Math.log10(10000 / 280) * fullWidth;
+  const pixelToNm = p => 280 * Math.pow(10000 / 280, p / fullWidth);
+  let previousCombinations = [];
+  let poäng = 0;
+  let rundor = 0;
+  let valdaGaser = [];
+  let användarGissningar = [];
+
+  const gaser = [
+      { name: 'Vattenånga (H₂O)', bands: [{wavelength: 720, strength: 'stark'}, {wavelength: 820, strength: 'stark'}, {wavelength: 940, strength: 'stark'}] },
+      { name: 'Koldioxid (CO₂)', bands: [{wavelength: 2349, strength: 'mycket stark'}, {wavelength: 2000, strength: 'stark'}, {wavelength: 4260, strength: 'måttlig'}] },
+      { name: 'Ozon (O₃)', bands: [{wavelength: 255, strength: 'stark'}, {wavelength: 280, strength: 'stark'}, {wavelength: 310, strength: 'måttlig'}, {wavelength: 325, strength: 'mycket svag'}, {wavelength: 340, strength: 'mycket svag'}, {wavelength: 360, strength: 'mycket svag'}, {wavelength: 600, strength: 'mycket svag'}] },
+      { name: 'Metan (CH₄)', bands: [{wavelength: 1660, strength: 'stark'}, {wavelength: 2300, strength: 'stark'}, {wavelength: 3300, strength: 'stark'}, {wavelength: 7700, strength: 'måttlig'}] },
+      { name: 'Lustgas (N₂O)', bands: [{wavelength: 4300, strength: 'stark'}, {wavelength: 7700, strength: 'stark'}, {wavelength: 3000, strength: 'måttlig'}] },
+      { name: 'Syre (O₂)', bands: [{wavelength: 688, strength: 'stark'}, {wavelength: 762, strength: 'stark'}, {wavelength: 1270, strength: 'stark'}] }
+  ];
+
+
+  function ritaSpektrum() {
+      const defs = spectrumSvg.append('defs');
+      const gradient = defs.append('linearGradient')
+          .attr('id', 'visibleSpectrumGradient')
+          .attr('x1', '0%')
+          .attr('x2', '100%')
+          .attr('y1', '0%')
+          .attr('y2', '0%');
+
+      gradient.append('stop').attr('offset', '0%').attr('stop-color', 'grey');
+      gradient.append('stop').attr('offset', `${nmToPixel(380) / fullWidth * 100}%`).attr('stop-color', 'violet');
+
+      gradient.append('stop').attr('offset', `${nmToPixel(450) / fullWidth * 100}%`).attr('stop-color', 'blue');
+      gradient.append('stop').attr('offset', `${nmToPixel(495) / fullWidth * 100}%`).attr('stop-color', 'green');
+      gradient.append('stop').attr('offset', `${nmToPixel(570) / fullWidth * 100}%`).attr('stop-color', 'yellow');
+      gradient.append('stop').attr('offset', `${nmToPixel(590) / fullWidth * 100}%`).attr('stop-color', 'orange');
+      gradient.append('stop').attr('offset', `${nmToPixel(620) / fullWidth * 100}%`).attr('stop-color', 'red');
+      gradient.append('stop').attr('offset', `${nmToPixel(740) / fullWidth * 100}%`).attr('stop-color', 'red');
+      gradient.append('stop').attr('offset', '100%').attr('stop-color', 'grey');
+
+      spectrumSvg.append('rect')
+          .attr('x', 0)
+          .attr('y', '40')
+          .attr('width', fullWidth)
+          .attr('height', '400')
+          .attr('fill', 'url(#visibleSpectrumGradient)');
+
+      spectrumSvg.append('text').attr('x', nmToPixel(400)).attr('y', 20).text('UV (<400 nm)').attr('fill', 'black');
+      spectrumSvg.append('text').attr('x', nmToPixel(750)).attr('y', 20).text('IR (>750 nm)').attr('fill', 'black');
+
+      for (let x = 0; x <= fullWidth; x += 50) {
+          const nm = Math.round(pixelToNm(x));
+          spectrumSvg.append('text')
+              .attr('x', x)
+              .attr('y', '30')
+              .attr('fill', 'black')
+              .attr('font-size', '10')
+              .attr('text-anchor', 'middle')
+              .text(`${nm} nm`);
+      }
+  }
+
+  function genereraAbsorptionslinjer() {
+      let antalGaser = 3;
+      let newCombination;
+      let attempts = 0;
+
+      do {
+          valdaGaser = gaser.sort(() => 0.5 - Math.random()).slice(0, antalGaser);
+          newCombination = valdaGaser.map(gas => gas.name).sort().join(",");
+          attempts++;
+          if (attempts > 100) {
+              console.error("Failed to find a unique combination after 100 attempts.");
+              return;
+          }
+      } while (previousCombinations.includes(newCombination));
+
+      previousCombinations.push(newCombination);
+
+      fadeOutIn(() => {
+          spectrumSvg.selectAll('rect.absorption').remove();
+          valdaGaser.forEach(gas => {
+              gas.bands.forEach(band => {
+                  spectrumSvg.append('rect')
+                      .attr('class', 'absorption')
+                      .attr('x', nmToPixel(band.wavelength))
+                      .attr('y', 40)
+                      .attr('width', '3px')
+                      .attr('height', 400)
+                      .attr('fill', 'black')
+                      .attr('opacity', { 'mycket stark': 0.8, 'stark': 0.6, 'måttlig': 0.4, 'mycket svag': 0.2 }[band.strength]);
+              });
+          });
+          uppdateraQuizAvsnitt();
+        });
+
+  }
+  function fadeOutIn(callback) {
+      const spectrumElement = document.getElementById('spectrum-display');
+      spectrumElement.style.transition = 'opacity 0.5s ease';
+      spectrumElement.style.opacity = 0;
+
+      setTimeout(() => {
+          callback();
+          spectrumElement.style.opacity = 1;
+      }, 500);
+  }
+
+  function uppdateraQuizAvsnitt() {
+      quizSection.innerHTML = '';
+      blandaGaser().forEach(gas => {
+          const knapp = document.createElement('button');
+          const verktygstips = document.createElement('div');
+          verktygstips.className = 'tooltip';
+          verktygstips.innerHTML = gas.bands.map(band => `${band.wavelength} nm: ${band.strength}`).join('<br>');
+          knapp.textContent = gas.name;
+          knapp.appendChild(verktygstips);
+
+          knapp.addEventListener('mouseover', function() {
+              verktygstips.style.display = 'block';
+          });
+          knapp.addEventListener('mousemove', function(e) {
+              verktygstips.style.left = `${e.pageX + 10}px`;
+              verktygstips.style.top = `${e.pageY + 10}px`;
+          });
+          knapp.addEventListener('mouseout', function() {
+              verktygstips.style.display = 'none';
+          });
+
+          knapp.addEventListener('click', function() {
+              växlaGissning(gas.name, knapp);
+          });
+
+          quizSection.appendChild(knapp);
+      });
+  }
+  
+  function blandaGaser() {
+      return [...gaser].sort(() => Math.random() - 0.5);
+  }
+  
+  function växlaGissning(gasNamn, knapp) {
+    const index = användarGissningar.indexOf(gasNamn);
+    if (index > -1) {
+      användarGissningar.splice(index, 1);
+      knapp.style.border = "5px solid transparent";
+    } else {
+      if (användarGissningar.length < 3) {
+        användarGissningar.push(gasNamn);
+        knapp.style.border = "5px solid black";
+      }
+    }
+    uppdateraResultatSammanfattning();
+  }
+
+  function uppdateraResultatSammanfattning() {
+    const gissningarKvar = 3 - användarGissningar.length;
+    resultsSummary.textContent = `Gissa ${gissningarKvar} fler gas(er) för att skicka ditt svar.`;
+    if (gissningarKvar === 0) {
+      skickaSvar();
+    }
+  }
+
+  function skickaSvar() {
+    const korrektaSvar = valdaGaser.map(gas => gas.name);
+    const ärKorrekt = användarGissningar.every(gissning => korrektaSvar.includes(gissning)) && användarGissningar.length === valdaGaser.length;
+
+    if (ärKorrekt) {
+      poäng++;
+    }
+    resultsSummary.textContent = rundor < 9 ? "Runda avklarad, förbered för nästa runda." : `Spelet är över. Poäng: ${poäng}/10`;
+
+    rundor++;
+    användarGissningar = [];
+    uppdateraKnapparStil();
+
+    if (rundor < 5) {
+      genereraAbsorptionslinjer();
+    } else {
+      kontrolleraSpelslut();
+    }
+  }
+
+  function uppdateraKnapparStil() {
+    const knappar = quizSection.querySelectorAll('button');
+    knappar.forEach(knapp => {
+      knapp.style.border = "5px solid transparent";
+    });
+  }
+
+  function kontrolleraSpelslut() {
+      document.getElementById('modal-message').textContent = `Du fick ${poäng}/5 rätt!`;
+      document.getElementById('modal').style.display = 'block';
+      startCountdown(5);
+  }
+
+  function startCountdown(seconds) {
+      let counter = seconds;
+      const interval = setInterval(() => {
+          document.getElementById('countdown').textContent = `Spelet börjar om ${counter}...`;
+          counter--;
+          if (counter < 0) {
+              clearInterval(interval);
+              window.location.reload(); // Reload the page to restart the game
+          }
+      }, 1000);
+  }
+
+  ritaSpektrum();
+  genereraAbsorptionslinjer(); // Starta spelet omedelbart
+});
+
+</script>
+</body>
+</html>

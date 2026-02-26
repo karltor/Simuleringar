@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kod-Ords Lek</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #f0f0f0;
+  }
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  #inputContainer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    z-index: 2;
+  }
+  .inputField {
+    width: 40px;
+    height: 40px;
+    margin: 0 5px;
+    font-size: 20px;
+    text-align: center;
+    border: 2px solid #000; /* Svart kant för att se rutan bättre */
+  }
+  .correct {
+    border: 2px solid green; /* Grön kant för korrekta svar */
+  }
+  #submitBtn {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 50;
+    margin-top: 10px; /* Lägg till lite marginal ovanför knappen */
+  }
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  .tooltipText {
+    visibility: hidden;
+    width: 200px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 3;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    font-size: 14px;
+  }
+  .tooltip:hover .tooltipText {
+    visibility: visible;
+  }
+  #popup {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 4;
+  }
+</style>
+</head>
+<body>
+
+
+<div id="inputContainer">
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char1"><span class="tooltipText">Värdet på x i ekvationen 2x + 6 = 14</span></div>
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char2"><span class="tooltipText">Bokstaven på plats 6 i alfabetet</span></div>
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char3"><span class="tooltipText">Första siffran i produkten av sidor i en triangel och hörn i en rektangel</span></div>
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char4"><span class="tooltipText">Om du sparar 200 kr varje dag, hur många dagar tar det att spara 1600 kr?</span></div>
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char5"><span class="tooltipText">Om du slår en tärning tre gånger och får summan 9, vad är medelvärdet av dina kast?</span></div>
+  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char6"><span class="tooltipText">Bokstavspositionen från X värde i ekvationen 2(x+1)=8</span></div>
+  <button id="submitBtn" onclick="validatePassword()">Skicka in</button>
+</div>
+
+
+
+<div id="popup">Bra jobbat! Ropa "Allakazam!"</div>
+
+<canvas id="canvas"></canvas>
+
+  <script>
+    // Grundläggande canvas-setup
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    function validatePassword() {
+      console.log('Knappen trycktes'); // Lägg till denna rad för att kontrollera knapptrycket
+      const correctAnswers = ['4', 'F', '1', '8', '3', 'C'];
+      let allCorrect = true;
+
+      for (let i = 1; i <= correctAnswers.length; i++) {
+        const inputField = document.getElementById(`char${i}`);
+        const isCorrect = inputField.value.toUpperCase() === correctAnswers[i - 1];
+        if (isCorrect) {
+          inputField.classList.add('correct');
+        } else {
+          inputField.classList.remove('correct');
+          allCorrect = false;
+        }
+      }
+
+      if (allCorrect) {
+        document.getElementById('popup').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('popup').style.display = 'none';
+        }, 5000); // Gör popupen synlig i 5 sekunder
+        explode();
+      }
+    }
+
+    function explode() {
+      const particles = [];
+      const colors = ['#ff0000', '#ff8c00', '#ffff00', '#008000', '#0000ff', '#4b0082', '#ee82ee']; // Regnbågens färger
+
+      class Particle {
+        constructor(x, y) {
+          this.x = x;
+          this.y = y;
+          this.radius = Math.random() * 5 + 1;
+          this.color = colors[Math.floor(Math.random() * colors.length)];
+          this.velocity = {
+            x: (Math.random() - 0.5) * 15,
+            y: (Math.random() - 0.5) * 15
+          };
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+          ctx.fillStyle = this.color;
+          ctx.fill();
+        }
+
+        update() {
+          this.x += this.velocity.x;
+          this.y += this.velocity.y;
+          this.draw();
+        }
+      }
+
+      function init() {
+        for (let i = 0; i < 100; i++) {
+          particles.push(new Particle(canvas.width / 2, canvas.height / 2));
+        }
+      }
+
+      function animate() {
+        requestAnimationFrame(animate);
+        ctx.fillStyle = 'rgba(240, 240, 240, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((particle, index) => {
+          if (particle.radius > 0.2) particle.radius -= 0.1;
+          particle.update();
+
+          // Ta bort partiklar som är för små
+          if (particle.radius <= 0.2) {
+            particles.splice(index, 1);
+          }
+        });
+      }
+
+      init();
+      animate();
+    }
+  </script>
+
+
+</body>
+</html>

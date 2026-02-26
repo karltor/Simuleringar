@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Spaceship Simulation</title>
+    <style>
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family: 'Arial', sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+.ui-element, #controls-tutorial {
+  position: absolute;
+  margin: 10px;
+  padding: 10px;
+  color: white;
+  background-color: rgba(85, 85, 255, 0.5); /* Use the spaceship's color with some transparency */
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
+}
+
+#score {
+  top: 10px;
+  left: 10px;
+}
+
+#velocity-meter {
+  bottom: 10px;
+  left: 10px; /* Adjusted to the right for consistency */
+}
+
+#controls-tutorial {
+  bottom: 20px;
+  right: 10px; /* Adjusted for spacing */
+  text-align: center; /* Align text to the left for a cleaner look */
+}
+
+.control, .arrow-keys {
+  margin-bottom: 10px;
+}
+
+.key {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  margin: 0px;
+  background-color: rgba(0, 0, 0, 0.5); /* Key background */
+  color: #fff;
+  border-radius: 5px;
+}
+
+.arrow {
+  font-size: 20px;
+}
+
+.label {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.arrow-row {
+  display: flex;
+  justify-content: center;
+}
+
+</style>
+</head>
+<body>
+  
+  <div id="score" class="ui-element">Score: 0</div>
+  <div id="velocity-meter" class="ui-element">Velocity: 0</div>
+  <div id="controls-tutorial">
+    <div class="control">
+      <div class="key">W</div>
+      <div class="label">Accelerera</div>
+    </div>
+    <div class="control">
+      <div class="key">S</div>
+      <div class="label">Deaccelerera</div>
+    </div>
+    <div class="arrow-keys">
+      <div class="arrow-row">
+        <div class="key arrow">↑</div>
+      </div>
+      <div class="arrow-row">
+        <div class="key arrow">←</div>
+        <div class="key arrow">↓</div>
+        <div class="key arrow">→</div>
+      </div>
+    </div>
+    <div class="label">Camera Control</div>
+  </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+let scene, camera, renderer, spaceship, light;
+let velocity = new THREE.Vector3();
+let acceleration = new THREE.Vector3();
+let quaternion = new THREE.Quaternion();
+let rotationSpeed = new THREE.Vector3(0, 0, 0); // Initialize rotationSpeed
+const thrust = 0.01;
+const drag = 0.99995;
+const rotationIncrement = 0.015;
+const nearDistance = 700;
+const farDistance = 1300;
+const maxDensity = 0.7;
+function init() {
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry(2, 2, 2); // Cube geometry for the spaceship
+    const material = new THREE.MeshPhongMaterial({ color: 0x5555ff });
+    spaceship = new THREE.Mesh(geometry, material);
+    spaceship.quaternion.copy(quaternion);
+    scene.add(spaceship);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+  scene.add(ambientLight);
+
+  light = new THREE.PointLight(0xffffff, 1, 100);
+  light.position.set(0, 10, -10);
+  scene.add(light);
+
+    generateAsteroids();
+    window.addEventListener('resize', onWindowResize, false);
+    document.addEventListener('keydown', onDocumentKeyDown, false);
+    document.addEventListener('keyup', onDocumentKeyUp, false);
+
+    animate();
+}
+
+function updateBackgroundColor(position) {
+    const distanceFromCenter = position.length();
+    let colorIntensity = 0;
+    if (distanceFromCenter > nearDistance && distanceFromCenter < farDistance) {
+        // Scale colorIntensity linearly between nearDistance and farDistance
+        colorIntensity = ((distanceFromCenter - nearDistance) / (farDistance - nearDistance));
+    } else if (distanceFromCenter >= farDistance) {
+        colorIntensity = 1;
+    }
+
+    // Calculate the new background color as a shade of grey
+    const greyValue = Math.floor(colorIntensity * 255);
+    const backgroundColor = (greyValue << 16) | (greyValue << 8) | greyValue;
+    scene.background = new THREE.Color(backgroundColor);
+}
+
+
+
+
+function checkBoundaryCollision() {
+    const distanceFromCenter = spaceship.position.length(); // Get the distance from the center
+    if (distanceFromCenter > 900) { // Check if outside boundary
+        resetSpaceship(); // Reset the spaceship if it crosses the boundary
+    }
+}
+
+function showPopup(message, duration) {
+    const popup = document.createElement('div');
+    popup.id = 'popup-message';
+    popup.textContent = message;
+    popup.style.position = 'absolute';
+    popup.style.top = '50%';
+    popup.style.left = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.color = 'white';
+    popup.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    popup.style.padding = '20px';
+    popup.style.borderRadius = '5px';
+    popup.style.zIndex = '100';
+    document.body.appendChild(popup);
+
+    // Remove the popup after 'duration' milliseconds
+    setTimeout(() => {
+        popup.remove();
+    }, duration);
+}
+
+// Modify the resetSpaceship function
+function resetSpaceship() {
+    spaceship.position.set(0, 0, 0); // Reset position to the center
+    velocity.set(0, 0, 0); // Reset velocity to 0
+    score = Math.round(score / 2); // Halve the score, rounded to the nearest integer
+    updateScore(); // Update the score display
+    updateCameraPosition(true); // Reset camera position with a flag to indicate a reset
+
+    // Show the popup message
+    showPopup("Tappa inte bort dig i rymden!", 3000); // Show message for 3 seconds
+}
+
+
+let score = 0;
+let asteroids = [];
+
+function createCheckerboardTexture() {
+    const size = 256; // Storleken på texturens canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+
+    const context = canvas.getContext('2d');
+
+    // Loopa igenom varje ruta och färglägg den
+    for (let i = 0; i < size / 16; i++) {
+        for (let j = 0; j < size / 16; j++) {
+            if ((i + j) % 2 === 0) {
+                context.fillStyle = 'white'; // Färg för ena rutan
+            } else {
+                context.fillStyle = 'black'; // Färg för den andra rutan
+            }
+            context.fillRect(i * 16, j * 16, 16, 16); // Måla rutan
+        }
+    }
+
+    const texture = new THREE.Texture(canvas);
+    texture.needsUpdate = true; // Informera Three.js att texturen behöver uppdateras
+
+    return texture;
+}
+
+function generateAsteroids() {
+    const checkerboardTexture = createCheckerboardTexture(); // Skapa schackbrädetexturen
+
+    for (let i = 0; i < 100; i++) {
+        const asteroidGeometry = new THREE.SphereGeometry((0.5+0.5*Math.random()) * 12, 32, 32);
+        const asteroidMaterial = new THREE.MeshBasicMaterial({
+            map: checkerboardTexture // Använd schackbrädetexturen som material
+        });
+        const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+        asteroid.position.x = Math.random() * 1000 - 500;
+        asteroid.position.y = Math.random() * 1000 - 500;
+        asteroid.position.z = Math.random() * 1000 - 500;
+        scene.add(asteroid);
+        asteroids.push(asteroid); // Lägg till i asteroidlistan
+    }
+}
+
+
+
+
+function checkCollisions() {
+    const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
+    for (let i = asteroids.length - 1; i >= 0; i--) {
+        const asteroid = asteroids[i];
+        const asteroidBox = new THREE.Box3().setFromObject(asteroid);
+        if (spaceshipBox.intersectsBox(asteroidBox)) {
+            scene.remove(asteroid); // Ta bort asteroiden från scenen
+            asteroids.splice(i, 1); // Ta bort från asteroidlistan
+            score += 10; // Öka poängen
+            updateScore(); // Uppdatera poängräknaren
+        }
+    }
+}
+
+function updateScore() {
+    document.getElementById('score').innerText = 'Score: ' + score;
+}
+
+function onWindowResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function applyRotation(axis, angle) {
+    // This function will create a quaternion representing the rotation
+    // and multiply the spaceship's quaternion by it to perform the rotation.
+    const q = new THREE.Quaternion();
+    q.setFromAxisAngle(axis, angle);
+    spaceship.quaternion.multiplyQuaternions(spaceship.quaternion, q);
+}
+
+function onDocumentKeyDown(event) {
+    switch (event.key) {
+        case 'w':
+            acceleration.set(0, 0, -thrust);
+            break;
+        case 's':
+            acceleration.set(0, 0, thrust);
+            break;
+        case 'ArrowRight':
+            rotationSpeed.y = Math.min(rotationSpeed.y + rotationIncrement, -0.01); // Begränsa minsta rotation till -0.5
+            break;
+        case 'ArrowLeft':
+            rotationSpeed.y = Math.max(rotationSpeed.y - rotationIncrement, 0.01); // Begränsa största rotation till 0.5
+            break;
+        case 'ArrowDown':
+            rotationSpeed.x = Math.min(rotationSpeed.x + rotationIncrement, -0.01); // Begränsa minsta rotation till -0.5
+            break;
+        case 'ArrowUp':
+            rotationSpeed.x = Math.max(rotationSpeed.x - rotationIncrement, 0.01); // Begränsa största rotation till 0.5
+            break;
+    }
+}
+
+function onDocumentKeyUp(event) {
+    switch (event.key) {
+        case 'w':
+        case 's':
+            acceleration.set(0, 0, 0);
+            break;
+        case 'ArrowLeft':
+        case 'ArrowRight':
+            rotationSpeed.y = 0; // Återställ rotationSpeed.y till 0 när piltangenterna släpps
+            break;
+        case 'ArrowUp':
+        case 'ArrowDown':
+            rotationSpeed.x = 0; // Återställ rotationSpeed.x till 0 när piltangenterna släpps
+            break;
+    }
+}
+
+
+function animate() {
+    requestAnimationFrame(animate);
+    applyRotation(new THREE.Vector3(1, 0, 0), rotationSpeed.x);
+    applyRotation(new THREE.Vector3(0, 1, 0), rotationSpeed.y);
+    let globalAccel = acceleration.clone().applyQuaternion(spaceship.quaternion);
+    velocity.multiplyScalar(drag).add(globalAccel);
+    spaceship.position.add(velocity);
+    light.position.copy(spaceship.position);
+    light.position.y += 10;
+    updateCameraPosition();
+    checkCollisions(); // Kontrollera kollisioner varje frame
+    checkBoundaryCollision();
+  const velocityValue = velocity.length().toFixed(2); // Assuming velocity is a THREE.Vector3
+  document.getElementById('velocity-meter').textContent = `Velocity: ${velocityValue} m/s`;
+
+
+  updateBackgroundColor(spaceship.position);
+    renderer.render(scene, camera);
+}
+
+function updateCameraPosition(reset = false) {
+if (reset) {
+    camera.position.set(0, 2, 10); // Reset camera position to initial
+    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Camera looks at the center
+    camera.up.set(0, 1, 0); // Reset camera's up vector
+} else {
+    // Define the relative offset of the camera from the spaceship
+    let relativeCameraOffset = new THREE.Vector3(0, 2, 10);
+
+    // Use the spaceship's world matrix to transform the relative offset into a global position
+    let cameraOffset = relativeCameraOffset.applyMatrix4(spaceship.matrixWorld);
+
+    // Set the camera's position to the offset position
+    camera.position.x = cameraOffset.x;
+    camera.position.y = cameraOffset.y;
+    camera.position.z = cameraOffset.z;
+
+    // Make the camera look at the spaceship's current position
+    camera.lookAt(spaceship.position);
+
+    // Adjust the camera's up vector
+    let up = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceship.quaternion);
+    camera.up.copy(up);
+}
+}
+
+init();
+
+</script>
+</body>
+</html>

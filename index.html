@@ -5,241 +5,178 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Karls Dashboard</title>
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-    .container { max-width: 800px; margin: 0 auto; }
-    .subject-block { background: white; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
-    .subject-title { background: #007bff; color: white; padding: 15px; margin: 0; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: space-between; }
-    .category-group { padding: 10px 20px; border-bottom: 1px solid #eee; }
-    .category-name { font-weight: bold; color: #555; display: block; margin: 10px 0 5px 0; cursor: pointer; }
-    .links-container { display: none; margin-left: 15px; padding-bottom: 10px; }
-    .sim-link { display: block; padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 6px; text-decoration: none; color: #007bff; transition: 0.2s; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+    h1 { text-align: center; margin-bottom: 30px; }
+    
+    /* Grid-systemet för att få rutorna bredvid varandra */
+    .container { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 20px; 
+      justify-content: center;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .subject-block { 
+      background: white; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+      width: 350px; /* Fixerad bredd så de stackar snyggt */
+      flex-grow: 0;
+      align-self: flex-start;
+    }
+
+    .subject-title { 
+      background: #007bff; 
+      color: white; 
+      padding: 15px; 
+      margin: 0; 
+      font-size: 1.1rem; 
+      cursor: pointer; 
+      display: flex; 
+      justify-content: space-between;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .content-wrapper { display: none; padding: 10px; }
+    
+    .category-group { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .category-group:last-child { border-bottom: none; }
+    
+    .category-name { font-weight: bold; color: #555; display: block; margin: 5px 0; font-size: 0.9rem; text-transform: uppercase; }
+    
+    .sim-link { 
+      display: block; 
+      padding: 8px 12px; 
+      margin: 4px 0; 
+      background: #f8f9fa; 
+      border-radius: 6px; 
+      text-decoration: none; 
+      color: #007bff; 
+      font-size: 0.95rem;
+      transition: 0.2s; 
+    }
     .sim-link:hover { background: #eef; transform: translateX(5px); }
+    
     .active { display: block !important; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Mina Simuleringar</h1>
-    <div id="main-content">
+  <h1>Mina Simuleringar</h1>
+  <div class="container" id="main-content">
 <div class='subject-block'>
 <div class='subject-title' onclick='toggle(this.nextElementSibling)'>Biologi <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Centrala Nervsystemet</span>
-<div class='links-container'>
-<a class='sim-link' href='./Biologi-Centrala Nervsystemet-Nervsignaler & Hormoner.html'>Nervsignaler & Hormoner</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Biologi <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Ekologi</span>
-<div class='links-container'>
-<a class='sim-link' href='./Biologi-Ekologi-Abiotiska och biotiska faktorer.html'>Abiotiska och biotiska faktorer</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Biologi <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Ekologi</span>
-<div class='links-container'>
-<a class='sim-link' href='./Biologi-Ekologi-Anrikning av Miljögifter.html'>Anrikning av Miljögifter</a>
-</div></div></div>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Centrala</span>
+<a class='sim-link' href='./Biologi-Centrala'></a>
+<span class='category-name'>📂 Ekologi</span>
+<a class='sim-link' href='./Biologi-Ekologi-Abiotiska'>Abiotiska</a>
+<a class='sim-link' href='./Biologi-Ekologi-Anrikning'>Anrikning</a>
+</div></div>
 <div class='subject-block'>
 <div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Astronomi</span>
-<div class='links-container'>
-<a class='sim-link' href='./Fysik-Astronomi-Spektroskopi och exoplaneters gaser.html'>Spektroskopi och exoplaneters gaser</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Astronomi</span>
-<div class='links-container'>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Astronomi</span>
+<a class='sim-link' href='./Fysik-Astronomi-Spektroskopi'>Spektroskopi</a>
 <a class='sim-link' href='./Fysik-Astronomi-Transitmetoden.html'>Transitmetoden</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Elektromagnetism</span>
-<div class='links-container'>
-<a class='sim-link' href='./Fysik-Elektromagnetism-AC Lampa.html'>AC Lampa</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Kraft</span>
-<div class='links-container'>
-<a class='sim-link' href='./Fysik-Kraft-Fritt Fall.html'>Fritt Fall</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Krafter</span>
-<div class='links-container'>
-<a class='sim-link' href='./Fysik-Krafter-Fritt Fall sidled.html'>Fritt Fall sidled</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Krafter</span>
-<div class='links-container'>
+<span class='category-name'>📂 Elektromagnetism</span>
+<a class='sim-link' href='./Fysik-Elektromagnetism-AC'>AC</a>
+<span class='category-name'>📂 Krafter</span>
+<a class='sim-link' href='./Fysik-Krafter-Fritt'>Fritt</a>
 <a class='sim-link' href='./Fysik-Krafter-Tröghetslagen.html'>Tröghetslagen</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Krafter</span>
-<div class='links-container'>
 <a class='sim-link' href='./Fysik-Krafter-Tyngdacceleration.html'>Tyngdacceleration</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Ljud</span>
-<div class='links-container'>
+<span class='category-name'>📂 Kraft</span>
+<a class='sim-link' href='./Fysik-Kraft-Fritt'>Fritt</a>
+<span class='category-name'>📂 Ljud</span>
 <a class='sim-link' href='./Fysik-Ljud-Dopplereffekten.html'>Dopplereffekten</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Optik</span>
-<div class='links-container'>
+<span class='category-name'>📂 Optik</span>
 <a class='sim-link' href='./Fysik-Optik-Våglängd.html'>Våglängd</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Fysik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Värmelära</span>
-<div class='links-container'>
-<a class='sim-link' href='./Fysik-Värmelära-Tid och Temperatur Diagram.html'>Tid och Temperatur Diagram</a>
-</div></div></div>
+<span class='category-name'>📂 Värmelära</span>
+<a class='sim-link' href='./Fysik-Värmelära-Tid'>Tid</a>
+</div></div>
 <div class='subject-block'>
 <div class='subject-title' onclick='toggle(this.nextElementSibling)'>Kemi <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Grunder</span>
-<div class='links-container'>
-<a class='sim-link' href='./Kemi-Grunder-Kemiska föreningar.html'>Kemiska föreningar</a>
-</div></div></div>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Grunder</span>
+<a class='sim-link' href='./Kemi-Grunder-Kemiska'>Kemiska</a>
+</div></div>
 <div class='subject-block'>
 <div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Geometri</span>
-<div class='links-container'>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Geometri</span>
 <a class='sim-link' href='./Matematik-Geometri-Cirkel.html'>Cirkel</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Geometri</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Geometri-Likformighet och kongruens.html'>Likformighet och kongruens</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Geometri</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Geometri-Pythagoras Golf.html'>Pythagoras Golf</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Problemlösning</span>
-<div class='links-container'>
+<a class='sim-link' href='./Matematik-Geometri-Likformighet'>Likformighet</a>
+<a class='sim-link' href='./Matematik-Geometri-Pythagoras'>Pythagoras</a>
+<span class='category-name'>📂 Problemlösning</span>
 <a class='sim-link' href='./Matematik-Problemlösning-Lösenord.html'>Lösenord</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Sannolikhetslära</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Sannolikhetslära-2 Tiosidiga Tärningar.html'>2 Tiosidiga Tärningar</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Sannolikhetslära</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Sannolikhetslära-Falsk Tärning.html'>Falsk Tärning</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Statistik</span>
-<div class='links-container'>
+<span class='category-name'>📂 Sannolikhetslära</span>
+<a class='sim-link' href='./Matematik-Sannolikhetslära-2'>2</a>
+<a class='sim-link' href='./Matematik-Sannolikhetslära-Falsk'>Falsk</a>
+<span class='category-name'>📂 Statistik</span>
 <a class='sim-link' href='./Matematik-Statistik-Diagram.html'>Diagram</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Taluppfattning-Bråk högre eller lägre.html'>Bråk högre eller lägre</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Taluppfattning-Hitta Kvadratroten.html'>Hitta Kvadratroten</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Taluppfattning-Multiplicera med 10.html'>Multiplicera med 10</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
+<span class='category-name'>📂 Taluppfattning</span>
+<a class='sim-link' href='./Matematik-Taluppfattning-Bråk'>Bråk</a>
+<a class='sim-link' href='./Matematik-Taluppfattning-Hitta'>Hitta</a>
+<a class='sim-link' href='./Matematik-Taluppfattning-Multiplicera'>Multiplicera</a>
 <a class='sim-link' href='./Matematik-Taluppfattning-Potenser.html'>Potenser</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
 <a class='sim-link' href='./Matematik-Taluppfattning-Primtal.html'>Primtal</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Taluppfattning</span>
-<div class='links-container'>
-<a class='sim-link' href='./Matematik-Taluppfattning-Ränta på Ränta.html'>Ränta på Ränta</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Övrigt</span>
-<div class='links-container'>
+<a class='sim-link' href='./Matematik-Taluppfattning-Ränta'>Ränta</a>
+<span class='category-name'>📂 Övrigt</span>
 <a class='sim-link' href='./Matematik-Övrigt-Countdown.html'>Countdown</a>
-</div></div></div>
-<div class='subject-block'>
-<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Matematik <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Övrigt</span>
-<div class='links-container'>
 <a class='sim-link' href='./Matematik-Övrigt-Klockan.html'>Klockan</a>
-</div></div></div>
+</div></div>
+<div class='subject-block'>
+<div class='subject-title' onclick='toggle(this.nextElementSibling)'>Nervsystemet <span>+</span></div>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Nervsignaler</span>
+<a class='sim-link' href='Nervsystemet-Nervsignaler'></a>
+</div></div>
 <div class='subject-block'>
 <div class='subject-title' onclick='toggle(this.nextElementSibling)'>Övrigt <span>+</span></div>
-<div class='category-group' style='display:none;'>
-<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 Gruppövningar</span>
-<div class='links-container'>
+<div class='content-wrapper'>
+<span class='category-name'>📂 Allmänt</span>
+<a class='sim-link' href='&'>&</a>
+<a class='sim-link' href='10.html'>10</a>
+<a class='sim-link' href='Diagram.html'>Diagram</a>
+<a class='sim-link' href='Fall'>Fall</a>
+<a class='sim-link' href='Fall.html'>Fall</a>
+<a class='sim-link' href='Golf.html'>Golf</a>
+<a class='sim-link' href='Hormoner.html'>Hormoner</a>
+<a class='sim-link' href='Kvadratroten.html'>Kvadratroten</a>
+<a class='sim-link' href='Lampa.html'>Lampa</a>
+<a class='sim-link' href='Miljögifter.html'>Miljögifter</a>
+<a class='sim-link' href='Ränta.html'>Ränta</a>
+<a class='sim-link' href='Temperatur'>Temperatur</a>
+<a class='sim-link' href='Tiosidiga'>Tiosidiga</a>
+<a class='sim-link' href='Tärningar.html'>Tärningar</a>
+<a class='sim-link' href='Tärning.html'>Tärning</a>
+<a class='sim-link' href='av'>av</a>
+<a class='sim-link' href='biotiska'>biotiska</a>
+<a class='sim-link' href='eller'>eller</a>
+<a class='sim-link' href='exoplaneters'>exoplaneters</a>
+<a class='sim-link' href='faktorer.html'>faktorer</a>
+<a class='sim-link' href='föreningar.html'>föreningar</a>
+<a class='sim-link' href='gaser.html'>gaser</a>
+<a class='sim-link' href='högre'>högre</a>
+<a class='sim-link' href='kongruens.html'>kongruens</a>
+<a class='sim-link' href='lägre.html'>lägre</a>
+<a class='sim-link' href='med'>med</a>
+<a class='sim-link' href='och'>och</a>
+<a class='sim-link' href='och'>och</a>
+<a class='sim-link' href='och'>och</a>
+<a class='sim-link' href='och'>och</a>
+<a class='sim-link' href='på'>på</a>
+<a class='sim-link' href='sidled.html'>sidled</a>
+<span class='category-name'>📂 Gruppövningar</span>
 <a class='sim-link' href='./Övrigt-Gruppövningar-Jeopardy.html'>Jeopardy</a>
-</div></div></div>
-    </div>
+</div></div>
   </div>
   <script>
     function toggle(el) {
-      if (el.style.display === 'block') {
-        el.style.display = 'none';
-      } else {
-        el.style.display = 'block';
-      }
+      el.classList.toggle('active');
+      const span = el.previousElementSibling.querySelector('span');
+      span.innerText = el.classList.contains('active') ? '-' : '+';
     }
   </script>
 </body>

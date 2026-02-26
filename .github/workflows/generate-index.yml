@@ -1,4 +1,4 @@
-name: Generate Smart Accordion Index
+name: Generate Smart Grid Accordion
 on:
   push:
     branches: [main]
@@ -20,55 +20,117 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Karls Dashboard</title>
             <style>
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
-              .container { max-width: 800px; margin: 0 auto; }
-              .subject-block { background: white; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
-              .subject-title { background: #007bff; color: white; padding: 15px; margin: 0; font-size: 1.2rem; cursor: pointer; display: flex; justify-content: space-between; }
-              .category-group { padding: 10px 20px; border-bottom: 1px solid #eee; }
-              .category-name { font-weight: bold; color: #555; display: block; margin: 10px 0 5px 0; cursor: pointer; }
-              .links-container { display: none; margin-left: 15px; padding-bottom: 10px; }
-              .sim-link { display: block; padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 6px; text-decoration: none; color: #007bff; transition: 0.2s; }
+              body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; color: #333; }
+              h1 { text-align: center; margin-bottom: 30px; }
+              
+              /* Grid-systemet för att få rutorna bredvid varandra */
+              .container { 
+                display: flex; 
+                flex-wrap: wrap; 
+                gap: 20px; 
+                justify-content: center;
+                max-width: 1400px;
+                margin: 0 auto;
+              }
+
+              .subject-block { 
+                background: white; 
+                border-radius: 10px; 
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+                width: 350px; /* Fixerad bredd så de stackar snyggt */
+                flex-grow: 0;
+                align-self: flex-start;
+              }
+
+              .subject-title { 
+                background: #007bff; 
+                color: white; 
+                padding: 15px; 
+                margin: 0; 
+                font-size: 1.1rem; 
+                cursor: pointer; 
+                display: flex; 
+                justify-content: space-between;
+                border-radius: 10px 10px 0 0;
+              }
+
+              .content-wrapper { display: none; padding: 10px; }
+              
+              .category-group { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+              .category-group:last-child { border-bottom: none; }
+              
+              .category-name { font-weight: bold; color: #555; display: block; margin: 5px 0; font-size: 0.9rem; text-transform: uppercase; }
+              
+              .sim-link { 
+                display: block; 
+                padding: 8px 12px; 
+                margin: 4px 0; 
+                background: #f8f9fa; 
+                border-radius: 6px; 
+                text-decoration: none; 
+                color: #007bff; 
+                font-size: 0.95rem;
+                transition: 0.2s; 
+              }
               .sim-link:hover { background: #eef; transform: translateX(5px); }
+              
               .active { display: block !important; }
             </style>
           </head>
           <body>
-            <div class="container">
-              <h1>Mina Simuleringar</h1>
-              <div id="main-content">
+            <h1>Mina Simuleringar</h1>
+            <div class="container" id="main-content">
           EOF
 
-          # Logik för att bygga strukturen
-          # Vi använder en temporär fil för att sortera och gruppera
-          find . -maxdepth 1 -name "*.html" ! -name "index.html" -not -path "*/.*" | sort | while read f; do
+          # Logik för att gruppera filer per Ämne och Kategori
+          # Vi skapar en temporär struktur i Bash
+          declare -A subjects
+          
+          # Hitta alla filer
+          for f in $(find . -maxdepth 1 -name "*.html" ! -name "index.html" -not -path "*/.*" | sort); do
             filename=$(basename "$f" .html)
-            # Vi splittar ENDAST på bindestreck
-            subject=$(echo "$filename" | cut -d'-' -f1)
-            category=$(echo "$filename" | cut -d'-' -f2)
-            name=$(echo "$filename" | cut -d'-' -f3-)
+            sub=$(echo "$filename" | cut -d'-' -f1)
+            cat_name=$(echo "$filename" | cut -d'-' -f2)
+            sim_name=$(echo "$filename" | cut -d'-' -f3-)
+            
+            # Fallback
+            if [ "$sub" == "$sim_name" ]; then sub="Övrigt"; cat_name="Allmänt"; sim_name="$filename"; fi
 
-            # Fallback om namnet saknar bindestreck
-            if [ "$subject" == "$name" ] || [ -z "$category" ]; then subject="Övrigt"; category="Allmänt"; name="$filename"; fi
-
-            echo "<div class='subject-block'>" >> index.html
-            echo "<div class='subject-title' onclick='toggle(this.nextElementSibling)'>$subject <span>+</span></div>" >> index.html
-            echo "<div class='category-group' style='display:none;'>" >> index.html
-            echo "<span class='category-name' onclick='toggle(this.nextElementSibling)'>📂 $category</span>" >> index.html
-            echo "<div class='links-container'>" >> index.html
-            echo "<a class='sim-link' href='$f'>$name</a>" >> index.html
-            echo "</div></div></div>" >> index.html
+            # Spara infon i en temporär fil för att sortera per ämne
+            echo "$sub|$cat_name|$sim_name|$f" >> raw_data.txt
           done
 
+          # Generera HTML från den sorterade datan
+          current_sub=""
+          current_cat=""
+          
+          sort raw_data.txt | while IFS='|' read -r sub cat_name sim_name f; do
+            if [ "$sub" != "$current_sub" ]; then
+              if [ "$current_sub" != "" ]; then echo "</div></div>" >> index.html; fi
+              echo "<div class='subject-block'>" >> index.html
+              echo "<div class='subject-title' onclick='toggle(this.nextElementSibling)'>$sub <span>+</span></div>" >> index.html
+              echo "<div class='content-wrapper'>" >> index.html
+              current_sub="$sub"
+              current_cat=""
+            fi
+            
+            if [ "$cat_name" != "$current_cat" ]; then
+              echo "<span class='category-name'>📂 $cat_name</span>" >> index.html
+              current_cat="$cat_name"
+            fi
+            
+            echo "<a class='sim-link' href='$f'>$sim_name</a>" >> index.html
+          done
+
+          echo "</div></div>" >> index.html # Stäng sista blocket
+
           cat <<EOF >> index.html
-              </div>
             </div>
             <script>
               function toggle(el) {
-                if (el.style.display === 'block') {
-                  el.style.display = 'none';
-                } else {
-                  el.style.display = 'block';
-                }
+                el.classList.toggle('active');
+                const span = el.previousElementSibling.querySelector('span');
+                span.innerText = el.classList.contains('active') ? '-' : '+';
               }
             </script>
           </body>
@@ -80,4 +142,4 @@ jobs:
           git config --global user.name 'github-actions'
           git config --global user.email 'action@github.com'
           git add index.html
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update Accordion Index" && git push)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Fix grouping and grid layout" && git push)

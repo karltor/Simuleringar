@@ -1,533 +1,286 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>Jeopardy Game</title>
+    <title>Jeopardy</title>
     <style>
 /* General Styles */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-}
+body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f9; }
 
 /* Splash Screen Styles */
-#splash-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #1e90ff; /* Dodger Blue */
-  color: #fff;
-}
+#splash-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #1e90ff; color: #fff; padding: 20px; box-sizing: border-box; }
+#splash-screen h1 { font-size: 4em; margin-bottom: 40px; text-align: center; }
+#splash-buttons { display: flex; gap: 10px; margin-bottom: 40px; flex-wrap: wrap; justify-content: center; }
+#splash-screen button { padding: 15px 30px; font-size: 1.2em; cursor: pointer; background-color: #fff; color: #1e90ff; border: none; border-radius: 5px; font-weight: bold; }
+#splash-screen button:hover { background-color: #e0e0e0; }
 
-#splash-screen h1 {
-  font-size: 4em;
-  margin-bottom: 40px;
-}
-
-#splash-buttons {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 40px;
-}
-
-#splash-screen button {
-  padding: 15px 30px;
-  font-size: 1.2em;
-  cursor: pointer;
-  background-color: #fff;
-  color: #1e90ff;
-  border: none;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-}
-
-#splash-screen button:hover {
-  background-color: #f0f0f0;
-}
-
-#existing-boards {
-  margin-top: 40px;
-  text-align: center;
-}
-
-#existing-boards h2 {
-  font-size: 2em;
-  margin-bottom: 20px;
-  color: #fff;
-}
-
-#board-list {
-  list-style-type: none;
-  padding: 0;
-}
-
-#board-list li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #fff;
-  color: #1e90ff;
-  padding: 10px 20px;
-  margin: 10px auto;
-  border-radius: 5px;
-  width: 100%;
-  max-width: 900px;
-  word-wrap: break-word;
-}
-
-#board-list li div {
-  display: flex;
-}
-
-#board-list li button {
-  margin-left: 10px;
-  padding: 5px 15px;
-  background-color: #1e90ff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: opacity 0.3s;
-}
-
-#board-list li button:hover {
-  opacity: 0.8;
-}
+#existing-boards { width: 100%; max-width: 900px; text-align: center; }
+#existing-boards h2 { font-size: 2em; margin-bottom: 20px; color: #fff; }
+#board-list { list-style-type: none; padding: 0; }
+#board-list li { display: flex; align-items: center; justify-content: space-between; background-color: #fff; color: #1e90ff; padding: 15px 20px; margin: 10px 0; border-radius: 5px; word-wrap: break-word; font-size: 1.2em; font-weight: bold; }
+#board-list li div { display: flex; gap: 5px; flex-wrap: wrap; }
+#board-list li button { padding: 8px 15px; background-color: #1e90ff; color: #fff; font-size: 0.9em; border: none; border-radius: 3px; cursor: pointer; }
+#board-list li button:hover { background-color: #0073e6; }
 
 /* Edit Mode Styles */
-#edit-mode {
-  padding: 40px;
-}
-
-#edit-mode button {
-  padding: 10px 20px;
-  font-size: 1em;
-  margin: 5px;
-  cursor: pointer;
-  background-color: #1e90ff;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-}
-
-#edit-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-gap: 10px;
-  margin-top: 20px;
-}
-
-#edit-grid input {
-  border: 1px solid #ccc;
-  padding: 15px;
-  text-align: center;
-  font-size: 1em;
-  border-radius: 5px;
-}
-
-.incomplete {
-  border: 2px solid red;
-}
+#edit-mode { padding: 40px; }
+#edit-mode-buttons { margin-bottom: 20px; }
+#edit-mode button { padding: 10px 20px; font-size: 1em; margin-right: 10px; cursor: pointer; background-color: #1e90ff; color: #fff; border: none; border-radius: 5px; }
+#edit-grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-gap: 10px; }
+#edit-grid input { border: 1px solid #ccc; padding: 15px; text-align: center; font-size: 1em; border-radius: 5px; width: 100%; box-sizing: border-box; }
+.incomplete { border: 2px solid red !important; }
 
 /* Play Mode Styles */
-#play-mode {
-  padding: 20px;
-}
+#play-mode { padding: 20px 20px 150px 20px; }
+#game-name { text-align: center; font-size: 3em; margin-top: 0; margin-bottom: 20px; color: #1e90ff; }
+#game-board { display: grid; grid-template-columns: repeat(6, 1fr); grid-gap: 5px; }
+.category-cell, .question-cell { display: flex; align-items: center; justify-content: center; text-align: center; box-sizing: border-box; }
+.category-cell { background-color: #00008b; color: #fff; padding: 15px 5px; font-size: 1.1em; font-weight: bold; text-transform: uppercase; border-radius: 5px; }
+.question-cell { background-color: #1e90ff; color: #ffd700; padding: 25px 10px; font-size: 2em; font-weight: bold; cursor: pointer; border-radius: 5px; text-shadow: 2px 2px 0 #000; }
+.question-cell:hover { background-color: #0073e6; }
+.question-cell.clicked { background-color: #999; cursor: default; text-shadow: none; }
 
-#game-name {
-  text-align: center;
-  font-size: 3em;
-  margin-bottom: 20px;
-}
+/* Teams Section */
+#teams { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #00008b; padding: 15px 10px; box-sizing: border-box; max-height: 150px; overflow-y: auto; border-top: 3px solid #ffd700; }
+#teams h2 { color: #fff; text-align: center; margin: 0 0 10px 0; font-size: 1.2em; }
+#team-list { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; }
+.team { display: flex; flex-direction: column; align-items: center; color: #fff; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; min-width: 120px; }
+.team input { text-align: center; font-size: 1.2em; font-weight: bold; margin-bottom: 5px; background-color: transparent; border: none; border-bottom: 1px solid #fff; color: #fff; width: 100%; }
+.team input:focus { outline: none; border-bottom: 2px solid #ffd700; }
+.team p { font-size: 1.5em; margin: 0; font-weight: bold; color: #ffd700; }
 
-#game-board {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  grid-gap: 5px;
-  margin-top: 20px;
-}
+/* Modals */
+.custom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal-content { background-color: #fff; padding: 30px; width: 90%; max-width: 500px; border-radius: 10px; text-align: center; position: relative; color: #333; }
+.modal-content h2 { margin-top: 0; color: #1e90ff; }
+.modal-content input[type="text"], .modal-content input[type="number"], .modal-content textarea { width: 100%; padding: 10px; margin: 10px 0 20px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 1em; box-sizing: border-box; }
+.modal-content button { padding: 10px 20px; font-size: 1em; background-color: #1e90ff; color: #fff; border: none; cursor: pointer; border-radius: 5px; margin: 5px; }
+.modal-content button.cancel-btn { background-color: #ccc; color: #333; }
+.close-x { position: absolute; top: 10px; right: 15px; font-size: 1.5em; cursor: pointer; color: #999; }
 
-.category-cell, .question-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
+/* Question Popup */
+#question-popup { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 50; }
+#question-content { background-color: #fff; padding: 40px; width: 80%; max-width: 900px; border-radius: 15px; text-align: center; border: 5px solid #1e90ff; position: relative; }
+#event-banner { display: none; padding: 10px; font-size: 1.5em; font-weight: bold; color: #fff; border-radius: 8px; margin-bottom: 20px; }
+#question-text { font-size: 3em; font-weight: bold; margin-bottom: 40px; color: #00008b; word-wrap: break-word; }
+#adjust-points { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin-top: 20px; }
 
-.category-cell {
-  background-color: #1e90ff;
-  color: #fff;
-  padding: 20px;
-  font-size: 1.2em;
-  text-transform: uppercase;
-  border-radius: 5px;
-}
+.adjust-team { display: flex; flex-direction: column; align-items: center; background: #f0f0f0; padding: 10px 15px; border-radius: 10px; min-width: 120px; transition: 0.3s; }
+.adjust-team p { font-size: 1.2em; font-weight: bold; margin: 0 0 10px 0; color: #333; }
+.adjust-team .btn-group { display: flex; gap: 10px; }
+.adjust-team button { padding: 15px 20px; font-size: 1.2em; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; color: #fff; }
+.btn-plus { background-color: #28a745; }
+.btn-plus:hover { background-color: #218838; }
+.btn-minus { background-color: #dc3545; }
+.btn-minus:hover { background-color: #c82333; }
+.team-frozen { opacity: 0.3; pointer-events: none; } /* För frysstrålen */
 
-.question-cell {
-  background-color: #f0f0f0;
-  color: #1e90ff;
-  padding: 20px;
-  font-size: 1.5em;
-  cursor: pointer;
-  border-radius: 5px;
-  transition: background-color 0.3s;
-}
+#close-question-btn { margin-top: 30px; padding: 15px 30px; font-size: 1.2em; background-color: #333; color: white; border: none; border-radius: 5px; cursor: pointer; }
 
-.question-cell:hover {
-  background-color: #e0e0e0;
-}
+/* Event Animations */
+.event-splash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-size: 300% 300%; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 200; color: white; text-transform: uppercase; text-align: center; }
+@keyframes explode { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+.event-splash h1 { font-size: 6em; font-weight: 900; text-shadow: 6px 6px 0 #000; animation: zoomInOut 1s infinite alternate; margin: 0; }
+.event-splash h2 { font-size: 3em; text-shadow: 3px 3px 0 #000; margin-top: 20px; }
+@keyframes zoomInOut { from { transform: scale(1); } to { transform: scale(1.15); } }
 
-.question-cell.clicked {
-  background-color: #999;
-  cursor: default;
-}
-
-/* Teams Section Styles */
-#teams {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background-color: #1e90ff;
-  padding: 10px 0;
-}
-
-#teams h2 {
-  color: #fff;
-  text-align: center;
-  margin: 0;
-}
-
-#team-list {
-  display: flex;
-  justify-content: space-around;
-}
-
-.team {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #fff;
-}
-
-.team input {
-  text-align: center;
-  font-size: 1.2em;
-  margin-bottom: 5px;
-  background-color: transparent;
-  border: none;
-  border-bottom: 1px solid #fff;
-  color: #fff;
-}
-
-.team input:focus {
-  outline: none;
-}
-
-.team p {
-  font-size: 1.2em;
-  margin: 0;
-}
-
-/* Question Popup Styles */
-#question-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#question-content {
-  background-color: #fff;
-  padding: 30px;
-  width: 60%;
-  max-width: 800px;
-  position: relative;
-  border-radius: 10px;
-  text-align: center;
-}
-
-#close-popup {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  cursor: pointer;
-  font-size: 2em;
-}
-
-#question-text {
-  font-size: 2em;
-  margin-bottom: 30px;
-}
-
-#adjust-points {
-  display: flex;
-  justify-content: space-around;
-  margin-top: 20px;
-}
-
-.adjust-team {
-  display: flex;
-  align-items: center;
-}
-
-.adjust-team p {
-  font-size: 1.2em;
-  margin: 0 10px 0 0;
-}
-
-.adjust-team button {
-  margin: 0 5px;
-  padding: 10px 15px;
-  font-size: 1em;
-  background-color: #1e90ff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.adjust-team button:hover {
-  opacity: 0.8;
-}
-
-/* End Screen Styles */
-#end-screen {
-  padding: 40px;
-  text-align: center;
-}
-
-#end-screen h1 {
-  font-size: 4em;
-  margin-bottom: 20px;
-}
-
-#results {
-  margin-top: 20px;
-}
-
-#results h2 {
-  font-size: 2em;
-  color: #1e90ff;
-  margin-bottom: 20px;
-}
-
-#results .team-result {
-  font-size: 1.5em;
-  margin-bottom: 10px;
-}
-
-/* Key Popup (Share Key) */
-#key-popup {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#key-content {
-  background-color: #fff;
-  padding: 30px;
-  width: 40%;
-  max-width: 600px;
-  position: relative;
-  border-radius: 10px;
-  text-align: center;
-}
-
-#close-key-popup {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  cursor: pointer;
-  font-size: 2em;
-}
-
-#share-key {
-  width: 100%;
-  height: 150px;
-  margin-bottom: 20px;
-  font-size: 1em;
-  padding: 10px;
-  resize: none;
-}
-
-#copy-key-button {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: #1e90ff;
-  color: #fff;
-  border: none;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-#copy-key-button:hover {
-  opacity: 0.8;
-}
-
-/* Button Styles */
-button {
-  transition: background-color 0.3s, opacity 0.3s;
-}
-
-button:disabled {
-  background-color: #ccc;
-  cursor: default;
-}
-
-/* Scrollbar Styles (Optional) */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f0f0f0;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #1e90ff;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+/* Slutskärm */
+#end-screen { padding: 40px; text-align: center; min-height: 100vh; background-color: #1e90ff; color: white; }
+#end-screen h1 { font-size: 5em; margin-bottom: 20px; color: #ffd700; text-shadow: 2px 2px 0 #000; }
+#results { margin-top: 20px; background: rgba(0,0,0,0.2); padding: 30px; border-radius: 15px; display: inline-block; }
+#results h2 { font-size: 3em; margin-bottom: 30px; }
+.team-result { font-size: 2em; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 10px;}
+#back-to-main { display: block; margin: 40px auto 0 auto; padding: 15px 30px; font-size: 1.5em; cursor: pointer; border: none; border-radius: 5px; background-color: #fff; color: #1e90ff; font-weight: bold; }
 
 </style>
 </head>
 <body>
-    <!-- Splash Screen -->
+
     <div id="splash-screen">
-        <h1>Jeopardy Game</h1>
+        <h1>Jeopardy</h1>
         <div id="splash-buttons">
-            <button id="create-board">Create New Board</button>
-            <button id="import-board">Importera</button>
+            <button id="create-board">Skapa Nytt Bräde</button>
+            <button id="import-board-btn">Importera Bräde</button>
         </div>
         <div id="existing-boards">
-            <h2>Existing Boards</h2>
+            <h2>Dina sparade bräden</h2>
             <ul id="board-list"></ul>
         </div>
     </div>
 
-    <!-- Edit Mode -->
     <div id="edit-mode" style="display: none;">
-        <button id="save-board">Save Board</button>
-        <button id="return-main">Return to Main Page</button>
+        <div id="edit-mode-buttons">
+            <button id="save-board">Spara Bräde</button>
+            <button id="return-main">Tillbaka till Start</button>
+        </div>
         <div id="edit-grid"></div>
     </div>
 
-    <!-- Play Mode -->
     <div id="play-mode" style="display: none;">
         <h1 id="game-name"></h1>
         <div id="game-board"></div>
         <div id="teams">
-            <h2>Teams</h2>
+            <h2>Lagens Poäng</h2>
             <div id="team-list"></div>
         </div>
     </div>
 
-    <!-- Question Popup -->
+    <div id="generic-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeModal('generic-modal')">&times;</span>
+            <h2 id="generic-modal-title">Meddelande</h2>
+            <p id="generic-modal-text"></p>
+            <button onclick="closeModal('generic-modal')">OK</button>
+        </div>
+    </div>
+    
+    <div id="freeze-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <h2>Frysstrålen!</h2>
+            <p>Välj vilket lag ni vill frysa under nästa fråga:</p>
+            <div id="freeze-team-buttons"></div>
+        </div>
+    </div>
+
+    <div id="import-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeModal('import-modal')">&times;</span>
+            <h2>Importera Bräde</h2>
+            <p>Klistra in nyckeln för brädet nedan:</p>
+            <textarea id="import-key-input" rows="4"></textarea>
+            <button id="confirm-import-btn">Importera</button>
+            <button class="cancel-btn" onclick="closeModal('import-modal')">Avbryt</button>
+        </div>
+    </div>
+
+    <div id="share-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeModal('share-modal')">&times;</span>
+            <h2>Dela Bräde</h2>
+            <p>Kopiera nyckeln nedan:</p>
+            <textarea id="share-key-output" rows="4" readonly></textarea>
+            <button id="copy-key-btn">Kopiera Nyckel</button>
+        </div>
+    </div>
+
+    <div id="team-setup-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeModal('team-setup-modal')">&times;</span>
+            <h2>Inställningar för lag</h2>
+            <p>Hur många lag ska spela? (2-5)</p>
+            <input type="number" id="num-teams-input" min="2" max="5" value="3">
+            <button id="generate-team-inputs-btn">Nästa</button>
+            <div id="team-names-container" style="display:none; margin-top:20px;">
+                <p>Namnge lagen:</p>
+                <div id="team-name-inputs"></div>
+                <button id="start-game-btn">Starta Spelet!</button>
+                <button class="cancel-btn" onclick="closeModal('team-setup-modal')">Avbryt</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="generic-event-splash" class="event-splash" style="display: none; background: radial-gradient(circle, #ff0000, #ff8c00);">
+        <h1 id="generic-event-title">EVENT</h1>
+        <h2 id="generic-event-sub">Underrubrik</h2>
+    </div>
+
+    <div id="dd-setup-modal" class="custom-modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close-x" onclick="closeModal('dd-setup-modal')">&times;</span>
+            <h2>Daily Double</h2>
+            <select id="dd-team-select" style="width:100%; padding:10px; font-size:1.1em; margin-bottom:15px;"></select>
+            <div id="dd-bet-container">
+                <button class="dd-bet-btn" id="dd-bet-x2"></button>
+                <button class="dd-bet-btn" id="dd-bet-1000">1000 poäng</button>
+                <button class="dd-bet-btn" id="dd-bet-all"></button>
+            </div>
+        </div>
+    </div>
+
     <div id="question-popup" style="display: none;">
         <div id="question-content">
-            <span id="close-popup">&times;</span>
+            <div id="event-banner"></div>
             <p id="question-text"></p>
+            <p id="question-value-display" style="color: #666; font-weight: bold; margin-bottom: 20px;"></p>
             <div id="adjust-points"></div>
+            <button id="close-question-btn">Stäng Fråga</button>
         </div>
     </div>
 
-    <!-- End Screen -->
     <div id="end-screen" style="display: none;">
-        <h1>Game Over</h1>
+        <h1>Spelet är slut!</h1>
         <div id="results"></div>
-        <button id="back-to-main">Return to Main Page</button>
-    </div>
-
-    <!-- Nyckel Popup (för delning) -->
-    <div id="key-popup" style="display: none;">
-        <div id="key-content">
-            <span id="close-key-popup">&times;</span>
-            <h2>Här är din nyckel</h2>
-            <textarea id="share-key" readonly></textarea>
-            <button id="copy-key-button">Kopiera nyckel</button>
-        </div>
+        <button id="back-to-main">Tillbaka till Start</button>
     </div>
 
     <script>
-// Filnamn: script.js
-
 // Global variables
 let boards = [];
 let currentBoard = null;
 let teams = [];
 let teamScores = {};
 let viewedQuestions = {};
-let totalQuestions = 30; // 6 categories * 5 questions
+let totalQuestions = 30;
+
+// Game State Variables
+let questionsOpened = 0;
+let currentQuestionValue = 0; 
+let activeDDValue = 0; 
+
+// Events State
+let dailyDoubleTriggered = false;
+let allaSvararCount = 0;
+let raddningsplankanTriggered = false;
+
+let mappedEvents = {}; 
+let solidaritetTurn = -1;
+let currentQuestionPreEvent = null;
+let currentQuestionPostEvent = null;
+let frozenTeam = null; 
+let nextFrozenTeam = null;
+let allianceTeams = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     loadBoards();
     setupEventListeners();
 });
 
+function showModal(title, text) {
+    document.getElementById('generic-modal-title').textContent = title;
+    document.getElementById('generic-modal-text').textContent = text;
+    document.getElementById('generic-modal').style.display = 'flex';
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
 function loadBoards() {
-    // Load boards from localStorage
-    const storedBoards = JSON.parse(localStorage.getItem('jeopardyBoards')) || [];
-    boards = storedBoards;
+    boards = JSON.parse(localStorage.getItem('jeopardyBoards')) || [];
     displayBoardList();
 }
 
-function saveBoards() {
-    localStorage.setItem('jeopardyBoards', JSON.stringify(boards));
-}
+function saveBoards() { localStorage.setItem('jeopardyBoards', JSON.stringify(boards)); }
 
 function displayBoardList() {
     const boardList = document.getElementById('board-list');
     boardList.innerHTML = '';
-
     if (boards.length === 0) {
-        const noBoardsMsg = document.createElement('li');
-        noBoardsMsg.textContent = 'No existing boards. Create a new one!';
-        boardList.appendChild(noBoardsMsg);
+        boardList.innerHTML = '<li style="justify-content:center;">Inga sparade bräden finns. Skapa ett nytt!</li>';
     } else {
         boards.forEach((board, index) => {
-            if (board && board.name && board.categories && board.questions) {
+            if (board && board.name) {
                 const li = document.createElement('li');
                 li.textContent = board.name.length > 20 ? board.name.substring(0, 17) + '...' : board.name;
                 const buttonsDiv = document.createElement('div');
 
-                const playBtn = document.createElement('button');
-                playBtn.textContent = 'Play';
-                playBtn.addEventListener('click', () => startGame(index));
+                const playBtn = document.createElement('button'); playBtn.textContent = 'Spela'; playBtn.onclick = () => initiateGame(index);
+                const editBtn = document.createElement('button'); editBtn.textContent = 'Redigera'; editBtn.onclick = () => editBoard(index);
+                const shareBtn = document.createElement('button'); shareBtn.textContent = 'Dela'; shareBtn.onclick = () => openShareModal(index);
+                const deleteBtn = document.createElement('button'); deleteBtn.textContent = 'Ta bort'; deleteBtn.style.backgroundColor = '#dc3545';
+                deleteBtn.onclick = () => {
+                    if (confirm(`Ta bort "${board.name}"?`)) { boards.splice(index, 1); saveBoards(); displayBoardList(); }
+                };
 
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.addEventListener('click', () => editBoard(index));
-
-                const deleteBtn = document.createElement('button');
-                deleteBtn.textContent = 'Delete';
-                deleteBtn.addEventListener('click', () => deleteBoard(index));
-
-                const shareBtn = document.createElement('button');
-                shareBtn.textContent = 'Dela';
-                shareBtn.addEventListener('click', () => shareBoard(index));
-
-                buttonsDiv.appendChild(playBtn);
-                buttonsDiv.appendChild(editBtn);
-                buttonsDiv.appendChild(deleteBtn);
-                buttonsDiv.appendChild(shareBtn);
-
+                buttonsDiv.append(playBtn, editBtn, shareBtn, deleteBtn);
                 li.appendChild(buttonsDiv);
                 boardList.appendChild(li);
             }
@@ -535,89 +288,71 @@ function displayBoardList() {
     }
 }
 
-function shareBoard(index) {
-    const board = boards[index];
-    const boardKey = JSON.stringify(board);
-    // Visa popup med nyckeln
-    const keyPopup = document.getElementById('key-popup');
-    const shareKey = document.getElementById('share-key');
-    shareKey.value = boardKey;
-    keyPopup.style.display = 'flex';
-}
-
-function deleteBoard(index) {
-    if (confirm(`Are you sure you want to delete the board "${boards[index].name}"?`)) {
-        boards.splice(index, 1);
-        saveBoards();
-        displayBoardList();
-    }
-}
-
 function setupEventListeners() {
     document.getElementById('create-board').addEventListener('click', createNewBoard);
-    document.getElementById('import-board').addEventListener('click', importBoard);
-    document.getElementById('save-board').addEventListener('click', saveCurrentBoard);
-    document.getElementById('return-main').addEventListener('click', () => {
-        saveCurrentBoard();
-        showSplashScreen();
+    document.getElementById('import-board-btn').addEventListener('click', () => {
+        document.getElementById('import-key-input').value = '';
+        document.getElementById('import-modal').style.display = 'flex';
     });
-    document.getElementById('close-popup').addEventListener('click', closeQuestionPopup);
-    document.getElementById('question-popup').addEventListener('click', (e) => {
-        if (e.target === document.getElementById('question-popup')) {
-            closeQuestionPopup();
+    document.getElementById('confirm-import-btn').addEventListener('click', importBoard);
+    document.getElementById('save-board').addEventListener('click', saveCurrentBoard);
+    document.getElementById('return-main').addEventListener('click', () => { saveCurrentBoard(); showSplashScreen(); });
+    document.getElementById('close-question-btn').addEventListener('click', closeQuestionPopup);
+    document.getElementById('back-to-main').addEventListener('click', showSplashScreen);
+    document.getElementById('copy-key-btn').addEventListener('click', copyKeyToClipboard);
+    document.getElementById('generate-team-inputs-btn').addEventListener('click', generateTeamInputs);
+    document.getElementById('start-game-btn').addEventListener('click', finalizeTeamSetupAndStart);
+
+    const modals = document.querySelectorAll('.custom-modal, #question-popup');
+    modals.forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            // Förhindra stängning om man måste välja frysstråle
+            if (modal.id === 'freeze-modal') return; 
+            if (e.target === modal) {
+                if (modal.id === 'question-popup') closeQuestionPopup();
+                else modal.style.display = 'none';
+            }
+        });
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (document.getElementById('freeze-modal').style.display === 'flex') return;
+            if (document.getElementById('question-popup').style.display === 'flex') closeQuestionPopup();
+            else modals.forEach(m => { if(m.style.display === 'flex') m.style.display = 'none'; });
         }
     });
-    document.getElementById('back-to-main').addEventListener('click', showSplashScreen);
-
-    document.getElementById('close-key-popup').addEventListener('click', closeKeyPopup);
-    document.getElementById('copy-key-button').addEventListener('click', copyKeyToClipboard);
 }
 
-function closeKeyPopup() {
-    const keyPopup = document.getElementById('key-popup');
-    keyPopup.style.display = 'none';
+function openShareModal(index) {
+    document.getElementById('share-key-output').value = JSON.stringify(boards[index]);
+    document.getElementById('share-modal').style.display = 'flex';
 }
 
 function copyKeyToClipboard() {
-    const shareKey = document.getElementById('share-key');
-    shareKey.select();
-    shareKey.setSelectionRange(0, 99999); // For mobile devices
-
-    document.execCommand('copy');
-    alert('Nyckeln är kopierad!');
+    const shareKey = document.getElementById('share-key-output');
+    shareKey.select(); document.execCommand('copy');
+    showModal('Klart!', 'Nyckeln har kopierats till urklipp.');
 }
 
 function importBoard() {
-    const key = prompt('Klistra in nyckeln här:');
-    if (!key || key.trim() === '') return;
-
+    const key = document.getElementById('import-key-input').value;
     try {
         const newBoard = JSON.parse(key);
-        if (newBoard && newBoard.name && newBoard.categories && newBoard.questions) {
-            // Kolla om board med samma namn redan finns
+        if (newBoard && newBoard.name) {
             const existingIndex = boards.findIndex(b => b.name === newBoard.name);
             if (existingIndex >= 0) {
-                if (confirm(`Ett board med namnet "${newBoard.name}" finns redan. Vill du ersätta det?`)) {
-                    boards[existingIndex] = newBoard;
-                } else {
-                    return;
-                }
-            } else {
-                boards.push(newBoard);
-            }
-            saveBoards();
-            displayBoardList();
-            alert('Board har importerats!');
-        } else {
-            alert('Ogiltig nyckel. Kunde inte importera.');
-        }
-    } catch (e) {
-        alert('Ogiltig nyckel. Kunde inte importera.');
-    }
+                if (confirm(`Skriva över brädet "${newBoard.name}"?`)) boards[existingIndex] = newBoard;
+                else return;
+            } else boards.push(newBoard);
+            saveBoards(); displayBoardList(); closeModal('import-modal');
+            showModal('Lyckades', 'Brädet har importerats!');
+        } else throw new Error();
+    } catch (e) { showModal('Fel', 'Ogiltig nyckel.'); }
 }
 
 function showSplashScreen() {
-    document.getElementById('splash-screen').style.display = 'block';
+    document.getElementById('splash-screen').style.display = 'flex'; 
     document.getElementById('edit-mode').style.display = 'none';
     document.getElementById('play-mode').style.display = 'none';
     document.getElementById('question-popup').style.display = 'none';
@@ -626,11 +361,7 @@ function showSplashScreen() {
 }
 
 function createNewBoard() {
-    currentBoard = {
-        name: 'New Game',
-        categories: Array(6).fill(''),
-        questions: Array(6).fill(null).map(() => Array(5).fill(''))
-    };
+    currentBoard = { name: 'Nytt Spel', categories: Array(6).fill(''), questions: Array(6).fill(null).map(() => Array(5).fill('')) };
     editCurrentBoard();
 }
 
@@ -642,225 +373,358 @@ function editBoard(index) {
 function editCurrentBoard() {
     document.getElementById('splash-screen').style.display = 'none';
     document.getElementById('edit-mode').style.display = 'block';
-    const editGrid = document.getElementById('edit-grid');
-    editGrid.innerHTML = '';
+    const editGrid = document.getElementById('edit-grid'); editGrid.innerHTML = '';
 
-    // Input for game name
     const nameInput = document.createElement('input');
-    nameInput.value = currentBoard.name;
-    nameInput.placeholder = 'Game Name';
-    nameInput.addEventListener('input', (e) => currentBoard.name = e.target.value);
-    nameInput.style.gridColumn = 'span 6';
+    nameInput.value = currentBoard.name; nameInput.placeholder = 'Spelets Namn';
+    nameInput.oninput = (e) => currentBoard.name = e.target.value;
+    nameInput.style.gridColumn = 'span 6'; nameInput.style.fontWeight = 'bold';
     editGrid.appendChild(nameInput);
-    editGrid.style.gridTemplateColumns = 'repeat(6, 1fr)';
-    editGrid.style.gridTemplateRows = 'repeat(6, auto)';
 
-    // Inputs for categories
     currentBoard.categories.forEach((cat, i) => {
-        const catInput = document.createElement('input');
-        catInput.value = cat;
-        catInput.placeholder = `Category ${i + 1}`;
-        catInput.addEventListener('input', (e) => currentBoard.categories[i] = e.target.value);
+        const catInput = document.createElement('input'); catInput.value = cat; catInput.placeholder = `Kategori ${i + 1}`;
+        catInput.style.backgroundColor = '#e6f2ff'; catInput.oninput = (e) => currentBoard.categories[i] = e.target.value;
         editGrid.appendChild(catInput);
     });
 
-    // Inputs for questions
     for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 6; col++) {
-            const qInput = document.createElement('input');
-            qInput.value = currentBoard.questions[col][row];
-            qInput.placeholder = `Question ${row + 1}`;
-            qInput.addEventListener('input', (e) => currentBoard.questions[col][row] = e.target.value);
-            qInput.dataset.col = col;
-            qInput.dataset.row = row;
+            const qInput = document.createElement('input'); qInput.value = currentBoard.questions[col][row];
+            qInput.placeholder = `Fråga ${row + 1} (${(row+1)*100}p)`;
+            qInput.oninput = (e) => currentBoard.questions[col][row] = e.target.value;
             editGrid.appendChild(qInput);
         }
     }
 }
 
 function saveCurrentBoard() {
-    const editGrid = document.getElementById('edit-grid');
-    const inputs = editGrid.getElementsByTagName('input');
-    let incompleteFields = 0;
-
-    // Remove previous highlights
-    for (let input of inputs) {
-        input.classList.remove('incomplete');
-    }
-
-    for (let input of inputs) {
-        if (input.value.trim() === '' && input.placeholder.startsWith('Question')) {
-            input.classList.add('incomplete');
-            incompleteFields++;
-        }
-    }
-
-    if (incompleteFields > 0) {
-        alert('Some questions are incomplete!');
-    }
-
-    // Save to boards
+    const inputs = document.getElementById('edit-grid').getElementsByTagName('input');
+    for (let input of inputs) input.classList.remove('incomplete');
     const existingIndex = boards.findIndex(b => b.name === currentBoard.name);
-    if (existingIndex >= 0) {
-        boards[existingIndex] = currentBoard;
-    } else {
-        boards.push(currentBoard);
-    }
+    if (existingIndex >= 0) boards[existingIndex] = currentBoard; else boards.push(currentBoard);
     saveBoards();
 }
 
-function startGame(index) {
+function initiateGame(index) {
     currentBoard = JSON.parse(JSON.stringify(boards[index]));
-    viewedQuestions = {};
+    viewedQuestions = {}; questionsOpened = 0; 
+    dailyDoubleTriggered = false; allaSvararCount = 0; raddningsplankanTriggered = false;
+    frozenTeam = null; nextFrozenTeam = null; mappedEvents = {};
+    
+    // Förbered Händelsebanken
+    const eventPool = ['robin_hood', 'lotterihjulet', 'solospelaren', 'dubbeltrubbel', 'frysstralen', 'alliansen', 'jackpot'];
+    const selectedEvents = eventPool.sort(() => 0.5 - Math.random()).slice(0, 2);
+    
+    let assignedTurns = [];
+    while(assignedTurns.length < 2) {
+        let r = Math.floor(Math.random() * 20) + 4; // Runda 4 till 23
+        if(!assignedTurns.includes(r)) assignedTurns.push(r);
+    }
+    selectedEvents.forEach((ev, idx) => mappedEvents[assignedTurns[idx]] = ev);
+
+    // Solidaritet 33% chans
+    if(Math.random() < 0.33) {
+        do { solidaritetTurn = Math.floor(Math.random() * 20) + 4; } while (assignedTurns.includes(solidaritetTurn));
+    } else { solidaritetTurn = -1; }
+
     document.getElementById('splash-screen').style.display = 'none';
-    promptForTeams();
+    document.getElementById('num-teams-input').value = 3;
+    document.getElementById('team-names-container').style.display = 'none';
+    document.getElementById('generate-team-inputs-btn').style.display = 'inline-block';
+    document.getElementById('team-setup-modal').style.display = 'flex';
 }
 
-function promptForTeams() {
-    let numTeams;
-    do {
-        numTeams = parseInt(prompt('Enter number of teams (2-5):'));
-    } while (isNaN(numTeams) || numTeams < 2 || numTeams > 5);
-
-    teams = [];
-    teamScores = {};
-    for (let i = 0; i < numTeams; i++) {
-        const teamName = prompt(`Enter name for Team ${i + 1}:`) || `Team ${i + 1}`;
-        teams.push(teamName);
-        teamScores[teamName] = 0;
+function generateTeamInputs() {
+    let num = parseInt(document.getElementById('num-teams-input').value);
+    if (num < 2) num = 2; if (num > 5) num = 5;
+    const container = document.getElementById('team-name-inputs'); container.innerHTML = '';
+    for(let i=1; i<=num; i++){
+        const inp = document.createElement('input'); inp.type = 'text'; inp.value = `Lag ${i}`; inp.className = 'setup-team-name';
+        container.appendChild(inp);
     }
+    document.getElementById('generate-team-inputs-btn').style.display = 'none';
+    document.getElementById('team-names-container').style.display = 'block';
+}
 
-    setupGameBoard();
+function finalizeTeamSetupAndStart() {
+    teams = []; teamScores = {};
+    document.querySelectorAll('.setup-team-name').forEach((inp, idx) => {
+        let tName = inp.value.trim() || `Lag ${idx+1}`;
+        while(teams.includes(tName)) tName += "*"; 
+        teams.push(tName); teamScores[tName] = 0;
+    });
+    closeModal('team-setup-modal'); setupGameBoard();
 }
 
 function setupGameBoard() {
     document.getElementById('play-mode').style.display = 'block';
     document.getElementById('game-name').textContent = currentBoard.name;
+    const gameBoard = document.getElementById('game-board'); gameBoard.innerHTML = '';
 
-    const gameBoard = document.getElementById('game-board');
-    gameBoard.innerHTML = '';
-    gameBoard.style.gridTemplateColumns = 'repeat(6, 1fr)';
-
-    // Categories
     currentBoard.categories.forEach(cat => {
-        const catDiv = document.createElement('div');
-        catDiv.textContent = cat || 'Category';
-        catDiv.classList.add('category-cell');
+        const catDiv = document.createElement('div'); catDiv.textContent = cat || 'Kategori'; catDiv.classList.add('category-cell');
         gameBoard.appendChild(catDiv);
     });
 
-    // Questions
     for (let row = 0; row < 5; row++) {
         for (let col = 0; col < 6; col++) {
-            const qDiv = document.createElement('div');
-            qDiv.textContent = (row + 1) * 100;
-            qDiv.classList.add('question-cell');
-            qDiv.dataset.col = col;
-            qDiv.dataset.row = row;
+            const qDiv = document.createElement('div'); qDiv.textContent = (row + 1) * 100;
+            qDiv.classList.add('question-cell'); qDiv.dataset.col = col; qDiv.dataset.row = row;
             qDiv.addEventListener('click', handleQuestionClick);
             gameBoard.appendChild(qDiv);
         }
     }
-
     updateTeamsDisplay();
 }
 
 function updateTeamsDisplay() {
-    const teamList = document.getElementById('team-list');
-    teamList.innerHTML = '';
+    const teamList = document.getElementById('team-list'); teamList.innerHTML = '';
     teams.forEach(team => {
-        const teamDiv = document.createElement('div');
-        teamDiv.classList.add('team');
-        const nameInput = document.createElement('input');
-        nameInput.value = team;
-        nameInput.addEventListener('input', (e) => {
-            const oldName = team;
-            const newName = e.target.value;
-            const index = teams.indexOf(team);
-            teams[index] = newName;
-            teamScores[newName] = teamScores[oldName];
-            delete teamScores[oldName];
-        });
-        const scoreP = document.createElement('p');
-        scoreP.textContent = `Points: ${teamScores[team]}`;
-        teamDiv.appendChild(nameInput);
-        teamDiv.appendChild(scoreP);
-        teamList.appendChild(teamDiv);
+        const teamDiv = document.createElement('div'); teamDiv.classList.add('team');
+        const nameInput = document.createElement('input'); nameInput.value = team;
+        nameInput.onchange = (e) => {
+            let newName = e.target.value.trim();
+            if(!newName || teams.includes(newName)) { e.target.value = team; return; }
+            teams[teams.indexOf(team)] = newName; teamScores[newName] = teamScores[team]; delete teamScores[team];
+            updateTeamsDisplay();
+        };
+        const scoreP = document.createElement('p'); scoreP.textContent = `${teamScores[team]} p`;
+        teamDiv.append(nameInput, scoreP); teamList.appendChild(teamDiv);
     });
+}
+
+function getLowestTeams(count = 1) {
+    let sorted = Object.entries(teamScores).sort((a, b) => Math.random() - 0.5).sort((a,b) => a[1]-b[1]);
+    return sorted.slice(0, count).map(t => t[0]);
+}
+function getLeader() {
+    let sorted = Object.entries(teamScores).sort((a,b) => b[1]-a[1]);
+    return sorted[0][0];
+}
+
+function flashEventSplash(title, subtitle, bgColor, duration, callback) {
+    const splash = document.getElementById('generic-event-splash');
+    document.getElementById('generic-event-title').innerHTML = title;
+    document.getElementById('generic-event-sub').innerHTML = subtitle;
+    splash.style.background = bgColor;
+    splash.style.display = 'flex';
+    setTimeout(() => { splash.style.display = 'none'; callback(); }, duration);
 }
 
 function handleQuestionClick(e) {
     const cell = e.currentTarget;
-    const col = cell.dataset.col;
-    const row = cell.dataset.row;
+    const col = parseInt(cell.dataset.col); const row = parseInt(cell.dataset.row);
 
-    if (viewedQuestions[`${col}-${row}`]) return; // Already viewed
+    if (viewedQuestions[`${col}-${row}`]) return;
+    viewedQuestions[`${col}-${row}`] = true; cell.classList.add('clicked'); cell.textContent = '';
+    
+    currentQuestionValue = (row + 1) * 100; questionsOpened++;
+    activeDDValue = currentQuestionValue;
+    currentQuestionPreEvent = null; currentQuestionPostEvent = null;
+    
+    // Frysstrålen Update
+    frozenTeam = nextFrozenTeam; nextFrozenTeam = null;
 
-    viewedQuestions[`${col}-${row}`] = true;
-    cell.classList.add('clicked');
-    cell.textContent = ''; // Remove the value from the cell
+    let isDD = (!dailyDoubleTriggered && questionsOpened >= 6 && questionsOpened <= 17 && (Math.random() < (questionsOpened - 5) / 12 || questionsOpened === 17));
+    let isRaddning = (!isDD && !raddningsplankanTriggered && questionsOpened > 12 && Math.random() < 0.15);
+    let isAlla = (!isDD && !isRaddning && allaSvararCount < 2 && Math.random() < 0.10);
+
+    // Krock-hantering (skjut bank-event framåt om permanent event triggas)
+    if ((isDD || isRaddning || isAlla) && mappedEvents[questionsOpened]) {
+        mappedEvents[questionsOpened + 1] = mappedEvents[questionsOpened];
+        delete mappedEvents[questionsOpened];
+    }
+    if ((isDD || isRaddning || isAlla) && solidaritetTurn === questionsOpened) { solidaritetTurn++; }
+
+    if (isDD) { dailyDoubleTriggered = true; triggerDailyDouble(col, row); return; }
+    if (isRaddning) { raddningsplankanTriggered = true; triggerRaddningsplankan(col, row); return; }
+    if (isAlla) { allaSvararCount++; triggerAllaSvarar(col, row); return; }
+
+    // Kolla Bank-händelser
+    if (mappedEvents[questionsOpened]) {
+        let ev = mappedEvents[questionsOpened];
+        if (ev === 'lotterihjulet') triggerLotterihjulet(col, row);
+        else if (ev === 'solospelaren') { currentQuestionPreEvent = 'solospelaren'; flashEventSplash("SOLOSPELAREN!", "Välj EN person i laget som får svara.<br>Övriga tittar bort!", "radial-gradient(circle, #ff4500, #ff8c00)", 4000, () => showQuestionPopup(col, row)); }
+        else if (ev === 'dubbeltrubbel') { currentQuestionPreEvent = 'dubbeltrubbel'; activeDDValue *= 2; flashEventSplash("DUBBELTRUBBEL!", "Värd dubbelt så mycket.<br>Gissar man fel får man dubbla minus!", "radial-gradient(circle, #8b0000, #ff0000)", 4000, () => showQuestionPopup(col, row)); }
+        else if (ev === 'alliansen') { currentQuestionPreEvent = 'alliansen'; allianceTeams = getLowestTeams(2); flashEventSplash("ALLIANSEN!", `${allianceTeams.join(" & ")} delar på poängen!<br>Svarar en rätt, får båda poäng!`, "radial-gradient(circle, #4169e1, #1e90ff)", 4000, () => showQuestionPopup(col, row)); }
+        else if (ev === 'frysstralen') { currentQuestionPreEvent = 'frysstralen'; flashEventSplash("FRYSSTRÅLEN!", "Laget som svarar rätt får<br>frysa ett annat lag nästa runda!", "radial-gradient(circle, #00ced1, #afeeee)", 4000, () => showQuestionPopup(col, row)); }
+        else if (ev === 'robin_hood') { currentQuestionPreEvent = 'robin_hood'; flashEventSplash("ROBIN HOOD!", "Rätt svar stjäl poängen från ledaren!", "radial-gradient(circle, #228b22, #32cd32)", 4000, () => showQuestionPopup(col, row)); }
+        else if (ev === 'jackpot') { currentQuestionPostEvent = 'jackpot'; showQuestionPopup(col, row); } // Dold
+        return;
+    }
+
+    if (solidaritetTurn === questionsOpened) { currentQuestionPostEvent = 'solidaritet'; showQuestionPopup(col, row); return; } // Dold
 
     showQuestionPopup(col, row);
 }
 
+function triggerLotterihjulet(col, row) {
+    const splash = document.getElementById('generic-event-splash');
+    document.getElementById('generic-event-title').innerHTML = "LOTTERIHJULET!";
+    splash.style.background = "radial-gradient(circle, #ff1493, #ff69b4)";
+    splash.style.display = 'flex';
+    let spins = 0; let bonus = 0;
+    let interval = setInterval(() => {
+        bonus = [100, 200, 300][Math.floor(Math.random()*3)];
+        document.getElementById('generic-event-sub').innerHTML = `Bonus: +${bonus} p`;
+        spins++;
+        if(spins > 20) {
+            clearInterval(interval);
+            setTimeout(() => { splash.style.display = 'none'; activeDDValue += bonus; currentQuestionPreEvent = 'lotteri'; showQuestionPopup(col, row); }, 1500);
+        }
+    }, 100);
+}
+
+function triggerDailyDouble(col, row) { flashEventSplash("DAILY<br>DOUBLE!", "", "radial-gradient(circle, #ff0000, #ffd700)", 2500, () => openDDSetupModal(col, row)); }
+function triggerAllaSvarar(col, row) { currentQuestionPreEvent = 'alla'; flashEventSplash("ALLA SVARAR!", "Inget buzzin!<br>Viska fram svaret.", "radial-gradient(circle, #008000, #20b2aa)", 3500, () => showQuestionPopup(col, row)); }
+function triggerRaddningsplankan(col, row) {
+    let lt = getLowestTeams(1); currentQuestionPreEvent = 'raddning'; allianceTeams = lt;
+    flashEventSplash("RÄDDNINGS<br>PLANKAN!", `Endast ${lt[0]} får svara först!`, "radial-gradient(circle, #800080, #ff1493)", 3500, () => showQuestionPopup(col, row));
+}
+
+function openDDSetupModal(col, row) {
+    const modal = document.getElementById('dd-setup-modal'); const select = document.getElementById('dd-team-select'); select.innerHTML = '';
+    teams.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.textContent = `${t} (${teamScores[t]} p)`; select.appendChild(opt); });
+
+    const updateBetBtns = () => {
+        const score = teamScores[select.value];
+        document.getElementById('dd-bet-x2').textContent = `Ruta x 2 (${currentQuestionValue * 2} p)`;
+        document.getElementById('dd-bet-all').textContent = `Alla sina poäng (${score} p)`;
+        document.getElementById('dd-bet-all').disabled = (score <= 0);
+        document.getElementById('dd-bet-all').style.opacity = score <= 0 ? '0.5' : '1';
+    };
+    select.onchange = updateBetBtns; updateBetBtns(); 
+
+    const btnContainer = document.getElementById('dd-bet-container');
+    const newBtnContainer = btnContainer.cloneNode(true); btnContainer.parentNode.replaceChild(newBtnContainer, btnContainer);
+
+    document.getElementById('dd-bet-x2').onclick = () => { activeDDValue = currentQuestionValue * 2; closeModal('dd-setup-modal'); currentQuestionPreEvent = 'dd'; allianceTeams = [select.value]; showQuestionPopup(col, row); };
+    document.getElementById('dd-bet-1000').onclick = () => { activeDDValue = 1000; closeModal('dd-setup-modal'); currentQuestionPreEvent = 'dd'; allianceTeams = [select.value]; showQuestionPopup(col, row); };
+    document.getElementById('dd-bet-all').onclick = () => { activeDDValue = teamScores[select.value]; closeModal('dd-setup-modal'); currentQuestionPreEvent = 'dd'; allianceTeams = [select.value]; showQuestionPopup(col, row); };
+    modal.style.display = 'flex';
+}
+
 function showQuestionPopup(col, row) {
     document.getElementById('question-popup').style.display = 'flex';
-    const questionText = currentBoard.questions[col][row] || 'No question provided.';
-    document.getElementById('question-text').textContent = questionText;
+    document.getElementById('question-text').textContent = currentBoard.questions[col][row] || '(Ingen fråga inlagd)';
+    
+    const banner = document.getElementById('event-banner'); const valDisplay = document.getElementById('question-value-display');
+    banner.style.display = 'none';
+    
+    if (currentQuestionPreEvent === 'dd') { banner.style.display = 'inline-block'; banner.style.backgroundColor = '#ff8c00'; banner.textContent = `DAILY DOUBLE (Spelas av: ${allianceTeams[0]})`; }
+    else if (currentQuestionPreEvent === 'alla') { banner.style.display = 'inline-block'; banner.style.backgroundColor = '#20b2aa'; banner.textContent = `ALLA SVARAR! (Inget buzzin)`; }
+    else if (currentQuestionPreEvent === 'raddning') { banner.style.display = 'inline-block'; banner.style.backgroundColor = '#9370db'; banner.textContent = `RÄDDNINGSPLANKAN (Förtur: ${allianceTeams[0]})`; }
+    else if (currentQuestionPreEvent === 'alliansen') { banner.style.display = 'inline-block'; banner.style.backgroundColor = '#4169e1'; banner.textContent = `ALLIANSEN (${allianceTeams.join(" & ")})`; }
+    
+    valDisplay.textContent = `Värde: ${activeDDValue} p`;
 
-    const adjustPointsDiv = document.getElementById('adjust-points');
-    adjustPointsDiv.innerHTML = '';
+    const adjustPointsDiv = document.getElementById('adjust-points'); adjustPointsDiv.innerHTML = '';
 
     teams.forEach(team => {
-        const teamDiv = document.createElement('div');
-        teamDiv.classList.add('adjust-team');
-        const teamNameP = document.createElement('p');
-        teamNameP.textContent = team;
-        const plusBtn = document.createElement('button');
-        plusBtn.textContent = '+';
-        plusBtn.addEventListener('click', () => adjustPoints(team, (parseInt(row) + 1) * 100));
-        const minusBtn = document.createElement('button');
-        minusBtn.textContent = '−';
-        minusBtn.addEventListener('click', () => adjustPoints(team, -(parseInt(row) + 1) * 100));
-        teamDiv.appendChild(teamNameP);
-        teamDiv.appendChild(plusBtn);
-        teamDiv.appendChild(minusBtn);
-        adjustPointsDiv.appendChild(teamDiv);
+        const teamDiv = document.createElement('div'); teamDiv.classList.add('adjust-team');
+        if (team === frozenTeam) { teamDiv.classList.add('team-frozen'); teamDiv.title = "Fryst denna runda!"; }
+
+        if (currentQuestionPreEvent === 'dd') {
+            if (team === allianceTeams[0]) { teamDiv.style.border = '3px solid #ff8c00'; teamDiv.style.backgroundColor = '#fff3e0'; } else teamDiv.style.opacity = '0.4';
+        } else if (currentQuestionPreEvent === 'raddning' || currentQuestionPreEvent === 'alliansen') {
+            if (allianceTeams.includes(team)) { teamDiv.style.border = '3px solid #9370db'; teamDiv.style.backgroundColor = '#f3e5f5'; } else teamDiv.style.opacity = '0.6';
+        }
+
+        const teamNameP = document.createElement('p'); teamNameP.textContent = team;
+        const btnGroup = document.createElement('div'); btnGroup.className = 'btn-group';
+
+        const plusBtn = document.createElement('button'); plusBtn.textContent = 'Rätt (+)'; plusBtn.className = 'btn-plus';
+        plusBtn.onclick = () => handlePointAdjustment(team, activeDDValue, true);
+        
+        const minusBtn = document.createElement('button'); minusBtn.textContent = 'Fel (−)'; minusBtn.className = 'btn-minus';
+        minusBtn.onclick = () => handlePointAdjustment(team, activeDDValue, false);
+        
+        btnGroup.append(plusBtn, minusBtn); teamDiv.append(teamNameP, btnGroup); adjustPointsDiv.appendChild(teamDiv);
     });
 }
 
-function adjustPoints(team, points) {
-    teamScores[team] += points;
+function handlePointAdjustment(team, points, isCorrect) {
+    if (isCorrect) {
+        let leader = getLeader();
+        
+        // Frysstrålen
+        if (currentQuestionPreEvent === 'frysstralen') {
+            const modal = document.getElementById('freeze-modal');
+            const btns = document.getElementById('freeze-team-buttons'); btns.innerHTML = '';
+            teams.forEach(t => {
+                if(t !== team) {
+                    const btn = document.createElement('button'); btn.textContent = t;
+                    btn.onclick = () => { nextFrozenTeam = t; closeModal('freeze-modal'); alert(`${t} är frysta under nästa fråga!`); };
+                    btns.appendChild(btn);
+                }
+            });
+            modal.style.display = 'flex';
+        }
+
+        // Alliansen
+        if (currentQuestionPreEvent === 'alliansen' && allianceTeams.includes(team)) {
+            allianceTeams.forEach(t => { if(t !== team) { teamScores[t] += points; } });
+            // Alert that the ally also got points
+            setTimeout(() => alert(`Alliansen! Även ${allianceTeams.find(t=>t!==team)} får poäng!`), 100);
+        }
+
+        // Robin Hood
+        if (currentQuestionPreEvent === 'robin_hood') {
+            if (team !== leader) {
+                teamScores[leader] -= points;
+                flashEventSplash("STÖLD!", `${team} stal ${points}p från ${leader}!`, "radial-gradient(circle, #228b22, #006400)", 3000, ()=>{});
+            } else {
+                flashEventSplash("SÄKERT!", `Ledande ${team} tog poängen och säkrade sin ledning!`, "radial-gradient(circle, #228b22, #006400)", 3000, ()=>{});
+            }
+        }
+
+        // Vanlig poäng-utdelning
+        teamScores[team] += points;
+
+        // --- DOLDA POST-EVENTS ---
+        
+        // Jackpot
+        if (currentQuestionPostEvent === 'jackpot') {
+            currentQuestionPostEvent = null; // Stäng av så den inte dras flera ggr
+            let newLeader = getLeader();
+            if (team !== newLeader) {
+                let diff = teamScores[newLeader] - teamScores[team];
+                let bonus = Math.floor(diff / 2);
+                teamScores[team] += bonus;
+                flashEventSplash("JACKPOT!", `Mysterieruta!<br>${team} halverar avståndet till ledaren!<br>+${bonus}p extra!`, "radial-gradient(circle, #ffd700, #ff8c00)", 5000, ()=>{ updateTeamsDisplay(); });
+            }
+        }
+
+        // Solidaritet
+        if (currentQuestionPostEvent === 'solidaritet') {
+            currentQuestionPostEvent = null;
+            let bonus = Math.floor(points / 2);
+            teams.forEach(t => { if(t !== team) teamScores[t] += bonus; });
+            flashEventSplash("SOLIDARITET!", `Mysterieruta!<br>Alla andra lag får ${bonus}p som tröstpris!`, "radial-gradient(circle, #ff69b4, #ff1493)", 4000, ()=>{ updateTeamsDisplay(); });
+        }
+
+    } else {
+        teamScores[team] -= points; // Vid minus tillämpas standard (även för Dubbeltrubbel)
+    }
+    
     updateTeamsDisplay();
 }
 
 function closeQuestionPopup() {
     document.getElementById('question-popup').style.display = 'none';
-
-    // Check if game is over
-    if (Object.keys(viewedQuestions).length === totalQuestions) {
-        setTimeout(showEndScreen, 500);
-    }
+    if (Object.keys(viewedQuestions).length === totalQuestions) setTimeout(showEndScreen, 1000);
 }
 
 function showEndScreen() {
-    document.getElementById('play-mode').style.display = 'none';
-    document.getElementById('end-screen').style.display = 'block';
-
+    document.getElementById('play-mode').style.display = 'none'; document.getElementById('end-screen').style.display = 'block';
     const sortedTeams = Object.entries(teamScores).sort((a, b) => b[1] - a[1]);
-    const winner = sortedTeams[0];
-
     const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = `<h2>Winner: ${winner[0]} with ${winner[1]} points!</h2>`;
-
+    resultsDiv.innerHTML = `<h2>Vinnare: ${sortedTeams[0][0]} med ${sortedTeams[0][1]} poäng!</h2>`;
     sortedTeams.slice(1).forEach(([team, score]) => {
-        const teamResultDiv = document.createElement('div');
-        teamResultDiv.classList.add('team-result');
-        teamResultDiv.textContent = `${team}: ${score} points`;
-        resultsDiv.appendChild(teamResultDiv);
+        const div = document.createElement('div'); div.classList.add('team-result'); div.textContent = `${team}: ${score} p`;
+        resultsDiv.appendChild(div);
     });
 }
-
 </script>
 </body>
 </html>

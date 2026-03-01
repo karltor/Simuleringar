@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tjernobyl: Reaktorfysik</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        body { margin: 0; overflow: hidden; background-color: #020617; color: #f8fafc; font-family: sans-serif; }
+        canvas { 
+            background: #0f172a; 
+            border-radius: 8px; 
+            width: 100%; 
+            height: 100%;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+        .tech-font { font-family: 'Share Tech Mono', monospace; }
+        
+        /* Shake animation för explosionen */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shaking { animation: shake 0.5s; animation-iteration-count: infinite; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const steps = [
+            {
+                id: 0,
+                title: "0. Stabil Kedjereaktion",
+                text: "Vid normal drift skickar uranbränslet (orange) ut neutroner. Flytande vatten (blått) kyler reaktorn och absorberar en del neutroner. Styrstavarna (grå) är delvis nedsänkta för att fånga upp överflödiga neutroner så att effekten hålls stabil.",
+                config: { spawnBase: 0.15, rodTarget: 0.4, xenonTarget: 0, voidTarget: 0, explosion: false },
+                actionText: "Förbered test: Sänk effekten till hälften"
+            },
+            {
+                id: 1,
+                title: "1. Halvfart i 10 timmar",
+                text: "För att möta elnätets behov tvingas reaktorn köras på halv effekt i många timmar i väntan på testet. Styrstavarna är halvvägs nere. Det man inte tänker på är att \"neutrongiftet\" Xenon-135 (lila moln) långsamt börjar byggas upp i bränslet under denna utdragna tid.",
+                config: { spawnBase: 0.08, rodTarget: 0.5, xenonTarget: 0.6, voidTarget: 0, explosion: false },
+                actionText: "Redo för test: Sänk effekten ytterligare"
+            },
+            {
+                id: 2,
+                title: "2. Operatörsmisstag & Xenon-grop",
+                text: "När testet äntligen ska börja råkar en operatör sänka effekten alldeles för mycket. Nu slår Xenon-förgiftningen från de föregående 10 timmarna till på allvar. Xenongasen äter upp de få neutroner som finns kvar. Effekten störtdyker till nästan noll.",
+                config: { spawnBase: 0.01, rodTarget: 0.85, xenonTarget: 1.0, voidTarget: 0, explosion: false },
+                actionText: "Regelbrott: Dra upp ALLA styrstavar"
+            },
+            {
+                id: 3,
+                title: "3. Manuell överstyrning",
+                text: "För att tvinga upp effekten igen bryter operatörerna mot alla säkerhetsregler och drar ut styrstavarna HELT ur reaktorn (se hur de dras upp i taket). Nu är det i princip bara den kvarvarande Xenon-gasen och det flytande vattnet som hindrar reaktorn från att skena.",
+                config: { spawnBase: 0.1, rodTarget: -0.2, xenonTarget: 0.9, voidTarget: 0.1, explosion: false },
+                actionText: "Starta test: Stryp vattenflödet"
+            },
+            {
+                id: 4,
+                title: "4. Positiv Void-koefficient",
+                text: "Testet börjar. Vattenpumparna saktar ner och vattnet börjar koka till ånga (bubblor). I RBMK-reaktorer fungerar flytande vatten som en broms. När vattnet blir till ånga (void) slutar det absorbera neutroner. Antalet neutroner ökar snabbt!",
+                config: { spawnBase: 0.3, rodTarget: -0.2, xenonTarget: 0.5, voidTarget: 0.8, explosion: false },
+                actionText: "Observera: Värmen skenar"
+            },
+            {
+                id: 5,
+                title: "5. Reaktorn skenar",
+                text: "Den ökande värmen bränner plötsligt bort all Xenon-gas. Utan styrstavar, utan Xenon och utan tillräckligt med flytande vatten som bromsar, löper kedjereaktionen amok. Värmen stiger okontrollerat.",
+                config: { spawnBase: 0.7, rodTarget: -0.2, xenonTarget: 0.0, voidTarget: 1.0, explosion: false },
+                actionText: "TRYCK AZ-5 (NÖDSTOPP)"
+            },
+            {
+                id: 6,
+                title: "6. AZ-5 (Grafitspetsen)",
+                text: "Nödstoppet aktiveras! Men styrstavarnas nedersta del är av grafit (gult). När grafiten tränger ner byter den plats med vattnet. Istället för att bromsa, fungerar grafiten som en accelerator! Titta på grafitspetsarna: de skapar en enorm kaskad av neutroner (lokal effektspik) i botten av reaktorn!",
+                config: { spawnBase: 0.7, rodTarget: 0.95, xenonTarget: 0, voidTarget: 1.0, explosion: false, dropRods: true },
+                actionText: "Invänta katastrof"
+            },
+            {
+                id: 7,
+                title: "7. Katastrof",
+                text: "Effektspiken i botten av reaktorn (över 100 gånger normal effekt) får bränslet att spricka och stavarna fastnar halvvägs nere. Värmen är så extrem att allt vatten omedelbart förångas. Det massiva ångtrycket spränger reaktorns 1000 ton tunga lock.",
+                config: { spawnBase: 0, rodTarget: 0.5, xenonTarget: 0, voidTarget: 1.0, explosion: true },
+                actionText: "SYSTEM OFFLINE"
+            }
+        ];
+
+        const ReactorSimulation = ({ config, onMetricsUpdate }) => {
+            const canvasRef = useRef(null);
+            
+            // Fysiktillstånd
+            const state = useRef({
+                neutrons: [],
+                xenons: [],
+                bubbles: [],
+                explosions: [],
+                rodDepth: config.rodTarget,
+                voidLevel: config.voidTarget,
+                xenonDensity: config.xenonTarget,
+                power: 100,
+                temperature: 280
+            });
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                let animationFrameId;
+
+                canvas.width = 800;
+                canvas.height = 600;
+
+                const coreY = 150;
+                const coreHeight = 400;
+                const fuelRods = [200, 300, 400, 500, 600];
+                const controlRods = [250, 350, 450, 550];
+
+                const loop = () => {
+                    const s = state.current;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    if (config.explosion) {
+                        canvas.classList.add('shaking');
+                        if (Math.random() < 0.3) {
+                            s.explosions.push({
+                                x: canvas.width / 2 + (Math.random() - 0.5) * 300,
+                                y: coreY + coreHeight / 2 + (Math.random() - 0.5) * 200,
+                                radius: 10,
+                                maxRadius: 100 + Math.random() * 200,
+                                life: 1.0,
+                                color: Math.random() > 0.5 ? '#ef4444' : '#f59e0b'
+                            });
+                        }
+                        
+                        s.explosions.forEach((exp, i) => {
+                            exp.radius += 5;
+                            exp.life -= 0.02;
+                            ctx.fillStyle = exp.color;
+                            ctx.globalAlpha = Math.max(0, exp.life);
+                            ctx.beginPath();
+                            ctx.arc(exp.x, exp.y, exp.radius, 0, Math.PI * 2);
+                            ctx.fill();
+                            if (exp.life <= 0) s.explosions.splice(i, 1);
+                        });
+                        ctx.globalAlpha = 1.0;
+                        
+                        ctx.fillStyle = '#334155';
+                        for(let i=0; i<5; i++) {
+                            ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 20 + 10, Math.random() * 20 + 10);
+                        }
+
+                        onMetricsUpdate(0, "MÄTNINGSFEL");
+                        animationFrameId = requestAnimationFrame(loop);
+                        return;
+                    } else {
+                        canvas.classList.remove('shaking');
+                        s.explosions = [];
+                    }
+
+                    // --- 1. LERP ---
+                    const lerpSpeed = config.dropRods ? 0.012 : 0.02; 
+                    s.rodDepth += (config.rodTarget - s.rodDepth) * lerpSpeed;
+                    s.voidLevel += (config.voidTarget - s.voidLevel) * 0.01;
+                    s.xenonDensity += (config.xenonTarget - s.xenonDensity) * 0.01;
+
+                    // Rita bakgrund för kärnan
+                    ctx.fillStyle = '#020617'; 
+                    ctx.fillRect(50, coreY, 700, coreHeight);
+
+                    // --- 2. Rita Vatten & Ånga (Endast i kärnan) ---
+                    ctx.fillStyle = `rgba(14, 165, 233, ${0.4 * (1 - s.voidLevel)})`;
+                    ctx.fillRect(100, coreY, 600, coreHeight);
+
+                    if (s.voidLevel > 0) {
+                        if (Math.random() < s.voidLevel * 0.5) {
+                            s.bubbles.push({
+                                x: 100 + Math.random() * 600,
+                                y: coreY + coreHeight,
+                                speed: 2 + Math.random() * 4 * s.voidLevel,
+                                size: 3 + Math.random() * 10 * s.voidLevel
+                            });
+                        }
+                    }
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    for (let i = s.bubbles.length - 1; i >= 0; i--) {
+                        let b = s.bubbles[i];
+                        b.y -= b.speed;
+                        ctx.beginPath();
+                        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (b.y < coreY) s.bubbles.splice(i, 1);
+                    }
+
+                    // --- 3. Rita Bränslestavar ---
+                    fuelRods.forEach(x => {
+                        ctx.fillStyle = '#ea580c'; 
+                        ctx.fillRect(x - 15, coreY, 30, coreHeight);
+                        
+                        const glowIntensity = Math.min(1, s.power / 5000);
+                        if (glowIntensity > 0) {
+                            ctx.fillStyle = `rgba(239, 68, 68, ${glowIntensity * 0.5})`;
+                            ctx.fillRect(x - 20, coreY, 40, coreHeight);
+                        }
+
+                        let spawnChance = config.spawnBase * (1 + s.voidLevel * 1.5);
+                        if (Math.random() < spawnChance) {
+                            s.neutrons.push({
+                                x: x,
+                                y: coreY + Math.random() * coreHeight,
+                                vx: (Math.random() - 0.5) * 8,
+                                vy: (Math.random() - 0.5) * 8,
+                                life: 1.0,
+                                boosted: false
+                            });
+                        }
+                    });
+
+                    // --- 4. Hantera Xenon-moln ---
+                    if (s.xenonDensity > 0 && Math.random() < s.xenonDensity * 0.2) {
+                        s.xenons.push({
+                            x: 150 + Math.random() * 500,
+                            y: coreY + Math.random() * coreHeight,
+                            size: 20 + Math.random() * 40,
+                            life: 1.0
+                        });
+                    }
+                    
+                    for (let i = s.xenons.length - 1; i >= 0; i--) {
+                        let xn = s.xenons[i];
+                        xn.y -= 0.5;
+                        xn.x += Math.sin(Date.now() / 1000 + i) * 1;
+                        xn.life -= 0.005 / Math.max(0.1, s.xenonDensity);
+                        
+                        ctx.fillStyle = `rgba(168, 85, 247, ${xn.life * 0.4})`;
+                        ctx.beginPath();
+                        ctx.arc(xn.x, xn.y, xn.size, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        if (xn.life <= 0 || xn.y < coreY) s.xenons.splice(i, 1);
+                    }
+
+                    // --- 5. Rita Styrstavar ---
+                    const rodLength = coreHeight;
+                    const tipLength = 60;
+                    // rodDepth = 0 betyder att grafitspetsen precis nuddar kärnans topp.
+                    // rodDepth = -0.2 betyder att hela staven (inklusive spets) är uppe i kanalerna.
+                    const rodY = coreY + (s.rodDepth * coreHeight);
+
+                    controlRods.forEach(rx => {
+                        // Rör/kanaler ovanför kärnan
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fillRect(rx - 15, 0, 30, coreY);
+                        
+                        // Kanaler inuti kärnan
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                        ctx.fillRect(rx - 15, coreY, 30, coreHeight);
+
+                        // Bor-del (Grå - Absorberar)
+                        ctx.fillStyle = '#64748b';
+                        const borBottom = rodY;
+                        const borTop = borBottom - rodLength;
+                        // Rita bor-delen
+                        ctx.fillRect(rx - 12, borTop, 24, rodLength);
+
+                        // Grafit-spets (Gul)
+                        // Om AZ-5 trycks, låt spetsen lysa starkt för att dra uppmärksamhet
+                        if (config.dropRods && rodY > coreY - tipLength && rodY < coreY + coreHeight) {
+                            ctx.shadowColor = '#facc15';
+                            ctx.shadowBlur = 20;
+                            ctx.fillStyle = '#fef08a';
+                        } else {
+                            ctx.fillStyle = '#eab308';
+                            ctx.shadowBlur = 0;
+                        }
+                        ctx.fillRect(rx - 12, rodY, 24, tipLength);
+                        ctx.shadowBlur = 0; // Återställ shadowblur
+
+                        // Fysik: Om AZ-5 trycks in OCH grafitspetsen rör sig ner genom kärnan, SPY ut neutroner
+                        if (config.dropRods) {
+                            const tipCenterY = rodY + tipLength / 2;
+                            if (tipCenterY > coreY && tipCenterY < coreY + coreHeight - 50) {
+                                // Massiv kaskad av neutroner rakt från grafitspetsen
+                                if (Math.random() < 0.8) { 
+                                    s.neutrons.push({
+                                        x: rx + (Math.random() - 0.5) * 30,
+                                        y: tipCenterY + (Math.random() - 0.5) * 20,
+                                        vx: (Math.random() - 0.5) * 14,
+                                        vy: Math.random() * 12 - 2, // Företrädesvis nedåt och utåt
+                                        life: 1.0,
+                                        boosted: true
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                    // Rita en mörk kant ovanför reaktorn för att dölja neutroner som åker uppåt
+                    ctx.fillStyle = 'rgba(2, 6, 23, 0.8)';
+                    ctx.fillRect(0, 0, canvas.width, coreY);
+
+                    // --- 6. Uppdatera och Rita Neutroner ---
+                    let activeNeutrons = 0;
+                    for (let i = s.neutrons.length - 1; i >= 0; i--) {
+                        let n = s.neutrons[i];
+                        n.x += n.vx;
+                        n.y += n.vy;
+                        let dead = false;
+
+                        // Ute ur härden
+                        if (n.x < 50 || n.x > 750 || n.y < coreY || n.y > coreY + coreHeight) {
+                            dead = true;
+                        }
+
+                        if (!dead && Math.random() < 0.02 * (1 - s.voidLevel)) {
+                            dead = true;
+                        }
+
+                        if (!dead) {
+                            for (let j = 0; j < s.xenons.length; j++) {
+                                let xn = s.xenons[j];
+                                let dist = Math.hypot(n.x - xn.x, n.y - xn.y);
+                                if (dist < xn.size * 0.8) {
+                                    dead = true;
+                                    xn.life -= 0.15; 
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!dead) {
+                            controlRods.forEach(rx => {
+                                if (n.x > rx - 15 && n.x < rx + 15) {
+                                    // Bor = Död
+                                    if (n.y < rodY && n.y > rodY - rodLength) {
+                                        dead = true;
+                                    }
+                                    // Grafit = Accelerera befintliga neutroner som nuddar spetsen
+                                    else if (n.y >= rodY && n.y <= rodY + tipLength) {
+                                        if (!n.boosted) {
+                                            n.vx *= 1.8;
+                                            n.vy *= 1.8;
+                                            n.boosted = true;
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        if (dead) {
+                            s.neutrons.splice(i, 1);
+                        } else {
+                            activeNeutrons++;
+                            ctx.fillStyle = n.boosted ? '#fde047' : '#ffffff';
+                            ctx.beginPath();
+                            ctx.arc(n.x, n.y, n.boosted ? 3 : 2, 0, Math.PI * 2);
+                            ctx.fill();
+                            if (n.boosted) {
+                                ctx.fillStyle = 'rgba(253, 224, 71, 0.4)';
+                                ctx.beginPath();
+                                ctx.arc(n.x - n.vx, n.y - n.vy, 2, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        }
+                    }
+
+                    // --- 7. Beräkna mätvärden ---
+                    s.power = s.power * 0.9 + (activeNeutrons * 5) * 0.1; 
+                    let displayPower = Math.round(s.power);
+                    
+                    if (config.explosion) {
+                        displayPower = 30000;
+                        s.temperature = 5000;
+                    } else {
+                        let targetTemp = 280 + (displayPower * 2);
+                        s.temperature += (targetTemp - s.temperature) * 0.05;
+                    }
+
+                    onMetricsUpdate(displayPower, Math.round(s.temperature));
+
+                    animationFrameId = requestAnimationFrame(loop);
+                };
+
+                loop();
+                return () => cancelAnimationFrame(animationFrameId);
+            }, [config]);
+
+            return <canvas ref={canvasRef} className="w-full h-full object-cover" />;
+        };
+
+        function App() {
+            const [currentStep, setCurrentStep] = useState(0);
+            const [metrics, setMetrics] = useState({ power: 100, temp: 280 });
+            const s = steps[currentStep];
+
+            return (
+                <div className="flex flex-col h-screen bg-slate-950">
+                    <header className="p-4 bg-black border-b border-slate-800 flex justify-between items-center shadow-md z-10">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">☢️</span>
+                            <h1 className="text-xl font-bold tracking-wider text-slate-100 uppercase">RBMK-1000 Simulator</h1>
+                        </div>
+                        <div className="tech-font text-emerald-500 bg-emerald-950/30 px-3 py-1 border border-emerald-900 rounded">
+                            SYSTEM ONLINE
+                        </div>
+                    </header>
+
+                    <main className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+                        <div className="flex-[3] relative bg-[#020617] p-4 lg:p-8 flex flex-col">
+                            <div className="absolute top-8 left-8 right-8 flex justify-between pointer-events-none z-10">
+                                <div className="bg-black/80 p-4 border border-slate-700 rounded tech-font min-w-[180px]">
+                                    <div className="text-slate-400 text-xs mb-1">REAKTOREFFEKT</div>
+                                    <div className={`text-4xl font-bold transition-colors ${metrics.power > 500 ? 'text-red-500' : metrics.power > 150 ? 'text-yellow-500' : 'text-emerald-500'}`}>
+                                        {metrics.power}%
+                                    </div>
+                                    {metrics.power > 500 && <div className="text-red-500 text-xs mt-1 animate-pulse font-bold">LOKAL KASKAD UPPTÄCKT</div>}
+                                </div>
+                                <div className="bg-black/80 p-4 border border-slate-700 rounded tech-font min-w-[180px] text-right">
+                                    <div className="text-slate-400 text-xs mb-1">KÄRNTEMPERATUR</div>
+                                    <div className={`text-4xl font-bold ${metrics.temp > 1000 ? 'text-red-500' : 'text-orange-400'}`}>
+                                        {metrics.temp}°C
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-800 shadow-2xl">
+                                <ReactorSimulation 
+                                    config={s.config} 
+                                    onMetricsUpdate={(p, t) => setMetrics({ power: p, temp: t })} 
+                                />
+                                
+                                <div className="absolute bottom-4 left-4 bg-black/80 p-3 rounded border border-slate-700 text-xs grid grid-cols-2 gap-x-6 gap-y-2 pointer-events-none">
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-600 rounded-sm"></div> Bränslestav (Uran)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-500 rounded-sm"></div> Styrstav (Bor - Bromsar)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-sky-500 rounded-sm opacity-60"></div> Kylvatten (Flytande)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-400 rounded-sm"></div> Grafitspets (Accelererar)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 bg-white rounded-full"></div> Neutron (Energi)</div>
+                                    <div className="flex items-center gap-2"><div className="w-3 h-3 border border-white rounded-full"></div> Ånga (Bubblor)</div>
+                                    <div className="flex items-center gap-2 col-span-2"><div className="w-3 h-3 bg-purple-500 rounded-full opacity-60"></div> Xenon-gas (Neutrongift)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex-[2] bg-slate-900 border-l border-slate-800 flex flex-col z-20 shadow-[-10px_0_30px_rgba(0,0,0,0.5)]">
+                            <div className="p-8 flex-1 overflow-y-auto">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="w-8 h-8 rounded-full bg-blue-900/50 border border-blue-500 flex items-center justify-center text-blue-400 font-bold">
+                                        {currentStep}
+                                    </div>
+                                    <div className="text-blue-400 font-bold uppercase tracking-widest text-sm">Händelseförlopp</div>
+                                </div>
+                                
+                                <h2 className="text-3xl font-bold mb-6 text-slate-100">{s.title}</h2>
+                                <p className="text-slate-300 leading-relaxed text-lg mb-8 bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                                    {s.text}
+                                </p>
+                                
+                                {currentStep === 2 && (
+                                    <div className="p-5 bg-purple-900/20 border-l-4 border-purple-500 rounded-r-lg mb-6">
+                                        <h3 className="text-purple-400 font-bold mb-2 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Pedagogisk Notering
+                                        </h3>
+                                        <p className="text-sm text-purple-200">
+                                            Titta på de lila Xenon-molnen i reaktorn. Observera hur neutronerna (de vita prickarna) ständigt försvinner när de nuddar molnen. Reaktorn "kvävs" inifrån på grund av den utdragna väntetiden.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {currentStep === 3 && (
+                                    <div className="p-5 bg-slate-800 border-l-4 border-slate-500 rounded-r-lg mb-6">
+                                        <h3 className="text-slate-300 font-bold mb-2 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Styrstavarna urdragen
+                                        </h3>
+                                        <p className="text-sm text-slate-400">
+                                            Se hur de grå styrstavarna (och de gula grafitspetsarna) parkeras i kanalerna ovanför den aktiva kärnan. Reaktorn är nu extremt instabil.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {currentStep === 4 && (
+                                    <div className="p-5 bg-sky-900/20 border-l-4 border-sky-500 rounded-r-lg mb-6">
+                                        <h3 className="text-sky-400 font-bold mb-2 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                            Positiv Void-koefficient
+                                        </h3>
+                                        <p className="text-sm text-sky-200">
+                                            När vattnet kokar till ånga (void) bildas bubblor. Eftersom ånga har lägre densitet än vatten, slutar det absorbera neutroner. Fler neutroner leder till mer värme, vilket ger mer ånga. En livsfarlig loop uppstår.
+                                        </p>
+                                    </div>
+                                )}
+
+                                {currentStep === 6 && (
+                                    <div className="p-5 bg-yellow-900/30 border-l-4 border-yellow-500 rounded-r-lg mb-6 animate-pulse">
+                                        <h3 className="text-yellow-400 font-bold mb-2 flex items-center gap-2">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                            Designmissen (Grafitspetsen)
+                                        </h3>
+                                        <p className="text-sm text-yellow-200">
+                                            Titta på de lysande gula spetsarna som faller ner! De sprutar bokstavligen ut neutroner när de tränger ner i kärnan och byter plats med vattnet. Istället för att stanna, triggar AZ-5 knappen reaktorns undergång.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 bg-slate-950 border-t border-slate-800">
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                                        className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed uppercase tracking-wider text-sm"
+                                        disabled={currentStep === 0}
+                                    >
+                                        Tillbaka
+                                    </button>
+                                    <button 
+                                        onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                                        className={`flex-[2] py-4 rounded-lg font-bold transition-all uppercase tracking-wider shadow-lg ${
+                                            currentStep === 5 
+                                                ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse border-2 border-red-400' 
+                                                : currentStep === 7 
+                                                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                                    : 'bg-blue-600 hover:bg-blue-500 text-white'
+                                        }`}
+                                        disabled={currentStep === steps.length - 1}
+                                    >
+                                        {s.actionText}
+                                    </button>
+                                </div>
+                                
+                                <div className="mt-6 flex justify-between gap-1">
+                                    {steps.map((_, i) => (
+                                        <div 
+                                            key={i} 
+                                            className={`h-2 flex-1 rounded-full ${i <= currentStep ? (i >= 5 ? 'bg-red-500' : 'bg-blue-500') : 'bg-slate-800'}`}
+                                        ></div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

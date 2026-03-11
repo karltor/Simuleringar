@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Från Råolja till Plast</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel för JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* STEG 1: Sortering */
+        @keyframes flowHeavy {
+            0% { transform: translate(0, 0); }
+            30%, 100% { transform: translate(140px, 0); }
+        }
+        @keyframes flowDiesel {
+            0% { transform: translate(0, 0); }
+            30% { transform: translate(0, -60px); }
+            60%, 100% { transform: translate(140px, -60px); }
+        }
+        @keyframes flowNaphtha {
+            0% { transform: translate(0, 0); }
+            40% { transform: translate(0, -120px); }
+            70%, 100% { transform: translate(140px, -120px); }
+        }
+        @keyframes flowGas {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(0, -180px); }
+            80%, 100% { transform: translate(140px, -180px); }
+        }
+
+        /* STEG 2: Krackning (Hexan & Oktan sekvens) */
+        @keyframes hexanSequence {
+            0% { transform: translateX(-200px); opacity: 1; }
+            10%, 25% { transform: translateX(0); opacity: 1; }
+            35%, 50% { opacity: 0; }
+            51%, 100% { transform: translateX(-200px); opacity: 0; }
+        }
+        @keyframes oktanSequence {
+            0%, 49% { transform: translateX(-200px); opacity: 0; }
+            50% { transform: translateX(-200px); opacity: 1; }
+            60%, 75% { transform: translateX(0); opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+        
+        /* Hexan delas till 3 Eten */
+        @keyframes splitHex1 {
+            0%, 25% { transform: translate(0, 0); }
+            35%, 45% { transform: translate(-30px, -40px) rotate(-15deg); }
+            50%, 100% { transform: translate(-30px, -40px) rotate(-15deg); }
+        }
+        @keyframes splitHex2 {
+            0%, 25% { transform: translate(0, 0); }
+            35%, 45% { transform: translate(0, 40px); }
+            50%, 100% { transform: translate(0, 40px); }
+        }
+        @keyframes splitHex3 {
+            0%, 25% { transform: translate(0, 0); }
+            35%, 45% { transform: translate(30px, -40px) rotate(15deg); }
+            50%, 100% { transform: translate(30px, -40px) rotate(15deg); }
+        }
+
+        /* Oktan delas till 4 Eten */
+        @keyframes splitOkt1 {
+            0%, 75% { transform: translate(0, 0); }
+            85%, 95% { transform: translate(-40px, -40px) rotate(-20deg); }
+            100% { transform: translate(-40px, -40px) rotate(-20deg); }
+        }
+        @keyframes splitOkt2 {
+            0%, 75% { transform: translate(0, 0); }
+            85%, 95% { transform: translate(-15px, 40px) rotate(-5deg); }
+            100% { transform: translate(-15px, 40px) rotate(-5deg); }
+        }
+        @keyframes splitOkt3 {
+            0%, 75% { transform: translate(0, 0); }
+            85%, 95% { transform: translate(15px, -40px) rotate(5deg); }
+            100% { transform: translate(15px, -40px) rotate(5deg); }
+        }
+        @keyframes splitOkt4 {
+            0%, 75% { transform: translate(0, 0); }
+            85%, 95% { transform: translate(40px, 40px) rotate(20deg); }
+            100% { transform: translate(40px, 40px) rotate(20deg); }
+        }
+
+        /* Bindningar som klyvs och skapas */
+        @keyframes breakBondHex {
+            0%, 22% { stroke: #94a3b8; opacity: 1; }
+            23%, 25% { stroke: #ef4444; stroke-width: 6; opacity: 1; }
+            26%, 100% { opacity: 0; }
+        }
+        @keyframes breakBondOkt {
+            0%, 72% { stroke: #94a3b8; opacity: 1; }
+            73%, 75% { stroke: #ef4444; stroke-width: 6; opacity: 1; }
+            76%, 100% { opacity: 0; }
+        }
+        @keyframes makeDoubleHex {
+            0%, 25% { opacity: 0; }
+            26%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        @keyframes makeDoubleOkt {
+            0%, 75% { opacity: 0; }
+            76%, 100% { opacity: 1; }
+        }
+
+        /* STEG 3: Bygg kedjor */
+        @keyframes monomerMove {
+            0% { transform: translateX(0); }
+            30%, 45% { transform: translateX(90px); } /* Över katalysator */
+            60%, 80% { transform: translateX(130px); } /* Fäster vid kedjan */
+            100% { transform: translateX(190px); } /* Följer med kedjan framåt */
+        }
+        @keyframes chainMove {
+            0%, 80% { transform: translateX(0); }
+            100% { transform: translateX(60px); } /* Exakt längden av en eten-enhet */
+        }
+        @keyframes doubleBondFade {
+            0%, 35% { opacity: 1; }
+            40%, 100% { opacity: 0; }
+        }
+        @keyframes singleBondGrow {
+            0%, 35% { opacity: 0; transform: scaleX(0); }
+            40%, 100% { opacity: 1; transform: scaleX(1); }
+        }
+
+        /* STEG 4: Granulat */
+        @keyframes extrudeFlow {
+            from { stroke-dashoffset: 25; }
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes chopBlade {
+            0%, 20% { transform: translateY(-25px); }
+            40% { transform: translateY(15px); }
+            60%, 100% { transform: translateY(-25px); }
+        }
+        @keyframes dropPelletAnim {
+            0%, 19% { opacity: 0; transform: translate(0,0); }
+            20% { opacity: 1; transform: translate(0,0); }
+            80% { opacity: 1; transform: translate(10px, 90px); }
+            100% { opacity: 0; transform: translate(10px, 110px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 font-sans text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // SVG Ikoner
+        const LayersIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>;
+        const FlameIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>;
+        const LinkIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-400"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>;
+        const FactoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M17 18h1"></path><path d="M12 18h1"></path><path d="M7 18h1"></path></svg>;
+        const ArrowLeftIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
+        const ArrowRightIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>;
+        const RefreshCwIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>;
+
+        const App = () => {
+            const [step, setStep] = useState(0);
+
+            const steps = [
+                {
+                    title: "1. Sortera kolvätena",
+                    shortDesc: "Råolja är en blandning av hundratals olika kolföreningar. Genom att värma upp oljan kan vi sortera dem eftersom de har olika kokpunkt och densitet.",
+                    explanation: "Tunga molekyler stannar långt ner, medan lättare molekyler stiger högre upp i tornet som gas innan de kondenserar (blir flytande igen). Vi är ute efter Nafta.",
+                    icon: <LayersIcon />,
+                    visual: (
+                        <svg viewBox="0 0 400 300" className="w-full h-full max-h-80 drop-shadow-xl">
+                            {/* Ugn och inlopp */}
+                            <rect x="40" y="200" width="70" height="60" fill="#334155" rx="8" />
+                            <path d="M110 230 L160 230" stroke="#475569" strokeWidth="16" fill="none" />
+                            <path d="M10 230 L40 230" stroke="#1e293b" strokeWidth="16" fill="none" />
+                            
+                            {/* Osorterad olja in */}
+                            <g className="animate-[slideIn_2s_linear_infinite]" style={{ animation: 'flowHeavy 2s linear infinite' }}>
+                                <circle cx="15" cy="225" r="3" fill="#94a3b8" />
+                                <circle cx="25" cy="235" r="3" fill="#fde047" />
+                                <circle cx="35" cy="225" r="3" fill="#fb923c" />
+                                <circle cx="20" cy="230" r="3" fill="#bae6fd" />
+                            </g>
+
+                            {/* Värme */}
+                            <g className="animate-pulse origin-bottom" style={{ transformOrigin: '75px 250px' }}>
+                                <path d="M60 250 Q75 210 90 250 Z" fill="#ef4444" />
+                                <path d="M68 250 Q75 220 82 250 Z" fill="#fbbf24" />
+                            </g>
+                            <text x="50" y="280" fontSize="10" fill="#ef4444" fontWeight="bold">400°C</text>
+
+                            {/* Fraktioneringstorn */}
+                            <rect x="160" y="40" width="80" height="230" fill="#475569" rx="10" />
+                            <line x1="160" y1="200" x2="240" y2="200" stroke="#334155" strokeWidth="4" strokeDasharray="4 2" />
+                            <line x1="160" y1="140" x2="240" y2="140" stroke="#334155" strokeWidth="4" strokeDasharray="4 2" />
+                            <line x1="160" y1="80" x2="240" y2="80" stroke="#334155" strokeWidth="4" strokeDasharray="4 2" />
+                            
+                            {/* Tunga (Asfalt) */}
+                            <path d="M240 240 L340 240" stroke="#334155" strokeWidth="12" fill="none" />
+                            <text x="350" y="244" fontSize="12" fill="#94a3b8" fontWeight="bold">Asfalt (Tung)</text>
+                            <circle cx="200" cy="240" r="4" fill="#94a3b8" style={{ animation: 'flowHeavy 3s linear infinite' }} />
+                            
+                            {/* Mellan (Diesel) */}
+                            <path d="M240 180 L340 180" stroke="#fb923c" strokeWidth="8" fill="none" />
+                            <text x="350" y="184" fontSize="12" fill="#fb923c" fontWeight="bold">Diesel</text>
+                            <circle cx="200" cy="240" r="3" fill="#fb923c" style={{ animation: 'flowDiesel 3s linear infinite' }} />
+
+                            {/* NAFTA */}
+                            <path d="M240 120 L340 120" stroke="#fde047" strokeWidth="14" fill="none" />
+                            <text x="350" y="124" fontSize="14" fill="#fde047" fontWeight="bold">NAFTA</text>
+                            <circle cx="200" cy="240" r="3.5" fill="#fde047" style={{ animation: 'flowNaphtha 3s linear infinite' }} />
+                            <circle cx="200" cy="240" r="3.5" fill="#fde047" style={{ animation: 'flowNaphtha 3s linear infinite 1.5s' }} />
+                            
+                            {/* Lätt (Gas) */}
+                            <path d="M240 60 L340 60" stroke="#bae6fd" strokeWidth="6" fill="none" />
+                            <text x="350" y="64" fontSize="12" fill="#bae6fd" fontWeight="bold">Gas (Lätt)</text>
+                            <circle cx="200" cy="240" r="2" fill="#bae6fd" style={{ animation: 'flowGas 3s linear infinite' }} />
+                        </svg>
+                    )
+                },
+                {
+                    title: "2. Krackning",
+                    shortDesc: "Nafta är en blandning av molekyler som Hexan och Oktan. För att bygga plast behöver vi identiska byggstenar.",
+                    explanation: "Med extrem värme och tryck klyver (krackar) vi bindningarna. Samma atomer som nyss var hexan och oktan splittras och bildar helt identiska eten-molekyler (C₂H₄). Inget material försvinner, det bara omarrangeras!",
+                    icon: <FlameIcon />,
+                    visual: (
+                        <svg viewBox="0 0 400 300" className="w-full h-full max-h-80 drop-shadow-xl">
+                            {/* Bakgrund värme/tryck */}
+                            <rect x="80" y="50" width="240" height="200" fill="#ef4444" opacity="0.1" rx="20" className="animate-pulse" />
+                            <text x="200" y="40" fill="#ef4444" fontSize="12" fontWeight="bold" textAnchor="middle">HÖGT TRYCK & VÄRME</text>
+
+                            {/* Input etikett */}
+                            <text x="40" y="150" fill="#94a3b8" fontSize="12" fontWeight="bold" textAnchor="middle" transform="rotate(-90 40 150)">NAFTA BLANDNING</text>
+                            <text x="360" y="150" fill="#fde047" fontSize="12" fontWeight="bold" textAnchor="middle" transform="rotate(-90 360 150)">ETEN (Identiska)</text>
+
+                            {/* --- HEXAN SEKVENS (C6 -> 3x C2) --- */}
+                            <g style={{ animation: 'hexanSequence 8s linear infinite' }}>
+                                {/* Centrum position för krackning */}
+                                <g transform="translate(140, 150)">
+                                    <text x="60" y="-30" fill="#cbd5e1" fontSize="12" textAnchor="middle">Hexan (C₆H₁₄)</text>
+                                    
+                                    {/* Eten-grupp 1 */}
+                                    <g style={{ animation: 'splitHex1 8s linear infinite' }}>
+                                        <line x1="0" y1="0" x2="30" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="0" y1="-5" x2="30" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleHex 8s linear infinite' }} />
+                                        <circle cx="0" cy="0" r="10" fill="#3b82f6" /><text x="0" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="30" cy="0" r="10" fill="#3b82f6" /><text x="30" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+
+                                    {/* Brytande bindning 1-2 */}
+                                    <line x1="30" y1="0" x2="50" y2="0" strokeWidth="4" style={{ animation: 'breakBondHex 8s linear infinite' }} />
+
+                                    {/* Eten-grupp 2 */}
+                                    <g style={{ animation: 'splitHex2 8s linear infinite' }}>
+                                        <line x1="50" y1="0" x2="80" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="50" y1="-5" x2="80" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleHex 8s linear infinite' }} />
+                                        <circle cx="50" cy="0" r="10" fill="#3b82f6" /><text x="50" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="80" cy="0" r="10" fill="#3b82f6" /><text x="80" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+
+                                    {/* Brytande bindning 2-3 */}
+                                    <line x1="80" y1="0" x2="100" y2="0" strokeWidth="4" style={{ animation: 'breakBondHex 8s linear infinite' }} />
+
+                                    {/* Eten-grupp 3 */}
+                                    <g style={{ animation: 'splitHex3 8s linear infinite' }}>
+                                        <line x1="100" y1="0" x2="130" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="100" y1="-5" x2="130" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleHex 8s linear infinite' }} />
+                                        <circle cx="100" cy="0" r="10" fill="#3b82f6" /><text x="100" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="130" cy="0" r="10" fill="#3b82f6" /><text x="130" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+                                </g>
+                            </g>
+
+                            {/* --- OKTAN SEKVENS (C8 -> 4x C2) --- */}
+                            <g style={{ animation: 'oktanSequence 8s linear infinite' }}>
+                                {/* Centrum position för krackning */}
+                                <g transform="translate(100, 150)">
+                                    <text x="95" y="-30" fill="#cbd5e1" fontSize="12" textAnchor="middle">Oktan (C₈H₁₈)</text>
+                                    
+                                    {/* Eten-grupp 1 */}
+                                    <g style={{ animation: 'splitOkt1 8s linear infinite' }}>
+                                        <line x1="0" y1="0" x2="30" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="0" y1="-5" x2="30" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleOkt 8s linear infinite' }} />
+                                        <circle cx="0" cy="0" r="10" fill="#3b82f6" /><text x="0" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="30" cy="0" r="10" fill="#3b82f6" /><text x="30" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+
+                                    {/* Brytande bindning */}
+                                    <line x1="30" y1="0" x2="50" y2="0" strokeWidth="4" style={{ animation: 'breakBondOkt 8s linear infinite' }} />
+
+                                    {/* Eten-grupp 2 */}
+                                    <g style={{ animation: 'splitOkt2 8s linear infinite' }}>
+                                        <line x1="50" y1="0" x2="80" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="50" y1="-5" x2="80" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleOkt 8s linear infinite' }} />
+                                        <circle cx="50" cy="0" r="10" fill="#3b82f6" /><text x="50" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="80" cy="0" r="10" fill="#3b82f6" /><text x="80" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+
+                                    {/* Brytande bindning */}
+                                    <line x1="80" y1="0" x2="100" y2="0" strokeWidth="4" style={{ animation: 'breakBondOkt 8s linear infinite' }} />
+
+                                    {/* Eten-grupp 3 */}
+                                    <g style={{ animation: 'splitOkt3 8s linear infinite' }}>
+                                        <line x1="100" y1="0" x2="130" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="100" y1="-5" x2="130" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleOkt 8s linear infinite' }} />
+                                        <circle cx="100" cy="0" r="10" fill="#3b82f6" /><text x="100" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="130" cy="0" r="10" fill="#3b82f6" /><text x="130" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+
+                                    {/* Brytande bindning */}
+                                    <line x1="130" y1="0" x2="150" y2="0" strokeWidth="4" style={{ animation: 'breakBondOkt 8s linear infinite' }} />
+
+                                    {/* Eten-grupp 4 */}
+                                    <g style={{ animation: 'splitOkt4 8s linear infinite' }}>
+                                        <line x1="150" y1="0" x2="180" y2="0" stroke="#94a3b8" strokeWidth="4" />
+                                        <line x1="150" y1="-5" x2="180" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'makeDoubleOkt 8s linear infinite' }} />
+                                        <circle cx="150" cy="0" r="10" fill="#3b82f6" /><text x="150" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx="180" cy="0" r="10" fill="#3b82f6" /><text x="180" y="3" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+                                </g>
+                            </g>
+                        </svg>
+                    )
+                },
+                {
+                    title: "3. Bygg kedjor (Polymerisering)",
+                    shortDesc: "Nu tvingar vi eten-molekylerna att fästa i varandra till en stark kedja.",
+                    explanation: "Katalysatorn bryter upp dubbelbindningen i eten. Detta skapar två 'lediga armar' på kolatomerna som griper tag i slutet på plastkedjan. Hela kedjan växer sedan med exakt de atomer som kom in.",
+                    icon: <LinkIcon />,
+                    visual: (
+                        <svg viewBox="0 0 400 300" className="w-full h-full max-h-80 drop-shadow-xl">
+                            {/* Katalysator */}
+                            <rect x="100" y="200" width="80" height="30" fill="#a855f7" rx="5" />
+                            <text x="140" y="220" fill="white" fontSize="10" textAnchor="middle" fontWeight="bold">KATALYSATOR</text>
+                            <path d="M 140 190 L 140 160" stroke="#d8b4fe" strokeWidth="3" strokeDasharray="4" className="animate-pulse" />
+
+                            {/* Den statiska oändliga kedjan som rör sig höger */}
+                            <g style={{ animation: 'chainMove 4s ease-in-out infinite' }}>
+                                {/* Tidigare monomerer i kedjan */}
+                                {[250, 310, 370, 430].map(cx => (
+                                    <g key={cx}>
+                                        <line x1={cx} y1="150" x2={cx + 30} y2="150" stroke="#10b981" strokeWidth="6" />
+                                        <line x1={cx + 30} y1="150" x2={cx + 60} y2="150" stroke="#10b981" strokeWidth="6" />
+                                        <circle cx={cx} cy="150" r="12" fill="#10b981" /><text x={cx} y="154" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                        <circle cx={cx + 30} cy="150" r="12" fill="#10b981" /><text x={cx + 30} y="154" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    </g>
+                                ))}
+                            </g>
+
+                            {/* Den inkommande Eten-monomeren */}
+                            <g style={{ animation: 'monomerMove 4s ease-in-out infinite' }}>
+                                <g transform="translate(40, 150)">
+                                    {/* Den ursprungliga dubbelbindningen (försvinner över katalysatorn) */}
+                                    <line x1="0" y1="-5" x2="30" y2="-5" stroke="#fde047" strokeWidth="4" style={{ animation: 'doubleBondFade 4s linear infinite' }} />
+                                    <line x1="0" y1="5" x2="30" y2="5" stroke="#fde047" strokeWidth="4" style={{ animation: 'doubleBondFade 4s linear infinite' }} />
+                                    
+                                    {/* Den nya enkelbindningen (dyker upp) */}
+                                    <line x1="0" y1="0" x2="30" y2="0" stroke="#10b981" strokeWidth="6" style={{ animation: 'singleBondGrow 4s linear infinite' }} />
+                                    
+                                    {/* Nya fästande "armar" utåt (dyker upp) */}
+                                    <line x1="-30" y1="0" x2="0" y2="0" stroke="#10b981" strokeWidth="6" strokeDasharray="4" style={{ transformOrigin: '0 0', animation: 'singleBondGrow 4s linear infinite' }} />
+                                    <line x1="30" y1="0" x2="60" y2="0" stroke="#10b981" strokeWidth="6" strokeDasharray="4" style={{ transformOrigin: '30px 0', animation: 'singleBondGrow 4s linear infinite' }} />
+
+                                    <circle cx="0" cy="0" r="12" fill="#3b82f6" style={{ transition: 'fill 0.5s', animation: 'colorChange 4s linear infinite' }} />
+                                    <text x="0" y="4" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                    <circle cx="30" cy="0" r="12" fill="#3b82f6" style={{ transition: 'fill 0.5s', animation: 'colorChange 4s linear infinite' }} />
+                                    <text x="30" y="4" fill="white" fontSize="10" textAnchor="middle">C</text>
+                                </g>
+                            </g>
+                            
+                            {/* Css inline för färgbytet på inkommande monomer */}
+                            <style>{`
+                                @keyframes colorChange {
+                                    0%, 35% { fill: #3b82f6; } /* Blå som gas */
+                                    40%, 100% { fill: #10b981; } /* Grön som del av plastkedjan */
+                                }
+                            `}</style>
+                        </svg>
+                    )
+                },
+                {
+                    title: "4. Plastgranulat",
+                    shortDesc: "Den mjuka, varma plastkedjan måste kylas ner och hackas till bitar som industrin kan använda.",
+                    explanation: "En kontinuerlig varm plaststräng matas ut, kyls ner i ett vattenbad tills den stelnar, och hackas direkt av en snurrande kniv till små vita plastpellets. Det är dessa pellets som leksaksfabriker smälter ner för att gjuta legobitar!",
+                    icon: <FactoryIcon />,
+                    visual: (
+                        <svg viewBox="0 0 400 300" className="w-full h-full max-h-80 drop-shadow-xl overflow-hidden">
+                            {/* Extruder-munstycke */}
+                            <path d="M 0 130 L 50 130 L 50 170 L 0 170 Z" fill="#334155" />
+                            <text x="25" y="154" fill="#94a3b8" fontSize="12" textAnchor="middle" fontWeight="bold">UT</text>
+
+                            {/* Kylvattenbad */}
+                            <rect x="100" y="120" width="90" height="60" fill="#3b82f6" opacity="0.4" rx="10" />
+                            <text x="145" y="110" fill="#60a5fa" fontSize="12" textAnchor="middle" fontWeight="bold">VATTENKYLNING</text>
+
+                            {/* Den kontinuerliga plaststrängen (Varm -> Kall) */}
+                            <rect x="50" y="142" width="70" height="16" fill="#10b981" />
+                            <defs>
+                                <linearGradient id="coolGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#10b981" />
+                                    <stop offset="100%" stopColor="#f8fafc" />
+                                </linearGradient>
+                            </defs>
+                            <rect x="120" y="142" width="50" height="16" fill="url(#coolGrad)" />
+                            <rect x="170" y="142" width="90" height="16" fill="#f8fafc" />
+                            
+                            {/* Animerad linje inuti strängen för att tydligt visa att den matas framåt */}
+                            <line x1="50" y1="150" x2="260" y2="150" stroke="#000000" strokeOpacity="0.15" strokeWidth="6" strokeDasharray="15 10" style={{ animation: 'extrudeFlow 0.8s linear infinite' }} />
+
+                            {/* Giljotin / Hackkniv */}
+                            <g style={{ animation: 'chopBlade 0.6s linear infinite' }}>
+                                <rect x="258" y="80" width="6" height="60" fill="#cbd5e1" rx="2" />
+                                <path d="M 254 135 L 268 135 L 268 150 L 254 160 Z" fill="#64748b" />
+                            </g>
+                            {/* Ram / Styrskena för giljotinen */}
+                            <rect x="254" y="80" width="14" height="85" fill="none" stroke="#475569" strokeWidth="2" opacity="0.5" />
+
+                            {/* Fasta pellets i högen i botten */}
+                            <path d="M 240 280 Q 275 230 310 280 Z" fill="#f8fafc" />
+                            <path d="M 220 280 Q 255 240 290 280 Z" fill="#e2e8f0" />
+                            <text x="265" y="295" fill="#f8fafc" fontSize="12" textAnchor="middle" fontWeight="bold">FÄRDIGA PELLETS</text>
+
+                            {/* Fallande pellets skapade av giljotinen */}
+                            {[0, 0.6].map((delay, index) => (
+                                <rect 
+                                    key={index}
+                                    x="262" y="142" width="10" height="16" rx="2" fill="#ffffff"
+                                    style={{ animation: `dropPelletAnim 1.2s linear infinite ${delay}s` }}
+                                />
+                            ))}
+                        </svg>
+                    )
+                }
+            ];
+
+            const nextStep = () => setStep((prev) => (prev + 1) % steps.length);
+            const prevStep = () => setStep((prev) => (prev - 1 + steps.length) % steps.length);
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex items-center justify-center">
+                    <div className="max-w-5xl w-full bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-700">
+                        
+                        {/* Header */}
+                        <div className="p-6 text-center border-b border-slate-700 relative overflow-hidden bg-slate-800">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-slate-900 opacity-50"></div>
+                            <h1 className="text-3xl font-extrabold relative z-10 text-white tracking-wide">
+                                Från råolja till plast
+                            </h1>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="flex w-full h-2 bg-slate-700">
+                            {steps.map((_, i) => (
+                                <div 
+                                    key={i} 
+                                    className={`flex-1 transition-all duration-700 ease-out border-r border-slate-800 last:border-0 ${i <= step ? 'bg-blue-500' : ''}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Main Content Area */}
+                        <div className="flex flex-col md:flex-row min-h-[500px]">
+                            
+                            {/* Left Side: Visual Animation */}
+                            <div className="w-full md:w-1/2 bg-slate-900 p-6 flex items-center justify-center relative overflow-hidden">
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-800/50 to-transparent"></div>
+                                <div className="relative w-full h-full flex items-center justify-center">
+                                    {steps[step].visual}
+                                </div>
+                            </div>
+
+                            {/* Right Side: Text & Controls */}
+                            <div className="w-full md:w-1/2 p-8 flex flex-col justify-between bg-slate-800 shadow-[-10px_0_20px_rgba(0,0,0,0.3)] z-10">
+                                <div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 bg-slate-700 rounded-lg shadow-inner">
+                                            {steps[step].icon}
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-white">
+                                            {steps[step].title}
+                                        </h2>
+                                    </div>
+                                    
+                                    <div className="space-y-6">
+                                        <p className="text-blue-300 font-medium text-lg leading-relaxed">
+                                            {steps[step].shortDesc}
+                                        </p>
+                                        <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-700 text-slate-300 leading-relaxed text-sm">
+                                            {steps[step].explanation}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8">
+                                    {/* Navigation */}
+                                    <div className="flex justify-between items-center pt-6 border-t border-slate-700">
+                                        <button 
+                                            onClick={prevStep}
+                                            className="p-3 rounded-full bg-slate-700 hover:bg-slate-600 transition-colors text-slate-300 hover:text-white disabled:opacity-30"
+                                            disabled={step === 0}
+                                        >
+                                            <ArrowLeftIcon />
+                                        </button>
+
+                                        <div className="text-slate-400 font-mono font-bold tracking-widest text-sm">
+                                            STEG {step + 1} AV 4
+                                        </div>
+
+                                        <button 
+                                            onClick={nextStep}
+                                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-500 transition-all font-bold shadow-lg shadow-blue-900/50 active:scale-95"
+                                        >
+                                            {step === steps.length - 1 ? "Börja om" : "Nästa"} 
+                                            {step === steps.length - 1 ? <RefreshCwIcon /> : <ArrowRightIcon />}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

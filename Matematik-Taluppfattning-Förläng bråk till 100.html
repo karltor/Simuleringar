@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Förlängning till hundradelar</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- KaTeX för matematisk formatering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        accent: '#FF5722', // En distinkt, energisk orange
+                        surface: '#F8F9FA',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            overflow: hidden; /* Förhindrar all scroll */
+            overscroll-behavior: none;
+        }
+
+        /* Mjuka övergångar för rektangeln - nu långsammare och mer "crisp" */
+        .fill-transition {
+            transition: all 1.5s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+
+        /* SVG Linje-animation (rita upp linjen) - krispigare easing */
+        .cut-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 1.2s cubic-bezier(0.8, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* Fade-transition för matte-formlerna */
+        .math-fade {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        
+        .math-hidden {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .math-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Övergång för linjer som försvinner vid förkortning */
+        .line-fade {
+            transition: opacity 1s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+
+        /* Grupp-övergång för att dölja de ursprungliga vertikala linjerna när rutnätet ritas */
+        .group-fade {
+            transition: opacity 1.2s cubic-bezier(0.8, 0, 0.2, 1);
+        }
+
+        /* Snygg custom scrollbar för bråk-knapparna på små skärmar ifall det blir trångt */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-zinc-900 h-screen w-screen flex flex-col md:flex-row antialiased selection:bg-orange-200">
+
+    <!-- Vänster panel: Interaktion och Matematik -->
+    <div class="h-1/2 md:h-full w-full md:w-5/12 flex flex-col justify-center px-8 md:px-16 lg:px-24 relative z-10 pt-8 md:pt-0">
+        <div class="max-w-md w-full mx-auto md:mx-0">
+            <h1 class="text-[10px] md:text-xs font-bold tracking-[0.25em] uppercase text-zinc-400 mb-8 md:mb-12">
+                Visuell Matematik
+            </h1>
+
+            <!-- Container för matematisk formel (KaTeX) -->
+            <div class="h-24 md:h-32 flex items-center justify-start mb-4">
+                <div id="math-display" class="text-4xl md:text-5xl lg:text-6xl math-fade math-visible text-zinc-800">
+                    <!-- Fylls av JS -->
+                </div>
+            </div>
+
+            <!-- Interaktionsknapp -->
+            <button id="action-btn" onclick="toggleExtension()" class="group relative inline-flex items-center justify-center px-8 py-3.5 overflow-hidden font-medium transition-all bg-zinc-900 rounded-full hover:bg-zinc-800 text-white w-full md:w-max shadow-lg shadow-zinc-900/20 hover:shadow-zinc-900/30 active:scale-95">
+                <span id="btn-text" class="text-sm font-semibold tracking-wide">Förläng till hundradelar</span>
+            </button>
+
+            <!-- Väljare för startbråk -->
+            <div class="mt-12 md:mt-16">
+                <p class="text-xs font-medium text-zinc-400 uppercase tracking-widest mb-4">Välj startbråk</p>
+                <div id="fraction-selectors" class="flex gap-3 flex-wrap hide-scrollbar">
+                    <!-- Knappar genereras av JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Höger panel: Geometrisk Visualisering -->
+    <div class="h-1/2 md:h-full w-full md:w-7/12 bg-white flex items-center justify-center relative shadow-[-30px_0_60px_-15px_rgba(0,0,0,0.03)] p-8 md:p-12">
+        
+        <!-- Själva rutan som ritas och delas -->
+        <svg id="visualizer" viewBox="0 0 1000 1000" class="w-full max-w-[40vh] md:max-w-[65vh] drop-shadow-2xl overflow-visible">
+            
+            <defs>
+                <clipPath id="square-clip">
+                    <rect width="1000" height="1000" rx="20" />
+                </clipPath>
+            </defs>
+
+            <!-- Bakgrund (Hela figuren) -->
+            <rect width="1000" height="1000" fill="#F4F4F5" rx="20" />
+
+            <!-- Allt inuti här klipps av de yttre rundade hörnen -->
+            <g clip-path="url(#square-clip)">
+                <!-- Delas upp i två rektanglar för att kunna formskifta till exakta rutor -->
+                <rect id="fill-rect-main" x="0" y="0" width="0" height="1000" fill="#FF5722" class="fill-transition" />
+                <rect id="fill-rect-partial" x="0" y="0" width="0" height="1000" fill="#FF5722" class="fill-transition" />
+
+                <!-- Vertikala baslinjer -->
+                <g id="vertical-lines" class="group-fade" stroke="#FFFFFF" stroke-width="5"></g>
+                <!-- Det slutgiltiga 10x10 rutnätet -->
+                <g id="grid-lines" stroke="#FFFFFF" stroke-width="5"></g>
+            </g>
+
+            <!-- Yttre elegant ram -->
+            <rect width="1000" height="1000" fill="none" stroke="#E4E4E7" stroke-width="4" rx="20" />
+            
+        </svg>
+
+    </div>
+
+    <script>
+        // Data för tillgängliga bråk, inklusive de som måste förkortas först
+        const fractions = [
+            { n: 1, d: 2 },
+            { n: 1, d: 4 },
+            { n: 3, d: 12, simplifiesTo: { n: 1, d: 4, divisor: 3 } }, // Nytt: Kräver förkortning
+            { n: 3, d: 4 },
+            { n: 1, d: 5 },
+            { n: 4, d: 20, simplifiesTo: { n: 1, d: 5, divisor: 4 } }, // Nytt: Kräver förkortning
+            { n: 1, d: 10 },
+            { n: 7, d: 10 }
+        ];
+
+        let currentIndex = 2; // Startar på 3/12 för att visa den nya funktionen
+        let currentStep = 0; // 0 = start, 1 = förkortat, 2 = förlängt
+        let isAnimating = false;
+
+        // DOM Element
+        const mathDisplay = document.getElementById('math-display');
+        const btnText = document.getElementById('btn-text');
+        const fillRectMain = document.getElementById('fill-rect-main');
+        const fillRectPartial = document.getElementById('fill-rect-partial');
+        const verticalLinesGroup = document.getElementById('vertical-lines');
+        const gridLinesGroup = document.getElementById('grid-lines');
+        const selectorsContainer = document.getElementById('fraction-selectors');
+        const actionBtn = document.getElementById('action-btn');
+
+        // Initiera applikationen
+        function init() {
+            createSelectors();
+            updateFraction(currentIndex, true);
+        }
+
+        // Skapa knapparna för att välja bråk
+        function createSelectors() {
+            fractions.forEach((f, index) => {
+                const btn = document.createElement('button');
+                btn.className = `px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${
+                    index === currentIndex 
+                    ? 'bg-zinc-900 text-white border-zinc-900 shadow-md' 
+                    : 'bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900'
+                }`;
+                btn.innerHTML = `${f.n}/${f.d}`;
+                btn.onclick = () => {
+                    if(isAnimating) return;
+                    currentIndex = index;
+                    updateSelectorsUI();
+                    updateFraction(currentIndex);
+                };
+                selectorsContainer.appendChild(btn);
+            });
+        }
+
+        function updateSelectorsUI() {
+            Array.from(selectorsContainer.children).forEach((btn, index) => {
+                if(index === currentIndex) {
+                    btn.className = 'px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border bg-zinc-900 text-white border-zinc-900 shadow-md transform scale-105';
+                } else {
+                    btn.className = 'px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900 transform scale-100';
+                }
+            });
+        }
+
+        // Hjälpfunktion för att sätta knappens utseende
+        function setButtonUI(text, mode) {
+            btnText.innerText = text;
+            actionBtn.classList.remove('bg-zinc-900', 'bg-zinc-100', 'bg-zinc-800', 'text-white', 'text-zinc-900', 'hover:bg-zinc-800', 'hover:bg-zinc-200');
+            
+            if (mode === 'primary') {
+                actionBtn.classList.add('bg-zinc-900', 'text-white', 'hover:bg-zinc-800');
+            } else if (mode === 'secondary') {
+                actionBtn.classList.add('bg-zinc-100', 'text-zinc-900', 'hover:bg-zinc-200');
+            }
+        }
+
+        // Uppdaterar den visuella och matematiska representationen för grundläget
+        function updateFraction(index, initial = false) {
+            currentStep = 0;
+            const frac = fractions[index];
+            const activeFrac = frac.simplifiesTo ? frac.simplifiesTo : frac;
+            
+            // Uppdatera SVG
+            verticalLinesGroup.style.opacity = '1'; // Se till att de ursprungliga linjerna syns
+            gridLinesGroup.innerHTML = ''; // Rensa 10x10 rutnätet
+            
+            // Beräkna bredder för de två rektanglarna
+            const totalHundredths = activeFrac.n * (100 / activeFrac.d);
+            const cols = Math.floor(totalHundredths / 10);
+            const rem = totalHundredths % 10;
+            
+            const mainWidth = cols * 100;
+            const partialWidthInitial = (rem / 10) * 100;
+
+            fillRectMain.setAttribute('width', mainWidth);
+            fillRectPartial.setAttribute('x', mainWidth);
+            fillRectPartial.setAttribute('width', partialWidthInitial);
+            fillRectPartial.setAttribute('height', 1000); // Återställ till full höjd
+
+            // Rita vertikala linjer
+            let vLines = '';
+            for(let i = 1; i < frac.d; i++) {
+                const x = (i / frac.d) * 1000;
+                // Kolla om linjen ska försvinna vid förkortning
+                let isMainLine = true;
+                if(frac.simplifiesTo) {
+                    isMainLine = (i % frac.simplifiesTo.divisor === 0);
+                }
+                
+                const lineClass = isMainLine ? '' : 'sub-line line-fade';
+                vLines += `<line x1="${x}" y1="0" x2="${x}" y2="1000" class="${lineClass}" />`;
+            }
+            verticalLinesGroup.innerHTML = vLines;
+
+            // Uppdatera Matte & Knapp
+            updateMath(`\\frac{${frac.n}}{${frac.d}}`);
+            
+            if (frac.simplifiesTo) {
+                setButtonUI("Förkorta bråket först", 'primary');
+            } else {
+                setButtonUI("Förläng till hundradelar", 'primary');
+            }
+        }
+
+        // Hanterar klicket på huvudknappen
+        function toggleExtension() {
+            if(isAnimating) return;
+            const frac = fractions[currentIndex];
+
+            if (currentStep === 0 && frac.simplifiesTo) {
+                // STEG 1: Förkorta (om det behövs)
+                isAnimating = true;
+                
+                updateMath(`\\frac{${frac.n} \\div ${frac.simplifiesTo.divisor}}{${frac.d} \\div ${frac.simplifiesTo.divisor}} = \\frac{${frac.simplifiesTo.n}}{${frac.simplifiesTo.d}}`);
+                
+                // Bleka ut de överflödiga linjerna
+                const subLines = document.querySelectorAll('.sub-line');
+                subLines.forEach(line => line.style.opacity = '0');
+
+                setButtonUI("Förläng till hundradelar", 'primary');
+
+                setTimeout(() => {
+                    currentStep = 1;
+                    isAnimating = false;
+                }, 1200); // Väntar in den krispiga utfasningen
+
+            } else if (currentStep === 0 || currentStep === 1) {
+                // STEG 2: Förläng till hundradelar
+                isAnimating = true;
+                
+                // Använd antingen det förkortade bråket, eller originalet om det inte behövde förkortas
+                const activeFrac = frac.simplifiesTo ? frac.simplifiesTo : frac;
+                const multiplier = 100 / activeFrac.d; 
+                const totalHundredths = activeFrac.n * multiplier;
+                const rem = totalHundredths % 10;
+
+                // Visa uträkningen
+                updateMath(`\\frac{${activeFrac.n} \\mathbin{\\color{#FF5722}\\cdot ${multiplier}}}{${activeFrac.d} \\mathbin{\\color{#FF5722}\\cdot ${multiplier}}}`);
+                
+                setButtonUI("Återställ figuren", 'secondary');
+
+                // Tona ut de gamla baslinjerna för att ge plats åt rutnätet
+                verticalLinesGroup.style.opacity = '0';
+
+                // Formskifta den partiella kolumnen så att den fyller exakt rätt antal rutor!
+                if (rem > 0) {
+                    fillRectPartial.setAttribute('width', 100);
+                    fillRectPartial.setAttribute('height', rem * 100);
+                }
+
+                // Rita ett 10x10 rutnät (9 vertikala, 9 horisontella linjer)
+                let gridHTML = '';
+                for(let i = 1; i <= 9; i++) {
+                    const pos = i * 100;
+                    // Långsammare spridning av delay. Skapar en korsande rits-effekt.
+                    const delayV = i * 80; 
+                    const delayH = (10 - i) * 80; 
+                    
+                    gridHTML += `<line x1="${pos}" y1="0" x2="${pos}" y2="1000" class="cut-line" style="animation-delay: ${delayV}ms" />`;
+                    gridHTML += `<line x1="0" y1="${pos}" x2="1000" y2="${pos}" class="cut-line" style="animation-delay: ${delayH}ms" />`;
+                }
+                gridLinesGroup.innerHTML = gridHTML;
+
+                // Efter linjerna är ritade, visa resultatet i procent
+                setTimeout(() => {
+                    const result = activeFrac.n * multiplier;
+                    updateMath(`\\frac{${result}}{100} = ${result}\\%`);
+                    currentStep = 2;
+                    isAnimating = false;
+                }, 2200); // Längre väntetid för att passa den långsammare kurvan
+
+            } else {
+                // STEG 3: Återställ
+                updateFraction(currentIndex);
+            }
+        }
+
+        // Hjälpfunktion för att animera in och ut matematiken med KaTeX
+        function updateMath(texString) {
+            mathDisplay.classList.remove('math-visible');
+            mathDisplay.classList.add('math-hidden');
+            
+            setTimeout(() => {
+                katex.render(texString, mathDisplay, {
+                    displayMode: true,
+                    throwOnError: false
+                });
+                mathDisplay.classList.remove('math-hidden');
+                mathDisplay.classList.add('math-visible');
+            }, 300); // Måste matcha CSS transition duration
+        }
+
+        // Kör vid start
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

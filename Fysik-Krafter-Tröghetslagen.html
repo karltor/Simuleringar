@@ -1,375 +1,651 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Spaceship Simulation</title>
+    <title>3D Spaceship - Newton's First Law</title>
     <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  font-family: 'Arial', sans-serif;
-}
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000;
+        }
 
-canvas {
-  display: block;
-}
+        canvas {
+            display: block;
+        }
 
-.ui-element, #controls-tutorial {
-  position: absolute;
-  margin: 10px;
-  padding: 10px;
-  color: white;
-  background-color: rgba(85, 85, 255, 0.5); /* Use the spaceship's color with some transparency */
-  border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add a subtle shadow for depth */
-}
+        .ui-element, #controls-tutorial {
+            position: absolute;
+            padding: 15px 25px;
+            color: #fff;
+            background: rgba(20, 25, 40, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            user-select: none;
+        }
 
-#score {
-  top: 10px;
-  left: 10px;
-}
+        #score {
+            top: 20px;
+            left: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #4CAF50;
+        }
 
-#velocity-meter {
-  bottom: 10px;
-  left: 10px; /* Adjusted to the right for consistency */
-}
+        #velocity-meter {
+            bottom: 20px;
+            left: 20px;
+            font-size: 1.1rem;
+            color: #00bcd4;
+        }
 
-#controls-tutorial {
-  bottom: 20px;
-  right: 10px; /* Adjusted for spacing */
-  text-align: center; /* Align text to the left for a cleaner look */
-}
+        #controls-tutorial {
+            bottom: 20px;
+            right: 20px;
+            text-align: center;
+        }
 
-.control, .arrow-keys {
-  margin-bottom: 10px;
-}
+        .control-group {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 8px;
+            gap: 10px;
+        }
 
-.key {
-  display: inline-block;
-  width: 40px;
-  height: 40px;
-  line-height: 40px;
-  margin: 0px;
-  background-color: rgba(0, 0, 0, 0.5); /* Key background */
-  color: #fff;
-  border-radius: 5px;
-}
+        .key {
+            display: inline-block;
+            min-width: 30px;
+            height: 30px;
+            line-height: 30px;
+            background: linear-gradient(135deg, #444, #222);
+            border: 1px solid #555;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            padding: 0 5px;
+        }
 
-.arrow {
-  font-size: 20px;
-}
+        .label {
+            font-size: 13px;
+            color: #ccc;
+        }
+        
+        .warning-label {
+            color: #ffaa00;
+            font-size: 11px;
+            margin-top: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
 
-.label {
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.arrow-row {
-  display: flex;
-  justify-content: center;
-}
-
-</style>
+        #popup-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff5555;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 30px 50px;
+            border-radius: 15px;
+            border: 2px solid #ff5555;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.5s;
+        }
+    </style>
 </head>
 <body>
-  
-  <div id="score" class="ui-element">Score: 0</div>
-  <div id="velocity-meter" class="ui-element">Velocity: 0</div>
-  <div id="controls-tutorial">
-    <div class="control">
-      <div class="key">W</div>
-      <div class="label">Accelerera</div>
+
+    <div id="score" class="ui-element">Poäng: 0</div>
+    <div id="velocity-meter" class="ui-element">Hastighet: 0 m/s</div>
+    
+    <div id="controls-tutorial">
+        <h4 style="margin: 0 0 15px 0; color: #aaa; text-transform: uppercase; font-size: 12px;">Flygsystem</h4>
+        <div class="control-group">
+            <div class="key">W</div><div class="key">S</div>
+            <div class="label">Huvudmotor (Gas/Back)</div>
+        </div>
+        <div class="control-group">
+            <div class="key">A</div><div class="key">D</div>
+            <div class="label">Roll (Rotera axel)</div>
+        </div>
+        <div class="control-group">
+            <div class="key">↑</div><div class="key">↓</div>
+            <div class="label">Pitch (Nos Upp/Ner)</div>
+        </div>
+        <div class="control-group">
+            <div class="key">←</div><div class="key">→</div>
+            <div class="label">Yaw (Nos Vänster/Höger)</div>
+        </div>
+        <div class="warning-label">Tröghet aktiv: Ge motkraft för att stanna</div>
     </div>
-    <div class="control">
-      <div class="key">S</div>
-      <div class="label">Deaccelerera</div>
-    </div>
-    <div class="arrow-keys">
-      <div class="arrow-row">
-        <div class="key arrow">↑</div>
-      </div>
-      <div class="arrow-row">
-        <div class="key arrow">←</div>
-        <div class="key arrow">↓</div>
-        <div class="key arrow">→</div>
-      </div>
-    </div>
-    <div class="label">Camera Control</div>
-  </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-let scene, camera, renderer, spaceship, light;
-let velocity = new THREE.Vector3();
-let acceleration = new THREE.Vector3();
-let quaternion = new THREE.Quaternion();
-let rotationSpeed = new THREE.Vector3(0, 0, 0); // Initialize rotationSpeed
-const thrust = 0.01;
-const drag = 0.99995;
-const rotationIncrement = 0.015;
-const nearDistance = 700;
-const farDistance = 1300;
-const maxDensity = 0.7;
-function init() {
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1500);
+        let scene, camera, renderer, spaceship, engineLight;
+        let starGeo, stars, dustGeo, dust;
+        let asteroids = [];
+        let explosions = []; 
+        let score = 0;
 
-    renderer = new THREE.WebGLRenderer();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+        // Fysikvariabler - Newton mode
+        let velocity = new THREE.Vector3();
+        let acceleration = new THREE.Vector3();
+        let rotationSpeed = new THREE.Vector3(0, 0, 0); 
+        const thrust = 0.0015; 
+        const drag = 1.0; 
+        const rotationAcceleration = 0.0001; 
+        const boundaryLimit = 1500;
 
-    const geometry = new THREE.BoxGeometry(2, 2, 2); // Cube geometry for the spaceship
-    const material = new THREE.MeshPhongMaterial({ color: 0x5555ff });
-    spaceship = new THREE.Mesh(geometry, material);
-    spaceship.quaternion.copy(quaternion);
-    scene.add(spaceship);
+        // Tröskelvärden för flygassistans (auto-stop)
+        const rotAssistThreshold = 0.002; 
+        const velAssistThreshold = 0.03;
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
-  scene.add(ambientLight);
+        // Input state
+        const keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
 
-  light = new THREE.PointLight(0xffffff, 1, 100);
-  light.position.set(0, 10, -10);
-  scene.add(light);
+        function init() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.0005); 
 
-    generateAsteroids();
-    window.addEventListener('resize', onWindowResize, false);
-    document.addEventListener('keydown', onDocumentKeyDown, false);
-    document.addEventListener('keyup', onDocumentKeyUp, false);
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 3000);
 
-    animate();
-}
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
 
-function updateBackgroundColor(position) {
-    const distanceFromCenter = position.length();
-    let colorIntensity = 0;
-    if (distanceFromCenter > nearDistance && distanceFromCenter < farDistance) {
-        // Scale colorIntensity linearly between nearDistance and farDistance
-        colorIntensity = ((distanceFromCenter - nearDistance) / (farDistance - nearDistance));
-    } else if (distanceFromCenter >= farDistance) {
-        colorIntensity = 1;
-    }
+            createEnvironment();
+            createIntricateSpaceship(); 
+            generateAsteroids();
 
-    // Calculate the new background color as a shade of grey
-    const greyValue = Math.floor(colorIntensity * 255);
-    const backgroundColor = (greyValue << 16) | (greyValue << 8) | greyValue;
-    scene.background = new THREE.Color(backgroundColor);
-}
+            window.addEventListener('resize', onWindowResize, false);
+            document.addEventListener('keydown', (e) => setKey(e.key, true), false);
+            document.addEventListener('keyup', (e) => setKey(e.key, false), false);
 
+            animate();
+        }
 
+        function setKey(key, isPressed) {
+            if (keys.hasOwnProperty(key)) keys[key] = isPressed;
+        }
 
+        function createIntricateSpaceship() {
+            spaceship = new THREE.Group();
 
-function checkBoundaryCollision() {
-    const distanceFromCenter = spaceship.position.length(); // Get the distance from the center
-    if (distanceFromCenter > 900) { // Check if outside boundary
-        resetSpaceship(); // Reset the spaceship if it crosses the boundary
-    }
-}
+            // --- Material Setup ---
+            const darkMetal = new THREE.MeshStandardMaterial({ color: 0x222629, metalness: 0.8, roughness: 0.3, flatShading: true });
+            const lightMetal = new THREE.MeshStandardMaterial({ color: 0x88929e, metalness: 0.7, roughness: 0.4, flatShading: true });
+            const accentMetal = new THREE.MeshStandardMaterial({ color: 0xd9534f, metalness: 0.6, roughness: 0.2, flatShading: true }); 
+            const glassMat = new THREE.MeshStandardMaterial({ color: 0x050a11, metalness: 1.0, roughness: 0.0, transparent: true, opacity: 0.8, flatShading: true });
+            const neonMat = new THREE.MeshBasicMaterial({ color: 0x00ffff }); 
 
-function showPopup(message, duration) {
-    const popup = document.createElement('div');
-    popup.id = 'popup-message';
-    popup.textContent = message;
-    popup.style.position = 'absolute';
-    popup.style.top = '50%';
-    popup.style.left = '50%';
-    popup.style.transform = 'translate(-50%, -50%)';
-    popup.style.color = 'white';
-    popup.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    popup.style.padding = '20px';
-    popup.style.borderRadius = '5px';
-    popup.style.zIndex = '100';
-    document.body.appendChild(popup);
+            // 1. Central Kropp (Hexagon)
+            const coreGeo = new THREE.CylinderGeometry(0.7, 1.2, 5, 6);
+            coreGeo.rotateX(Math.PI / 2);
+            const core = new THREE.Mesh(coreGeo, lightMetal);
+            spaceship.add(core);
 
-    // Remove the popup after 'duration' milliseconds
-    setTimeout(() => {
-        popup.remove();
-    }, duration);
-}
+            // 2. Nos (Kon)
+            const noseGeo = new THREE.ConeGeometry(0.7, 3.5, 6);
+            noseGeo.rotateX(Math.PI / 2);
+            const nose = new THREE.Mesh(noseGeo, darkMetal);
+            nose.position.set(0, 0, -4.25);
+            spaceship.add(nose);
 
-// Modify the resetSpaceship function
-function resetSpaceship() {
-    spaceship.position.set(0, 0, 0); // Reset position to the center
-    velocity.set(0, 0, 0); // Reset velocity to 0
-    score = Math.round(score / 2); // Halve the score, rounded to the nearest integer
-    updateScore(); // Update the score display
-    updateCameraPosition(true); // Reset camera position with a flag to indicate a reset
+            // 3. Cockpit (Aggressiv diamantform)
+            const canopyGeo = new THREE.CylinderGeometry(0.5, 0.7, 2.5, 4);
+            canopyGeo.rotateX(Math.PI / 2);
+            canopyGeo.rotateZ(Math.PI / 4); 
+            const canopy = new THREE.Mesh(canopyGeo, glassMat);
+            canopy.position.set(0, 0.9, -1.2);
+            canopy.scale.set(1, 0.6, 1);
+            spaceship.add(canopy);
 
-    // Show the popup message
-    showPopup("Tappa inte bort dig i rymden!", 3000); // Show message for 3 seconds
-}
+            // 4. Sidokroppar (Pods)
+            const podGeo = new THREE.CylinderGeometry(0.4, 0.6, 4, 8);
+            podGeo.rotateX(Math.PI / 2);
+            const podL = new THREE.Mesh(podGeo, darkMetal);
+            podL.position.set(-1.2, 0, 0.5);
+            const podR = new THREE.Mesh(podGeo, darkMetal);
+            podR.position.set(1.2, 0, 0.5);
+            spaceship.add(podL);
+            spaceship.add(podR);
 
+            // 5. Huvudvingar (Bakåtsvepta)
+            const wingGeo = new THREE.BoxGeometry(8, 0.2, 3);
+            
+            const wingL = new THREE.Mesh(wingGeo, lightMetal);
+            wingL.position.set(-3.5, 0, 1.5);
+            wingL.rotation.y = -Math.PI / 7; 
+            spaceship.add(wingL);
 
-let score = 0;
-let asteroids = [];
+            const wingR = new THREE.Mesh(wingGeo, lightMetal);
+            wingR.position.set(3.5, 0, 1.5);
+            wingR.rotation.y = Math.PI / 7;
+            spaceship.add(wingR);
 
-function createCheckerboardTexture() {
-    const size = 256; // Storleken på texturens canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
+            // BORTTAGET: Winglets (orange klossar på kanterna)
 
-    const context = canvas.getContext('2d');
+            // 6. Laserkononer (Detaljer på vingarna)
+            const cannonGeo = new THREE.CylinderGeometry(0.08, 0.1, 2.5, 8);
+            cannonGeo.rotateX(Math.PI / 2);
+            
+            const cannonL = new THREE.Mesh(cannonGeo, darkMetal);
+            cannonL.position.set(-4.5, 0.2, 0);
+            spaceship.add(cannonL);
 
-    // Loopa igenom varje ruta och färglägg den
-    for (let i = 0; i < size / 16; i++) {
-        for (let j = 0; j < size / 16; j++) {
-            if ((i + j) % 2 === 0) {
-                context.fillStyle = 'white'; // Färg för ena rutan
-            } else {
-                context.fillStyle = 'black'; // Färg för den andra rutan
+            const cannonR = new THREE.Mesh(cannonGeo, darkMetal);
+            cannonR.position.set(4.5, 0.2, 0);
+            spaceship.add(cannonR);
+
+            // 7. Motorblock (3 Thrusters)
+            const mainEngineGeo = new THREE.CylinderGeometry(0.6, 0.9, 1.2, 12);
+            mainEngineGeo.rotateX(Math.PI / 2);
+            const mainEngine = new THREE.Mesh(mainEngineGeo, accentMetal);
+            mainEngine.position.set(0, 0, 3.1);
+            spaceship.add(mainEngine);
+
+            const sideEngineGeo = new THREE.CylinderGeometry(0.35, 0.5, 1, 12);
+            sideEngineGeo.rotateX(Math.PI / 2);
+            
+            const engineL = new THREE.Mesh(sideEngineGeo, darkMetal);
+            engineL.position.set(-1.2, 0, 2.8);
+            spaceship.add(engineL);
+
+            const engineR = new THREE.Mesh(sideEngineGeo, darkMetal);
+            engineR.position.set(1.2, 0, 2.8);
+            spaceship.add(engineR);
+
+            // 8. Greebles (Små tekniska paneler för realism)
+            const greebleGeo = new THREE.BoxGeometry(0.3, 0.1, 0.4);
+            for(let i=0; i<8; i++) {
+                const g = new THREE.Mesh(greebleGeo, darkMetal);
+                g.position.set(
+                    (Math.random() - 0.5) * 1.5, 
+                    0.6, 
+                    (Math.random() - 0.5) * 3
+                );
+                spaceship.add(g);
             }
-            context.fillRect(i * 16, j * 16, 16, 16); // Måla rutan
+
+            // 9. Neonstrips
+            const neonStripGeo = new THREE.BoxGeometry(3, 0.25, 0.1);
+            const stripL = new THREE.Mesh(neonStripGeo, neonMat);
+            stripL.position.set(-3, 0.05, 0.1);
+            stripL.rotation.y = -Math.PI / 7;
+            spaceship.add(stripL);
+
+            const stripR = new THREE.Mesh(neonStripGeo, neonMat);
+            stripR.position.set(3, 0.05, 0.1);
+            stripR.rotation.y = Math.PI / 7;
+            spaceship.add(stripR);
+
+            // --- Uppdaterade Fysiska Jetflammor (Plasma-strålar) ---
+            spaceship.userData.flames = [];
+            
+            const flameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x00ffff, 
+                transparent: true, 
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending // Ger det en lysande, energetisk look
+            });
+
+            // Huvudflamma (Kon)
+            const mainFlameGeo = new THREE.ConeGeometry(0.4, 3, 16);
+            mainFlameGeo.rotateX(-Math.PI / 2); // Rikta den bakåt
+            mainFlameGeo.translate(0, 0, 1.5); // Flytta pivot-punkten till basen
+            
+            const mainFlame = new THREE.Mesh(mainFlameGeo, flameMaterial);
+            mainFlame.position.set(0, 0, 3.2);
+            spaceship.add(mainFlame);
+            spaceship.userData.flames.push(mainFlame);
+
+            // Sidoflammor (Koner)
+            const sideFlameGeo = new THREE.ConeGeometry(0.25, 2, 16);
+            sideFlameGeo.rotateX(-Math.PI / 2);
+            sideFlameGeo.translate(0, 0, 1.0);
+
+            const sideFlameL = new THREE.Mesh(sideFlameGeo, flameMaterial);
+            sideFlameL.position.set(-1.2, 0, 2.9);
+            spaceship.add(sideFlameL);
+            spaceship.userData.flames.push(sideFlameL);
+
+            const sideFlameR = new THREE.Mesh(sideFlameGeo, flameMaterial);
+            sideFlameR.position.set(1.2, 0, 2.9);
+            spaceship.add(sideFlameR);
+            spaceship.userData.flames.push(sideFlameR);
+
+            // Dölj flammorna från början
+            spaceship.userData.flames.forEach(f => f.scale.set(0.01, 0.01, 0.01));
+
+            // Motorljus (PointLight)
+            engineLight = new THREE.PointLight(0x00ffff, 0, 15); 
+            engineLight.position.set(0, 0, 4.5);
+            spaceship.add(engineLight);
+
+            // Strålkastare framåt
+            const headLight = new THREE.SpotLight(0xffffff, 2.5, 300, 0.4, 0.5, 1);
+            headLight.position.set(0, -0.5, -4);
+            headLight.target.position.set(0, 0, -20);
+            spaceship.add(headLight);
+            spaceship.add(headLight.target);
+
+            scene.add(spaceship);
         }
-    }
 
-    const texture = new THREE.Texture(canvas);
-    texture.needsUpdate = true; // Informera Three.js att texturen behöver uppdateras
+        function createEnvironment() {
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xfffaaa, 1.8);
+            sunLight.position.set(100, 200, 50);
+            scene.add(sunLight);
 
-    return texture;
-}
+            starGeo = new THREE.BufferGeometry();
+            const starCount = 3000;
+            const starPos = new Float32Array(starCount * 3);
+            for(let i=0; i < starCount * 3; i++) {
+                starPos[i] = (Math.random() - 0.5) * 4000;
+            }
+            starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+            const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.5, sizeAttenuation: false });
+            stars = new THREE.Points(starGeo, starMat);
+            scene.add(stars);
 
-function generateAsteroids() {
-    const checkerboardTexture = createCheckerboardTexture(); // Skapa schackbrädetexturen
-
-    for (let i = 0; i < 100; i++) {
-        const asteroidGeometry = new THREE.SphereGeometry((0.5+0.5*Math.random()) * 12, 32, 32);
-        const asteroidMaterial = new THREE.MeshBasicMaterial({
-            map: checkerboardTexture // Använd schackbrädetexturen som material
-        });
-        const asteroid = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
-        asteroid.position.x = Math.random() * 1000 - 500;
-        asteroid.position.y = Math.random() * 1000 - 500;
-        asteroid.position.z = Math.random() * 1000 - 500;
-        scene.add(asteroid);
-        asteroids.push(asteroid); // Lägg till i asteroidlistan
-    }
-}
-
-
-
-
-function checkCollisions() {
-    const spaceshipBox = new THREE.Box3().setFromObject(spaceship);
-    for (let i = asteroids.length - 1; i >= 0; i--) {
-        const asteroid = asteroids[i];
-        const asteroidBox = new THREE.Box3().setFromObject(asteroid);
-        if (spaceshipBox.intersectsBox(asteroidBox)) {
-            scene.remove(asteroid); // Ta bort asteroiden från scenen
-            asteroids.splice(i, 1); // Ta bort från asteroidlistan
-            score += 10; // Öka poängen
-            updateScore(); // Uppdatera poängräknaren
+            dustGeo = new THREE.BufferGeometry();
+            const dustCount = 1000;
+            const dustPos = new Float32Array(dustCount * 3);
+            for(let i=0; i < dustCount * 3; i++) {
+                dustPos[i] = (Math.random() - 0.5) * 400; 
+            }
+            dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+            const dustMat = new THREE.PointsMaterial({ color: 0xaaaaaa, size: 0.5, transparent: true, opacity: 0.6 });
+            dust = new THREE.Points(dustGeo, dustMat);
+            scene.add(dust);
         }
-    }
-}
 
-function updateScore() {
-    document.getElementById('score').innerText = 'Score: ' + score;
-}
+        function generateAsteroids() {
+            const rockMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x666666, 
+                roughness: 0.8, 
+                flatShading: true 
+            });
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+            for (let i = 0; i < 150; i++) {
+                const radius = (Math.random() * 8) + 4;
+                const asteroidGeometry = new THREE.DodecahedronGeometry(radius, 1); 
+                
+                const positions = asteroidGeometry.attributes.position;
+                for(let j=0; j < positions.count; j++) {
+                    positions.setX(j, positions.getX(j) * (0.8 + Math.random() * 0.4));
+                    positions.setY(j, positions.getY(j) * (0.8 + Math.random() * 0.4));
+                    positions.setZ(j, positions.getZ(j) * (0.8 + Math.random() * 0.4));
+                }
+                asteroidGeometry.computeVertexNormals();
 
-function applyRotation(axis, angle) {
-    // This function will create a quaternion representing the rotation
-    // and multiply the spaceship's quaternion by it to perform the rotation.
-    const q = new THREE.Quaternion();
-    q.setFromAxisAngle(axis, angle);
-    spaceship.quaternion.multiplyQuaternions(spaceship.quaternion, q);
-}
+                const asteroid = new THREE.Mesh(asteroidGeometry, rockMaterial);
+                
+                do {
+                    asteroid.position.set(
+                        (Math.random() - 0.5) * 2000,
+                        (Math.random() - 0.5) * 2000,
+                        (Math.random() - 0.5) * 2000
+                    );
+                } while (asteroid.position.length() < 100);
 
-function onDocumentKeyDown(event) {
-    switch (event.key) {
-        case 'w':
-            acceleration.set(0, 0, -thrust);
-            break;
-        case 's':
-            acceleration.set(0, 0, thrust);
-            break;
-        case 'ArrowRight':
-            rotationSpeed.y = Math.min(rotationSpeed.y + rotationIncrement, -0.01); // Begränsa minsta rotation till -0.5
-            break;
-        case 'ArrowLeft':
-            rotationSpeed.y = Math.max(rotationSpeed.y - rotationIncrement, 0.01); // Begränsa största rotation till 0.5
-            break;
-        case 'ArrowDown':
-            rotationSpeed.x = Math.min(rotationSpeed.x + rotationIncrement, -0.01); // Begränsa minsta rotation till -0.5
-            break;
-        case 'ArrowUp':
-            rotationSpeed.x = Math.max(rotationSpeed.x - rotationIncrement, 0.01); // Begränsa största rotation till 0.5
-            break;
-    }
-}
+                asteroid.userData = {
+                    rotX: (Math.random() - 0.5) * 0.02,
+                    rotY: (Math.random() - 0.5) * 0.02,
+                    rotZ: (Math.random() - 0.5) * 0.02
+                };
 
-function onDocumentKeyUp(event) {
-    switch (event.key) {
-        case 'w':
-        case 's':
-            acceleration.set(0, 0, 0);
-            break;
-        case 'ArrowLeft':
-        case 'ArrowRight':
-            rotationSpeed.y = 0; // Återställ rotationSpeed.y till 0 när piltangenterna släpps
-            break;
-        case 'ArrowUp':
-        case 'ArrowDown':
-            rotationSpeed.x = 0; // Återställ rotationSpeed.x till 0 när piltangenterna släpps
-            break;
-    }
-}
+                scene.add(asteroid);
+                asteroids.push(asteroid);
+            }
+        }
 
+        function createExplosion(position) {
+            const particleCount = 30;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = position.x;
+                positions[i * 3 + 1] = position.y;
+                positions[i * 3 + 2] = position.z;
+                
+                velocities.push(
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 2
+                );
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const material = new THREE.PointsMaterial({ 
+                color: 0xff8800,
+                size: 2, 
+                transparent: true, 
+                opacity: 1 
+            });
+            
+            const explosion = new THREE.Points(geometry, material);
+            scene.add(explosion);
+            
+            explosions.push({ mesh: explosion, velocities: velocities, age: 0 });
+        }
 
-function animate() {
-    requestAnimationFrame(animate);
-    applyRotation(new THREE.Vector3(1, 0, 0), rotationSpeed.x);
-    applyRotation(new THREE.Vector3(0, 1, 0), rotationSpeed.y);
-    let globalAccel = acceleration.clone().applyQuaternion(spaceship.quaternion);
-    velocity.multiplyScalar(drag).add(globalAccel);
-    spaceship.position.add(velocity);
-    light.position.copy(spaceship.position);
-    light.position.y += 10;
-    updateCameraPosition();
-    checkCollisions(); // Kontrollera kollisioner varje frame
-    checkBoundaryCollision();
-  const velocityValue = velocity.length().toFixed(2); // Assuming velocity is a THREE.Vector3
-  document.getElementById('velocity-meter').textContent = `Velocity: ${velocityValue} m/s`;
+        function handleInput() {
+            // Acceleration & Visuella Motorflammor
+            if (keys.w) {
+                acceleration.set(0, 0, -thrust);
+                engineLight.intensity = 3; 
+                // Skjut ut en lång och intensiv flamma
+                spaceship.userData.flames.forEach(f => f.scale.set(1, 1, 1.5));
+            } else if (keys.s) {
+                acceleration.set(0, 0, thrust); 
+                engineLight.intensity = 1;
+                // Kort, bredare retro-burn när man backar/bromsar
+                spaceship.userData.flames.forEach(f => f.scale.set(0.6, 0.6, 0.2));
+            } else {
+                acceleration.set(0, 0, 0);
+                engineLight.intensity = 0;
+                // Göm flamman helt
+                spaceship.userData.flames.forEach(f => f.scale.set(0.01, 0.01, 0.01));
+            }
 
+            // Pitch (Upp/Ner)
+            if (keys.ArrowUp) rotationSpeed.x += rotationAcceleration; 
+            if (keys.ArrowDown) rotationSpeed.x -= rotationAcceleration; 
 
-  updateBackgroundColor(spaceship.position);
-    renderer.render(scene, camera);
-}
+            // Yaw (Vänster/Höger)
+            if (keys.ArrowLeft) rotationSpeed.y += rotationAcceleration; 
+            if (keys.ArrowRight) rotationSpeed.y -= rotationAcceleration; 
 
-function updateCameraPosition(reset = false) {
-if (reset) {
-    camera.position.set(0, 2, 10); // Reset camera position to initial
-    camera.lookAt(new THREE.Vector3(0, 0, 0)); // Camera looks at the center
-    camera.up.set(0, 1, 0); // Reset camera's up vector
-} else {
-    // Define the relative offset of the camera from the spaceship
-    let relativeCameraOffset = new THREE.Vector3(0, 2, 10);
+            // Roll
+            if (keys.a) rotationSpeed.z += rotationAcceleration; 
+            if (keys.d) rotationSpeed.z -= rotationAcceleration; 
 
-    // Use the spaceship's world matrix to transform the relative offset into a global position
-    let cameraOffset = relativeCameraOffset.applyMatrix4(spaceship.matrixWorld);
+            // FLYGASSISTANS (Auto-stop på små rörelser)
+            if (!keys.ArrowUp && !keys.ArrowDown && Math.abs(rotationSpeed.x) < rotAssistThreshold) {
+                rotationSpeed.x *= 0.95;
+            }
+            if (!keys.ArrowLeft && !keys.ArrowRight && Math.abs(rotationSpeed.y) < rotAssistThreshold) {
+                rotationSpeed.y *= 0.95;
+            }
+            if (!keys.a && !keys.d && Math.abs(rotationSpeed.z) < rotAssistThreshold) {
+                rotationSpeed.z *= 0.95;
+            }
 
-    // Set the camera's position to the offset position
-    camera.position.x = cameraOffset.x;
-    camera.position.y = cameraOffset.y;
-    camera.position.z = cameraOffset.z;
+            if (!keys.w && !keys.s && velocity.length() < velAssistThreshold) {
+                velocity.multiplyScalar(0.95);
+            }
 
-    // Make the camera look at the spaceship's current position
-    camera.lookAt(spaceship.position);
+            if (Math.abs(rotationSpeed.x) < 0.00001) rotationSpeed.x = 0;
+            if (Math.abs(rotationSpeed.y) < 0.00001) rotationSpeed.y = 0;
+            if (Math.abs(rotationSpeed.z) < 0.00001) rotationSpeed.z = 0;
+            if (velocity.length() < 0.00001) velocity.set(0, 0, 0);
+        }
 
-    // Adjust the camera's up vector
-    let up = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceship.quaternion);
-    camera.up.copy(up);
-}
-}
+        function checkCollisions() {
+            const shipRadius = 3.5; 
+            
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                
+                asteroid.rotation.x += asteroid.userData.rotX;
+                asteroid.rotation.y += asteroid.userData.rotY;
+                asteroid.rotation.z += asteroid.userData.rotZ;
 
-init();
+                const dist = spaceship.position.distanceTo(asteroid.position);
+                const asteroidRadius = asteroid.geometry.parameters.radius;
 
-</script>
+                if (dist < shipRadius + asteroidRadius) {
+                    createExplosion(asteroid.position);
+                    scene.remove(asteroid);
+                    asteroids.splice(i, 1);
+                    score += 10;
+                    updateScore();
+                }
+            }
+        }
+
+        function checkBoundary() {
+            if (spaceship.position.length() > boundaryLimit) {
+                resetSpaceship();
+            }
+        }
+
+        function resetSpaceship() {
+            spaceship.position.set(0, 0, 0);
+            velocity.set(0, 0, 0);
+            rotationSpeed.set(0, 0, 0);
+            spaceship.quaternion.identity();
+            score = Math.floor(score / 2);
+            updateScore();
+            showPopup("Tappa inte bort dig i rymden!");
+        }
+
+        function updateScore() {
+            document.getElementById('score').innerText = 'Poäng: ' + score;
+        }
+
+        function showPopup(message) {
+            let popup = document.getElementById('popup-message');
+            if (!popup) {
+                popup = document.createElement('div');
+                popup.id = 'popup-message';
+                document.body.appendChild(popup);
+            }
+            popup.textContent = message;
+            popup.style.opacity = '1';
+            
+            setTimeout(() => {
+                popup.style.opacity = '0';
+            }, 3000);
+        }
+
+        function updateCamera() {
+            let relativeCameraOffset = new THREE.Vector3(0, 4, 15); 
+            let cameraOffset = relativeCameraOffset.applyMatrix4(spaceship.matrixWorld);
+            
+            camera.position.copy(cameraOffset);
+            camera.lookAt(spaceship.position);
+            
+            let up = new THREE.Vector3(0, 1, 0).applyQuaternion(spaceship.quaternion);
+            camera.up.copy(up);
+        }
+
+        function animateEnvironment() {
+            dust.position.copy(spaceship.position);
+            
+            const positions = dustGeo.attributes.position.array;
+            const shipDir = velocity.clone().normalize();
+            const speed = velocity.length();
+
+            for(let i=0; i < positions.length; i+=3) {
+                positions[i] -= shipDir.x * speed * 0.5;
+                positions[i+1] -= shipDir.y * speed * 0.5;
+                positions[i+2] -= shipDir.z * speed * 0.5;
+
+                const dx = positions[i];
+                const dy = positions[i+1];
+                const dz = positions[i+2];
+                if (Math.sqrt(dx*dx + dy*dy + dz*dz) > 200) {
+                    positions[i] = (Math.random() - 0.5) * 400 + shipDir.x * 200;
+                    positions[i+1] = (Math.random() - 0.5) * 400 + shipDir.y * 200;
+                    positions[i+2] = (Math.random() - 0.5) * 400 + shipDir.z * 200;
+                }
+            }
+            dustGeo.attributes.position.needsUpdate = true;
+            
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                let exp = explosions[i];
+                let expPositions = exp.mesh.geometry.attributes.position.array;
+                
+                for (let j = 0; j < expPositions.length / 3; j++) {
+                    expPositions[j * 3] += exp.velocities[j * 3];
+                    expPositions[j * 3 + 1] += exp.velocities[j * 3 + 1];
+                    expPositions[j * 3 + 2] += exp.velocities[j * 3 + 2];
+                }
+                
+                exp.mesh.geometry.attributes.position.needsUpdate = true;
+                exp.mesh.material.opacity -= 0.02; 
+                exp.age++;
+                
+                if (exp.age > 50) {
+                    scene.remove(exp.mesh);
+                    exp.mesh.geometry.dispose();
+                    exp.mesh.material.dispose();
+                    explosions.splice(i, 1);
+                }
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            handleInput();
+
+            spaceship.rotateX(rotationSpeed.x);
+            spaceship.rotateY(rotationSpeed.y);
+            spaceship.rotateZ(rotationSpeed.z);
+
+            const localAccel = acceleration.clone().applyQuaternion(spaceship.quaternion);
+            velocity.add(localAccel);
+            
+            velocity.multiplyScalar(drag); 
+            spaceship.position.add(velocity);
+
+            document.getElementById('velocity-meter').textContent = `Hastighet: ${(velocity.length() * 100).toFixed(0)} m/s`;
+            
+            checkCollisions();
+            checkBoundary();
+            updateCamera();
+            animateEnvironment();
+
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
 </body>
 </html>

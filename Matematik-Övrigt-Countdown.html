@@ -1,134 +1,760 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="sv">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width">
-  <title>replit</title>
-  <link href="style.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Countdown — Sifferlek</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #0d1b2a;
+      color: #e0e1dd;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.4rem;
+      color: #ffd60a;
+      margin-bottom: 4px;
+      letter-spacing: 2px;
+    }
+
+    .tagline {
+      color: #778da9;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    /* Rules panel */
+    .rules-toggle {
+      background: none;
+      border: 1px solid #415a77;
+      color: #a8dadc;
+      padding: 6px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+    }
+    .rules-toggle:hover { background: #1b263b; border-color: #a8dadc; }
+
+    .rules {
+      max-width: 560px;
+      background: #1b263b;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      line-height: 1.6;
+      display: none;
+      font-size: 0.9rem;
+      color: #c9d1d9;
+      text-align: left;
+    }
+
+    .rules.open { display: block; }
+
+    .rules h3 { color: #ffd60a; margin-bottom: 8px; font-size: 1rem; }
+    .rules ul { padding-left: 20px; margin-bottom: 10px; }
+    .rules li { margin-bottom: 4px; }
+    .rules strong { color: #a8dadc; }
+
+    /* Target display */
+    .target-area {
+      background: #1b263b;
+      border: 2px solid #ffd60a;
+      border-radius: 12px;
+      padding: 16px 40px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .target-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #778da9;
+    }
+
+    .target-number {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: #ffd60a;
+      font-variant-numeric: tabular-nums;
+      min-height: 60px;
+    }
+
+    /* Number tiles */
+    .tiles-area {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .tile {
+      width: 72px;
+      height: 72px;
+      background: #415a77;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #e0e1dd;
+      cursor: pointer;
+      transition: all 0.15s;
+      user-select: none;
+      border: 2px solid transparent;
+    }
+
+    .tile:hover { background: #4a6d8c; transform: translateY(-2px); }
+    .tile.used { opacity: 0.3; cursor: default; transform: none; }
+    .tile.selected { border-color: #ffd60a; background: #4a6d8c; }
+
+    /* Selection area – pick buttons */
+    .pick-area {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .pick-btn {
+      padding: 10px 22px;
+      border-radius: 24px;
+      border: 2px solid #415a77;
+      background: #1b263b;
+      color: #a8dadc;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pick-btn:hover { border-color: #a8dadc; background: #253346; }
+    .pick-btn.active { border-color: #ffd60a; color: #ffd60a; }
+
+    /* Workspace: expression builder */
+    .workspace {
+      background: #1b263b;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 560px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+
+    .workspace-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #778da9;
+      margin-bottom: 8px;
+    }
+
+    .steps {
+      min-height: 40px;
+      margin-bottom: 12px;
+    }
+
+    .step {
+      background: #253346;
+      border-radius: 8px;
+      padding: 8px 14px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1.1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .step-expr { color: #e0e1dd; }
+    .step-result { color: #a8dadc; font-weight: 700; }
+
+    .step-remove {
+      background: none;
+      border: none;
+      color: #ef5350;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+      margin-left: 10px;
+    }
+
+    /* Operator buttons */
+    .ops {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .op-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #415a77;
+      background: #0d1b2a;
+      color: #ffd60a;
+      font-size: 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .op-btn:hover { border-color: #ffd60a; background: #1b263b; }
+    .op-btn.selected { background: #ffd60a; color: #0d1b2a; }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .action-btn {
+      padding: 10px 24px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-start { background: #ffd60a; color: #0d1b2a; }
+    .btn-start:hover { background: #ffe34d; }
+    .btn-undo { background: #415a77; color: #e0e1dd; }
+    .btn-undo:hover { background: #4a6d8c; }
+    .btn-reset { background: #ef5350; color: white; }
+    .btn-reset:hover { background: #f44336; }
+    .btn-new { background: #4caf50; color: white; }
+    .btn-new:hover { background: #43a047; }
+
+    /* Timer */
+    .timer-bar {
+      width: 100%;
+      max-width: 560px;
+      height: 8px;
+      background: #1b263b;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+
+    .timer-fill {
+      height: 100%;
+      background: #ffd60a;
+      border-radius: 4px;
+      transition: width 1s linear, background 0.3s;
+    }
+
+    .timer-fill.warning { background: #ff9800; }
+    .timer-fill.danger { background: #ef5350; }
+
+    .timer-text {
+      font-size: 0.85rem;
+      color: #778da9;
+      margin-bottom: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Result message */
+    .result-msg {
+      font-size: 1.3rem;
+      font-weight: 700;
+      min-height: 40px;
+      margin-bottom: 10px;
+    }
+
+    .result-msg.perfect { color: #ffd60a; }
+    .result-msg.close { color: #a8dadc; }
+    .result-msg.miss { color: #ef5350; }
+
+    /* Score */
+    .score-bar {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .score-item {
+      text-align: center;
+    }
+
+    .score-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #ffd60a;
+    }
+
+    .score-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #778da9;
+    }
+
+    /* Phases */
+    .phase { display: none; }
+    .phase.active { display: block; }
+
+    .pick-phase { text-align: center; }
+  </style>
 </head>
-
 <body>
-  <script>
-/* Create a box 80% wide 15% height 5% margin from top. slightly round the edges of the box. Divide the inside of the box into 6 slots where integers can be shown. */
-var box = document.createElement('div');
-box.style.width = '100%';
-box.style.height = '15%';
-box.style.marginTop = '5%';
-box.style.borderRadius = '5px';
-box.style.backgroundColor = '#f0f0f0';
-box.style.display = 'flex';
-box.style.flexDirection = 'row';
-box.style.justifyContent = 'space-around';
-box.style.alignItems = 'center';
-document.body.appendChild(box);
-/* In the center vertically and 15% of center to the left, add a button called "Stort Tal". If clicked, randomly print 10, 25, 50 or 100 in the box. If clicked again, the next number should be printed 10% to the right of the last print. */
-var button = document.createElement('button');
-button.innerHTML = 'Stort Tal';
-button.style.marginLeft = '15%';
-button.style.marginTop = '15%';
-button.style.fontSize = '1.5em';
-button.style.borderRadius = '5px';
-button.style.backgroundColor = '#f0f0f0';
-button.style.border = 'none';
-button.style.padding = '10px';
-button.style.cursor = 'pointer';
-document.body.appendChild(button);
-var numbers = [10, 25, 50, 100];
-var lastNumber = 5;
-button.addEventListener('click', function() {
-  var number = numbers[Math.floor(Math.random() * numbers.length)];
-  var numberElement = document.createElement('div');
-  numberElement.innerHTML = number;
-  numberElement.style.fontSize = '2.5em';
-  numberElement.style.marginLeft = lastNumber + '%';
-  lastNumber = 5;
-  box.appendChild(numberElement);
-});
-/* In the center vertically and 15% of center to the right, add a button called "Litet tal Tal". If clicked, randomly print an integer 1-9 in the box. If clicked again, the next number should be printed 10% to the right of the last print. */
-var button2 = document.createElement('button');
-button2.innerHTML = 'Litet Tal';
-button2.style.marginRight = '15%';
-button2.style.marginTop = '15%';
-button2.style.fontSize = '1.5em';
-button2.style.borderRadius = '5px';
-button2.style.backgroundColor = '#f0f0f0';
-button2.style.border = 'none';
-button2.style.padding = '10px';
-button2.style.cursor = 'pointer';
-document.body.appendChild(button2);
-var lastNumber2 = 5;
-button2.addEventListener('click', function() {
-  var number = Math.floor(Math.random() * 9) + 1;
-  var numberElement = document.createElement('div');
-  numberElement.innerHTML = number;
-  numberElement.style.fontSize = '2.5em';
-  numberElement.style.marginLeft = lastNumber2 + '%';
-  lastNumber2 = 5;
-  box.appendChild(numberElement);
-});
-/* Add a button in the bottom right called "Återställ". If clicked, clear numberElement. */
-var button3 = document.createElement('button');
-button3.innerHTML = 'Återställ';
-button3.style.position = 'absolute';
-button3.style.bottom = '5%';
-button3.style.right = '5%';
-button3.style.fontSize = '1.5em';
-button3.style.borderRadius = '5px';
-button3.style.backgroundColor = '#f0f0f0';
-button3.style.border = 'none';
-button3.style.padding = '10px';
-button3.style.cursor = 'pointer';
-document.body.appendChild(button3);
-button3.addEventListener('click', function() {
-  while (box.firstChild) {
-    box.removeChild(box.firstChild);
+
+<h1>COUNTDOWN</h1>
+<p class="tagline">Sifferlek — baserad på det brittiska TV-programmet</p>
+
+<button class="rules-toggle" onclick="toggleRules()">Visa regler</button>
+
+<div class="rules" id="rules">
+  <h3>Hur fungerar det?</h3>
+  <p>Countdown är baserad på den brittiska TV-showen med samma namn.
+     I sifferleken ska du kombinera sex slumpmässiga tal med
+     de fyra räknesätten för att nå (eller komma så nära som möjligt)
+     ett slumpmässigt måltal.</p>
+
+  <h3>Regler</h3>
+  <ul>
+    <li>Du har <strong>6 tal</strong> att arbeta med.</li>
+    <li>Välj dem genom att klicka <strong>"Stort tal"</strong> (25, 50, 75, 100)
+        eller <strong>"Litet tal"</strong> (1–10) tills du har sex stycken.</li>
+    <li><strong>Måltalet</strong> slumpas mellan 101 och 999.</li>
+    <li>Du har <strong>30 sekunder</strong> på dig.</li>
+    <li>Använd <strong>+ − × ÷</strong> för att kombinera talen steg för steg.</li>
+    <li>Varje valt tal får bara användas <strong>en gång</strong>,
+        men mellanresultat kan användas vidare.</li>
+    <li>Alla mellanresultat måste vara <strong>positiva heltal</strong>
+        (inga negativa tal, inga decimaler).</li>
+  </ul>
+
+  <h3>Poäng</h3>
+  <ul>
+    <li><strong>10 poäng</strong> — exakt rätt</li>
+    <li><strong>7 poäng</strong> — inom 5 från målet</li>
+    <li><strong>5 poäng</strong> — inom 10 från målet</li>
+    <li><strong>0 poäng</strong> — mer än 10 ifrån</li>
+  </ul>
+</div>
+
+<!-- PHASE 1: Pick numbers -->
+<div class="phase active" id="phase-pick">
+  <div class="target-area">
+    <div class="target-label">Måltal</div>
+    <div class="target-number" id="target-preview">?</div>
+  </div>
+
+  <div class="tiles-area" id="pick-tiles"></div>
+
+  <p style="color:#778da9; font-size:0.85rem; margin-bottom:12px;">
+    Välj 6 tal (<span id="pick-count">0</span>/6)
+  </p>
+
+  <div class="pick-area">
+    <button class="pick-btn" onclick="pickNumber('big')">Stort tal</button>
+    <button class="pick-btn" onclick="pickNumber('small')">Litet tal</button>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn btn-start" id="btn-go" onclick="startRound()" disabled>Kör!</button>
+  </div>
+</div>
+
+<!-- PHASE 2: Solve -->
+<div class="phase" id="phase-solve">
+  <div class="target-area">
+    <div class="target-label">Måltal</div>
+    <div class="target-number" id="target-number"></div>
+  </div>
+
+  <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+  <div class="timer-text" id="timer-text">30s</div>
+
+  <div class="tiles-area" id="solve-tiles"></div>
+
+  <div class="ops">
+    <button class="op-btn" onclick="selectOp('+')">+</button>
+    <button class="op-btn" onclick="selectOp('−')">−</button>
+    <button class="op-btn" onclick="selectOp('×')">×</button>
+    <button class="op-btn" onclick="selectOp('÷')">÷</button>
+  </div>
+
+  <div class="workspace">
+    <div class="workspace-label">Dina steg</div>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div class="result-msg" id="result-msg"></div>
+
+  <div class="actions">
+    <button class="action-btn btn-undo" onclick="undoStep()">Ångra</button>
+    <button class="action-btn btn-reset" onclick="resetWork()">Börja om</button>
+    <button class="action-btn btn-new" onclick="newGame()">Ny omgång</button>
+  </div>
+</div>
+
+<div class="score-bar" style="margin-top:12px;">
+  <div class="score-item"><div class="score-value" id="sc-total">0</div><div class="score-label">Poäng</div></div>
+  <div class="score-item"><div class="score-value" id="sc-rounds">0</div><div class="score-label">Omgångar</div></div>
+  <div class="score-item"><div class="score-value" id="sc-perfect">0</div><div class="score-label">Exakta</div></div>
+</div>
+
+<script>
+// ─── State ─────────────────────────────────────────
+let pickedNumbers = [];
+let target = 0;
+let available = [];   // { value, id, used }
+let selectedA = null; // index into available
+let selectedOp = null;
+let steps = [];       // { a, op, b, result, aId, bId, resultId }
+let nextId = 0;
+let timerInterval = null;
+let timeLeft = 30;
+let roundOver = false;
+
+let score = { total: 0, rounds: 0, perfect: 0 };
+
+// ─── Picking phase ─────────────────────────────────
+const bigNumbers = [25, 50, 75, 100];
+const smallNumbers = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10];
+
+let bigPool = [];
+let smallPool = [];
+
+function initPools() {
+  bigPool = [...bigNumbers];
+  smallPool = [...smallNumbers];
+  shuffle(bigPool);
+  shuffle(smallPool);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
   }
-});
-/* Add a box with slightly rounded squares in the center right, 200px by 100 px. Below the box with 5% margin, add a button called "Mål". When mål is pressed, randomly generate a prime number between 101 and 999 inside the box. */
-var box2 = document.createElement('div');
-box2.style.width = '200px';
-box2.style.height = '100px';
-box2.style.marginLeft = '60%';
-box2.style.marginTop = '-10%';
-box2.style.borderRadius = '5px';
-box2.style.backgroundColor = '#f0f0f0';
-box2.style.display = 'flex';
-box2.style.flexDirection = 'row';
-box2.style.justifyContent = 'space-around';
-box2.style.alignItems = 'center';
-document.body.appendChild(box2);
-var button4 = document.createElement('button');
-button4.innerHTML = 'Mål';
-button4.style.marginTop = '5%';
-button4.style.fontSize = '1.5em';
-button4.style.borderRadius = '5px';
-button4.style.backgroundColor = '#f0f0f0';
-button4.style.marginLeft = '61%';
-button4.style.marginTop = '1%';
-button4.style.border = 'none';
-button4.style.padding = '10px';
-button4.style.cursor = 'pointer';
-document.body.appendChild(button4);
-/* When button4 is pressed, Clear contents of box2 if there is any and add a random integer 101-999 in the center of box2. */
-button4.addEventListener('click', function() {
-  while (box2.firstChild) {
-    box2.removeChild(box2.firstChild);
+}
+
+function pickNumber(type) {
+  if (pickedNumbers.length >= 6) return;
+
+  let num;
+  if (type === 'big') {
+    if (bigPool.length === 0) return;
+    num = bigPool.pop();
+  } else {
+    if (smallPool.length === 0) return;
+    num = smallPool.pop();
   }
-  var number = Math.floor(Math.random() * 899) + 101;
-  var numberElement = document.createElement('div');
-  numberElement.innerHTML = number;
-  numberElement.style.fontSize = '3.5em';
-  box2.appendChild(numberElement);
-});
-/* button3 should also clear box2. */
-button3.addEventListener('click', function() {
-  while (box2.firstChild) {
-    box2.removeChild(box2.firstChild);
+
+  pickedNumbers.push(num);
+  renderPickTiles();
+  document.getElementById('pick-count').textContent = pickedNumbers.length;
+  document.getElementById('btn-go').disabled = pickedNumbers.length < 6;
+}
+
+function renderPickTiles() {
+  const container = document.getElementById('pick-tiles');
+  container.innerHTML = '';
+  for (const n of pickedNumbers) {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.textContent = n;
+    container.appendChild(div);
   }
-});
+  // Placeholders
+  for (let i = pickedNumbers.length; i < 6; i++) {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.style.opacity = '0.2';
+    div.textContent = '?';
+    container.appendChild(div);
+  }
+}
+
+// ─── Start round ───────────────────────────────────
+function startRound() {
+  target = Math.floor(Math.random() * 899) + 101;
+  document.getElementById('target-number').textContent = target;
+
+  // Build available numbers
+  available = pickedNumbers.map((v, i) => ({ value: v, id: nextId++, used: false, original: true }));
+  steps = [];
+  selectedA = null;
+  selectedOp = null;
+  roundOver = false;
+
+  showPhase('phase-solve');
+  renderSolveTiles();
+  renderSteps();
+  document.getElementById('result-msg').textContent = '';
+  document.getElementById('result-msg').className = 'result-msg';
+
+  // Start timer
+  timeLeft = 30;
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endRound();
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  const pct = (timeLeft / 30) * 100;
+  const fill = document.getElementById('timer-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'timer-fill' + (pct <= 20 ? ' danger' : pct <= 40 ? ' warning' : '');
+  document.getElementById('timer-text').textContent = timeLeft + 's';
+}
+
+// ─── Solve phase ───────────────────────────────────
+function renderSolveTiles() {
+  const container = document.getElementById('solve-tiles');
+  container.innerHTML = '';
+  for (let i = 0; i < available.length; i++) {
+    const a = available[i];
+    const div = document.createElement('div');
+    div.className = 'tile' + (a.used ? ' used' : '') + (selectedA === i ? ' selected' : '');
+    div.textContent = a.value;
+    const idx = i;
+    div.addEventListener('click', () => selectTile(idx));
+    container.appendChild(div);
+  }
+}
+
+function selectTile(idx) {
+  if (roundOver) return;
+  if (available[idx].used) return;
+
+  if (selectedA === null) {
+    // First number
+    selectedA = idx;
+    renderSolveTiles();
+  } else if (selectedOp === null) {
+    // No op yet, switch selection
+    selectedA = idx;
+    renderSolveTiles();
+  } else {
+    // We have A and op, this is B → compute
+    const a = available[selectedA];
+    const b = available[idx];
+    const result = compute(a.value, selectedOp, b.value);
+
+    if (result === null) {
+      // Invalid operation
+      flashResult('Ogiltigt! (inga negativa tal eller decimaler)', 'miss');
+      clearSelection();
+      return;
+    }
+
+    // Record step
+    a.used = true;
+    b.used = true;
+    const newEntry = { value: result, id: nextId++, used: false, original: false };
+    available.push(newEntry);
+
+    steps.push({
+      aVal: a.value, op: selectedOp, bVal: b.value, result,
+      aIdx: selectedA, bIdx: idx, resultIdx: available.length - 1
+    });
+
+    clearSelection();
+    renderSolveTiles();
+    renderSteps();
+
+    // Check if we hit target
+    if (result === target) {
+      clearInterval(timerInterval);
+      endRound();
+    }
+  }
+}
+
+function selectOp(op) {
+  if (roundOver) return;
+  if (selectedA === null) return;
+  selectedOp = op;
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+function clearSelection() {
+  selectedA = null;
+  selectedOp = null;
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('selected'));
+}
+
+function compute(a, op, b) {
+  let r;
+  switch (op) {
+    case '+': r = a + b; break;
+    case '−': r = a - b; break;
+    case '×': r = a * b; break;
+    case '÷': r = a / b; break;
+  }
+  // Must be positive integer
+  if (r <= 0 || !Number.isInteger(r)) return null;
+  return r;
+}
+
+function renderSteps() {
+  const container = document.getElementById('steps');
+  container.innerHTML = '';
+  if (steps.length === 0) {
+    container.innerHTML = '<div style="color:#555; font-size:0.9rem; padding:8px;">Välj ett tal, en operator och sedan ett till tal.</div>';
+    return;
+  }
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const div = document.createElement('div');
+    div.className = 'step';
+    const opDisplay = s.op;
+    div.innerHTML = `
+      <span class="step-expr">${fmtN(s.aVal)} ${opDisplay} ${fmtN(s.bVal)}</span>
+      <span>
+        <span class="step-result">= ${fmtN(s.result)}</span>
+        ${!roundOver ? `<button class="step-remove" onclick="undoFrom(${i})">✕</button>` : ''}
+      </span>
+    `;
+    container.appendChild(div);
+  }
+}
+
+function fmtN(n) {
+  return n.toLocaleString('sv-SE');
+}
+
+// ─── Undo ──────────────────────────────────────────
+function undoStep() {
+  if (steps.length === 0 || roundOver) return;
+  undoFrom(steps.length - 1);
+}
+
+function undoFrom(idx) {
+  if (roundOver) return;
+  // Undo all steps from idx onwards (in reverse)
+  while (steps.length > idx) {
+    const s = steps.pop();
+    // Remove the result tile
+    available.splice(s.resultIdx, 1);
+    // Un-use the operands
+    available[s.aIdx].used = false;
+    available[s.bIdx].used = false;
+  }
+  clearSelection();
+  renderSolveTiles();
+  renderSteps();
+}
+
+function resetWork() {
+  if (roundOver) return;
+  undoFrom(0);
+}
+
+// ─── End round ─────────────────────────────────────
+function endRound() {
+  roundOver = true;
+  clearInterval(timerInterval);
+
+  // Find closest result among available (unused) numbers + step results
+  let best = null;
+  let bestDiff = Infinity;
+
+  for (const a of available) {
+    const diff = Math.abs(a.value - target);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = a.value;
+    }
+  }
+
+  const msg = document.getElementById('result-msg');
+  let pts = 0;
+
+  if (bestDiff === 0) {
+    msg.textContent = `Perfekt! Du nådde ${target} exakt!`;
+    msg.className = 'result-msg perfect';
+    pts = 10;
+    score.perfect++;
+  } else if (bestDiff <= 5) {
+    msg.textContent = `Nära! Du kom till ${best} (${bestDiff} ifrån)`;
+    msg.className = 'result-msg close';
+    pts = 7;
+  } else if (bestDiff <= 10) {
+    msg.textContent = `Okej! Du kom till ${best} (${bestDiff} ifrån)`;
+    msg.className = 'result-msg close';
+    pts = 5;
+  } else {
+    msg.textContent = `Närmast: ${best} (${bestDiff} ifrån). Inga poäng.`;
+    msg.className = 'result-msg miss';
+    pts = 0;
+  }
+
+  score.total += pts;
+  score.rounds++;
+  updateScore();
+  renderSteps(); // re-render without remove buttons
+}
+
+function updateScore() {
+  document.getElementById('sc-total').textContent = score.total;
+  document.getElementById('sc-rounds').textContent = score.rounds;
+  document.getElementById('sc-perfect').textContent = score.perfect;
+}
+
+// ─── New game ──────────────────────────────────────
+function newGame() {
+  clearInterval(timerInterval);
+  pickedNumbers = [];
+  nextId = 0;
+  initPools();
+  renderPickTiles();
+  document.getElementById('pick-count').textContent = '0';
+  document.getElementById('btn-go').disabled = true;
+  document.getElementById('target-preview').textContent = '?';
+  showPhase('phase-pick');
+}
+
+function showPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function toggleRules() {
+  const r = document.getElementById('rules');
+  r.classList.toggle('open');
+  document.querySelector('.rules-toggle').textContent = r.classList.contains('open') ? 'Dölj regler' : 'Visa regler';
+}
+
+function flashResult(msg, cls) {
+  const el = document.getElementById('result-msg');
+  el.textContent = msg;
+  el.className = 'result-msg ' + cls;
+  setTimeout(() => { if (!roundOver) { el.textContent = ''; el.className = 'result-msg'; } }, 2000);
+}
+
+// ─── Init ──────────────────────────────────────────
+initPools();
+renderPickTiles();
+updateScore();
 </script>
-
 </body>
-
 </html>

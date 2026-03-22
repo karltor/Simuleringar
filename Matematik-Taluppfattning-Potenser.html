@@ -1,231 +1,589 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
 <head>
-  <title>Grundpotensform Träning</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Potenser — Träning</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <style>
-body {
-  font-family: Arial, sans-serif;
-  background-color: #e6ffe6;
-  text-align: center;
-  font-size: 1.2rem;
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-#main-title {
-  font-size: 3rem;
-  margin-bottom: 40px;
-}
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: #1b5e20;
+    }
 
-#question-bank button, #answer-buttons button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  padding: 20px 40px;
-  margin: 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-size: 1.5rem;
-}
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
 
-#question {
-  font-size: 2rem;
-  margin: 40px;
-    min-height: 100px;  /* Ställ in en minsta höjd */
-}
+    .subtitle {
+      font-size: 0.95rem;
+      color: #558b2f;
+      margin-bottom: 24px;
+    }
 
-#answer-buttons {
-  display: inline-block;
-}
+    /* Category selector */
+    .categories {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
 
-#stats {
-  position: absolute;
-  top: 60%;
-  right: 4px;
-  background-color: #f0fff0;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  font-size: 1rem;
-}
+    .categories button {
+      padding: 10px 22px;
+      border: 2px solid #4caf50;
+      border-radius: 24px;
+      background: white;
+      color: #2e7d32;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
 
-.fraction {
-  display: inline-block;
-  vertical-align: middle; 
-  text-align: center;
-  margin: 0 10px;
-}
+    .categories button:hover { background: #e8f5e9; }
 
-.numerator, .denominator {
-  display: block;
-}
+    .categories button.active {
+      background: #4caf50;
+      color: white;
+    }
 
-.denominator {
-  border-top: 2px solid black;
-}
+    /* Question card */
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      padding: 36px 48px;
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 20px;
+    }
 
-#feedback {
-  font-size: 2rem;
-  transition: opacity 1s ease;
-}
+    .card-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #81c784;
+      margin-bottom: 6px;
+    }
 
-</style>
+    .question-display {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin: 16px 0 24px;
+      line-height: 1.6;
+    }
+
+    .question-display .katex { font-size: 2rem; }
+
+    .answer-row {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .answer-row button {
+      flex: 1;
+      max-width: 180px;
+      padding: 14px 0;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-true {
+      background: #4caf50;
+      color: white;
+    }
+    .btn-true:hover { background: #43a047; transform: translateY(-1px); }
+
+    .btn-false {
+      background: #ef5350;
+      color: white;
+    }
+    .btn-false:hover { background: #e53935; transform: translateY(-1px); }
+
+    /* Feedback */
+    .feedback {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      transition: opacity 0.4s;
+    }
+
+    .feedback.correct { color: #2e7d32; }
+    .feedback.wrong { color: #c62828; }
+
+    .correction {
+      font-size: 1rem;
+      font-weight: 400;
+      color: #555;
+      margin-top: 4px;
+      min-height: 24px;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .stat {
+      background: white;
+      border-radius: 12px;
+      padding: 12px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2e7d32;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .streak-fire { color: #ff9800; }
+
+    /* Keyboard hint */
+    .hint {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    .hint kbd {
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: inherit;
+      font-size: 0.8rem;
+    }
+  </style>
 </head>
 <body>
-  <h1 id="main-title">Träna på Matematik</h1>
-  <div id="question-bank">
-    <button onclick="loadQuestions('potenser.txt')">Potenser</button>
-    <button onclick="loadQuestions('multiplikation.txt')">Multiplikation och Division</button>
-    <button onclick="loadQuestions('grundpotens.txt')">Grundpotensform</button>
-  </div>
-  <div id="question"></div>
-  <div id="answer-buttons">
-    <button onclick="checkAnswer(true)">Sant</button>
-    <button onclick="checkAnswer(false)">Falskt</button>
-  </div>
-  <div id="feedback"></div>
-  <div id="stats">
-    <h2>Statistik</h2>
-    <table id="stats-table">
-      <thead>
-        <tr>
-          <th>Kategori</th>
-          <th>Rätt</th>
-          <th>Fel</th>
-          <th>Streak</th>
-          <th>Bästa Streak</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr id="stats-potenser">
-          <td>Potenser</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-        </tr>
-        <tr id="stats-multiplikation">
-          <td>Multiplikation och Division</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-        </tr>
-        <tr id="stats-grundpotens">
-          <td>Grundpotensform</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-          <td>0</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <script>
-let questions = [];
-let currentQuestion;
-let currentIndex = 0;
-let currentCategory = "";
-let correctCount = 0;
-let wrongCount = 0;
-let streakCount = 0;
-let bestStreakCount = 0;
 
-function updateStats() {
-  const statsRow = document.getElementById(`stats-${currentCategory}`);
-  if (statsRow) {
-    statsRow.children[1].innerText = correctCount;
-    statsRow.children[2].innerText = wrongCount;
-    statsRow.children[3].innerText = streakCount;
-    statsRow.children[4].innerText = bestStreakCount;
+<h1>Potenser</h1>
+<p class="subtitle">Sant eller falskt? Svara med knapparna eller tangentbordet.</p>
+
+<div class="categories">
+  <button onclick="selectCategory('potenser')" id="cat-potenser">Potenser</button>
+  <button onclick="selectCategory('multiplikation')" id="cat-multiplikation">Multiplikation &amp; Division</button>
+  <button onclick="selectCategory('grundpotens')" id="cat-grundpotens">Grundpotensform</button>
+</div>
+
+<div class="card">
+  <div class="card-label" id="card-label">Välj en kategori ovan</div>
+  <div class="question-display" id="question">—</div>
+  <div class="answer-row">
+    <button class="btn-true" onclick="answer(true)">Sant</button>
+    <button class="btn-false" onclick="answer(false)">Falskt</button>
+  </div>
+</div>
+
+<div class="feedback" id="feedback"></div>
+<div class="correction" id="correction"></div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-value" id="s-correct">0</div><div class="stat-label">Rätt</div></div>
+  <div class="stat"><div class="stat-value" id="s-wrong">0</div><div class="stat-label">Fel</div></div>
+  <div class="stat"><div class="stat-value streak-fire" id="s-streak">0</div><div class="stat-label">Streak</div></div>
+  <div class="stat"><div class="stat-value" id="s-best">0</div><div class="stat-label">Bästa</div></div>
+</div>
+
+<p class="hint"><kbd>←</kbd> Sant &nbsp; <kbd>→</kbd> Falskt</p>
+
+<script>
+// ─── State ─────────────────────────────────────────
+let category = null;
+let currentQ = null; // { latex, answer: bool, correctionLatex }
+let stats = { correct: 0, wrong: 0, streak: 0, best: 0 };
+
+// ─── Helpers ───────────────────────────────────────
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const randInt = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
+const coin = () => Math.random() < 0.5;
+
+function renderKatex(latex, el) {
+  katex.render(latex, el, { throwOnError: false, displayMode: true });
+}
+
+// ─── Question generators ───────────────────────────
+// Each returns { latex, answer, correctionLatex? }
+
+function genPotenser() {
+  const type = randInt(0, 5);
+  switch (type) {
+
+    case 0: { // base^exp = value?
+      const b = randInt(2, 12);
+      const e = randInt(2, 4);
+      const real = Math.pow(b, e);
+      const correct = coin();
+      const shown = correct ? real : real + pick([-2, -1, 1, 2, 3].filter(d => real + d > 0));
+      return {
+        latex: `${b}^{${e}} = ${fmtNum(shown)}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${b}^{${e}} = ${fmtNum(real)}`
+      };
+    }
+
+    case 1: { // product rule: a^m · a^n = a^(m+n)?
+      const a = randInt(2, 9);
+      const m = randInt(1, 5);
+      const n = randInt(1, 5);
+      const correct = coin();
+      const exp = correct ? m + n : m + n + pick([-1, 1]);
+      return {
+        latex: `${a}^{${m}} \\cdot ${a}^{${n}} = ${a}^{${exp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${a}^{${m}} \\cdot ${a}^{${n}} = ${a}^{${m + n}}`
+      };
+    }
+
+    case 2: { // quotient rule: a^m / a^n = a^(m-n)?
+      const a = randInt(2, 9);
+      const m = randInt(3, 8);
+      const n = randInt(1, m - 1);
+      const correct = coin();
+      const exp = correct ? m - n : m - n + pick([-1, 1]);
+      return {
+        latex: `\\frac{${a}^{${m}}}{${a}^{${n}}} = ${a}^{${exp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `\\frac{${a}^{${m}}}{${a}^{${n}}} = ${a}^{${m - n}}`
+      };
+    }
+
+    case 3: { // power of power: (a^m)^n = a^(m*n)?
+      const a = randInt(2, 7);
+      const m = randInt(2, 4);
+      const n = randInt(2, 4);
+      const correct = coin();
+      const exp = correct ? m * n : m * n + pick([-1, 1, 2]);
+      return {
+        latex: `(${a}^{${m}})^{${n}} = ${a}^{${exp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `(${a}^{${m}})^{${n}} = ${a}^{${m * n}}`
+      };
+    }
+
+    case 4: { // a^0 = 1?
+      const a = randInt(2, 20);
+      const correct = coin();
+      const shown = correct ? 1 : pick([0, a]);
+      return {
+        latex: `${a}^{0} = ${shown}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${a}^{0} = 1`
+      };
+    }
+
+    case 5: { // a^1 = a?
+      const a = randInt(2, 50);
+      const correct = coin();
+      const shown = correct ? a : pick([1, a + 1]);
+      return {
+        latex: `${a}^{1} = ${correct ? a : shown}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${a}^{1} = ${a}`
+      };
+    }
   }
 }
 
-function loadQuestions(questionBank) {
-  currentCategory = questionBank.split('.')[0].toLowerCase();
-  document.getElementById("main-title").innerText = `Träna på ${currentCategory}`;
- loadStats();
-  correctCount = localStorage.getItem(`correctCount-${currentCategory}`) ? parseInt(localStorage.getItem(`correctCount-${currentCategory}`)) : 0;
-  wrongCount = localStorage.getItem(`wrongCount-${currentCategory}`) ? parseInt(localStorage.getItem(`wrongCount-${currentCategory}`)) : 0;
-  streakCount = localStorage.getItem(`streakCount-${currentCategory}`) ? parseInt(localStorage.getItem(`streakCount-${currentCategory}`)) : 0;
-  bestStreakCount = localStorage.getItem(`bestStreakCount-${currentCategory}`) ? parseInt(localStorage.getItem(`bestStreakCount-${currentCategory}`)) : 0;
+function genMultiplikation() {
+  const type = randInt(0, 4);
+  switch (type) {
 
-  fetch(questionBank)
-    .then(response => response.text())
-    .then(data => {
-      questions = [];
-      currentIndex = 0;
-      const lines = data.split('\n');
-      lines.forEach(line => {
-        const [question, answer] = line.split(',');
-        questions.push({ question, answer: answer === 'true' });
-      });
-      nextQuestion();
-      updateStats();
-    });
+    case 0: { // rewrite as power: b*b*b = b^?
+      const b = randInt(2, 12);
+      const count = randInt(2, 5);
+      const correct = coin();
+      const exp = correct ? count : count + pick([-1, 1]);
+      const product = Array(count).fill(`${b}`).join(' \\cdot ');
+      return {
+        latex: `${product} = ${b}^{${exp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${product} = ${b}^{${count}}`
+      };
+    }
+
+    case 1: { // expand power to product: b^n = b*b*...?
+      const b = randInt(2, 10);
+      const n = randInt(2, 5);
+      const correct = coin();
+      const showCount = correct ? n : n + pick([-1, 1]);
+      const product = Array(Math.max(1, showCount)).fill(`${b}`).join(' \\cdot ');
+      return {
+        latex: `${b}^{${n}} = ${product}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${b}^{${n}} = ${Array(n).fill(`${b}`).join(' \\cdot ')}`
+      };
+    }
+
+    case 2: { // product value: 3^4 = 81?
+      const b = randInt(2, 9);
+      const e = randInt(2, 4);
+      const real = Math.pow(b, e);
+      const correct = coin();
+      const shown = correct ? real : real + pick([-3, -1, 1, 2, 5].filter(d => real + d > 0));
+      return {
+        latex: `${b}^{${e}} = ${fmtNum(shown)}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${b}^{${e}} = ${fmtNum(real)}`
+      };
+    }
+
+    case 3: { // division as power subtraction: a^5 / a^2 = a^3 = value?
+      const a = randInt(2, 5);
+      const m = randInt(3, 5);
+      const n = randInt(1, m - 1);
+      const real = Math.pow(a, m - n);
+      const correct = coin();
+      const shown = correct ? real : real + pick([-2, -1, 1, 2].filter(d => real + d > 0));
+      return {
+        latex: `\\frac{${a}^{${m}}}{${a}^{${n}}} = ${fmtNum(shown)}`,
+        answer: correct,
+        correctionLatex: correct ? null : `\\frac{${a}^{${m}}}{${a}^{${n}}} = ${a}^{${m - n}} = ${fmtNum(real)}`
+      };
+    }
+
+    case 4: { // negative exponent: a^{-n} = 1/a^n?
+      const a = randInt(2, 8);
+      const n = randInt(1, 3);
+      const correct = coin();
+      const denom = Math.pow(a, n);
+      const shownDenom = correct ? denom : denom + pick([-1, 1, 2].filter(d => denom + d > 0));
+      return {
+        latex: `${a}^{-${n}} = \\frac{1}{${shownDenom}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${a}^{-${n}} = \\frac{1}{${a}^{${n}}} = \\frac{1}{${denom}}`
+      };
+    }
+  }
+}
+
+function genGrundpotens() {
+  const type = randInt(0, 3);
+  switch (type) {
+
+    case 0: { // number to scientific notation: 45000 = 4.5 × 10^4?
+      const sig = randInt(10, 99);  // e.g. 45
+      const exp = randInt(2, 7);
+      const value = sig * Math.pow(10, exp - 1); // e.g. 45000
+      const correct = coin();
+      const shownExp = correct ? exp : exp + pick([-1, 1]);
+      const coeff = sig / 10; // e.g. 4.5
+      return {
+        latex: `${fmtNum(value)} = ${fmtDec(coeff)} \\times 10^{${shownExp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${fmtNum(value)} = ${fmtDec(coeff)} \\times 10^{${exp}}`
+      };
+    }
+
+    case 1: { // scientific notation to number
+      const sig = randInt(10, 99);
+      const exp = randInt(2, 6);
+      const coeff = sig / 10;
+      const real = sig * Math.pow(10, exp - 1);
+      const correct = coin();
+      const shown = correct ? real : sig * Math.pow(10, exp - 1 + pick([-1, 1]));
+      return {
+        latex: `${fmtDec(coeff)} \\times 10^{${exp}} = ${fmtNum(shown)}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${fmtDec(coeff)} \\times 10^{${exp}} = ${fmtNum(real)}`
+      };
+    }
+
+    case 2: { // small number: 0.0045 = 4.5 × 10^{-3}?
+      const sig = randInt(10, 99);
+      const exp = randInt(2, 6); // negative exponent magnitude
+      const coeff = sig / 10;
+      const correct = coin();
+      const shownExp = correct ? -exp : -(exp + pick([-1, 1]));
+      // Build the decimal string manually
+      const decStr = '0.' + '0'.repeat(exp - 2) + sig;
+      return {
+        latex: `${decStr} = ${fmtDec(coeff)} \\times 10^{${shownExp}}`,
+        answer: correct,
+        correctionLatex: correct ? null : `${decStr} = ${fmtDec(coeff)} \\times 10^{${-exp}}`
+      };
+    }
+
+    case 3: { // multiply two scientific notations
+      const c1 = randInt(1, 9);
+      const e1 = randInt(1, 5);
+      const c2 = randInt(1, 9);
+      const e2 = randInt(1, 5);
+      const prodC = c1 * c2;
+      // normalize if prodC >= 10
+      let resCoeff, resExp;
+      if (prodC >= 10) {
+        resCoeff = prodC / 10;
+        resExp = e1 + e2 + 1;
+      } else {
+        resCoeff = prodC;
+        resExp = e1 + e2;
+      }
+      const correct = coin();
+      const shownExp = correct ? resExp : resExp + pick([-1, 1]);
+      return {
+        latex: `(${c1} \\times 10^{${e1}}) \\cdot (${c2} \\times 10^{${e2}}) = ${fmtDec(resCoeff)} \\times 10^{${shownExp}}`,
+        answer: correct,
+        correctionLatex: correct ? null :
+          `(${c1} \\times 10^{${e1}}) \\cdot (${c2} \\times 10^{${e2}}) = ${fmtDec(resCoeff)} \\times 10^{${resExp}}`
+      };
+    }
+  }
+}
+
+// Format number with spaces as thousands separator (Swedish)
+function fmtNum(n) {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\\,');
+}
+
+function fmtDec(n) {
+  // Swedish uses comma for decimal: 4.5 → 4{,}5 in LaTeX
+  const s = n.toString();
+  return s.includes('.') ? s.replace('.', '{,}') : s;
+}
+
+// ─── Category selection ────────────────────────────
+const generators = {
+  potenser: genPotenser,
+  multiplikation: genMultiplikation,
+  grundpotens: genGrundpotens
+};
+
+const catNames = {
+  potenser: 'Potenser',
+  multiplikation: 'Multiplikation & Division',
+  grundpotens: 'Grundpotensform'
+};
+
+function selectCategory(cat) {
+  category = cat;
+  // Save & load stats per category
+  saveStats();
+  loadStats();
+
+  document.querySelectorAll('.categories button').forEach(b => b.classList.remove('active'));
+  document.getElementById('cat-' + cat).classList.add('active');
+  document.getElementById('card-label').textContent = catNames[cat];
+
+  nextQuestion();
+}
+
+// ─── Question flow ─────────────────────────────────
+function nextQuestion() {
+  if (!category) return;
+  currentQ = generators[category]();
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('correction').innerHTML = '';
+  renderKatex(currentQ.latex, document.getElementById('question'));
+}
+
+function answer(val) {
+  if (!currentQ) return;
+
+  const fb = document.getElementById('feedback');
+  const corr = document.getElementById('correction');
+
+  if (val === currentQ.answer) {
+    fb.textContent = 'Rätt!';
+    fb.className = 'feedback correct';
+    stats.correct++;
+    stats.streak++;
+    if (stats.streak > stats.best) stats.best = stats.streak;
+  } else {
+    fb.textContent = 'Fel!';
+    fb.className = 'feedback wrong';
+    stats.wrong++;
+    stats.streak = 0;
+    if (currentQ.correctionLatex) {
+      renderKatex(currentQ.correctionLatex, corr);
+    }
+  }
+
+  updateStatsUI();
+  saveStats();
+
+  // Short pause so user sees the correction, then next question
+  const delay = val === currentQ.answer ? 600 : 1800;
+  const q = currentQ;
+  setTimeout(() => {
+    if (currentQ === q) nextQuestion();
+  }, delay);
+  currentQ = null; // prevent double-answering
+  setTimeout(() => { currentQ = currentQ || generators[category](); }, delay - 50);
+  // Actually, let's simplify – just delay and call next
+  currentQ = null;
+  setTimeout(() => nextQuestion(), delay);
+}
+
+// ─── Stats persistence ─────────────────────────────
+function saveStats() {
+  if (!category) return;
+  localStorage.setItem('potenser-stats-' + category, JSON.stringify(stats));
 }
 
 function loadStats() {
-  correctCount = localStorage.getItem(`correctCount-${currentCategory}`) ? parseInt(localStorage.getItem(`correctCount-${currentCategory}`)) : 0;
-  wrongCount = localStorage.getItem(`wrongCount-${currentCategory}`) ? parseInt(localStorage.getItem(`wrongCount-${currentCategory}`)) : 0;
-  streakCount = localStorage.getItem(`streakCount-${currentCategory}`) ? parseInt(localStorage.getItem(`streakCount-${currentCategory}`)) : 0;
-  bestStreakCount = localStorage.getItem(`bestStreakCount-${currentCategory}`) ? parseInt(localStorage.getItem(`bestStreakCount-${currentCategory}`)) : 0;
-
-  updateStats();
+  if (!category) { stats = { correct: 0, wrong: 0, streak: 0, best: 0 }; }
+  else {
+    const saved = localStorage.getItem('potenser-stats-' + category);
+    stats = saved ? JSON.parse(saved) : { correct: 0, wrong: 0, streak: 0, best: 0 };
+  }
+  updateStatsUI();
 }
 
-// Initiering
-document.addEventListener("DOMContentLoaded", function() {
-  loadStats();
+function updateStatsUI() {
+  document.getElementById('s-correct').textContent = stats.correct;
+  document.getElementById('s-wrong').textContent = stats.wrong;
+  document.getElementById('s-streak').textContent = stats.streak;
+  document.getElementById('s-best').textContent = stats.best;
+}
+
+// ─── Keyboard support ──────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') answer(true);
+  if (e.key === 'ArrowRight') answer(false);
 });
 
-function nextQuestion() {
-  if (currentIndex < questions.length) {
-    currentQuestion = questions[currentIndex];
-    const formattedQuestion = formatQuestion(currentQuestion.question);
-    document.getElementById('question').innerHTML = formattedQuestion;
-  } else {
-    document.getElementById('feedback').innerText = "Inga fler frågor!";
-  }
-}
-
-function formatQuestion(question) {
-  question = question.replace(/\b\d{4,}\b/g, (match) => {
-    return match.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  });
-  question = question.replace(/\*/g, '×');
-  return question.replace(/(\d+)\^(\d+)/g, "$1<sup>$2</sup>")
-                 .replace(/(\d+<sup>\d+<\/sup>)\/(\d+<sup>\d+<\/sup>)=/g, "<span class='fraction'><span class='numerator'>$1</span><span class='denominator'>$2</span></span> = ");
-}
-
-function checkAnswer(answer) {
-  const feedback = document.getElementById('feedback');
-  if (currentQuestion.answer === answer) {
-    feedback.innerText = "Rätt!";
-    correctCount++;
-    streakCount++;
-    if (streakCount > bestStreakCount) {
-      bestStreakCount = streakCount;
-    }
-  } else {
-    feedback.innerText = "Fel!";
-    wrongCount++;
-    streakCount = 0;
-  }
-
-  localStorage.setItem(`correctCount-${currentCategory}`, correctCount);
-  localStorage.setItem(`wrongCount-${currentCategory}`, wrongCount);
-  localStorage.setItem(`streakCount-${currentCategory}`, streakCount);
-  localStorage.setItem(`bestStreakCount-${currentCategory}`, bestStreakCount);
-
-  updateStats();
-
-  feedback.style.opacity = 1;
-  setTimeout(() => {
-    feedback.style.opacity = 0;
-  }, 300);
-
-  currentIndex++;
-  nextQuestion();
-}
+// Init
+loadStats();
 </script>
 </body>
 </html>

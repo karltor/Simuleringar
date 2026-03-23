@@ -1,589 +1,478 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proportionalitet — Träning</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funktioner & Proportionalitet</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f4f4f9;
+            --surface: #ffffff;
+            --text: #1e1e24;
+            --text-muted: #6b7280;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --border: #e5e7eb;
+        }
 
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      color: #222;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
 
-    h1 { font-size: 2rem; color: #1a1a2e; margin-bottom: 4px; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 1rem;
+        }
 
-    .subtitle {
-      color: #777;
-      font-size: 0.9rem;
-      margin-bottom: 24px;
-      text-align: center;
-    }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1rem;
+        }
 
-    /* Card */
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-      padding: 28px 32px;
-      max-width: 560px;
-      width: 100%;
-      text-align: center;
-      margin-bottom: 16px;
-    }
+        .question-area {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            max-width: 60%;
+        }
 
-    .card-label {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: #aaa;
-      margin-bottom: 14px;
-    }
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
 
-    .scenario {
-      font-size: 1.1rem;
-      line-height: 1.7;
-      color: #333;
-      margin-bottom: 20px;
-      text-align: left;
-    }
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
 
-    .scenario strong { color: #1a1a2e; }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+        }
 
-    .question-text {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 20px;
-    }
+        .checkbox-group input {
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-right: 0.5rem;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
 
-    /* Value table */
-    .val-table {
-      margin: 0 auto 20px;
-      border-collapse: collapse;
-      font-size: 1.05rem;
-      font-variant-numeric: tabular-nums;
-    }
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
 
-    .val-table th {
-      background: #f0f4ff;
-      color: #555;
-      font-weight: 600;
-      padding: 8px 18px;
-      border: 1px solid #dde;
-      font-size: 0.9rem;
-    }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
 
-    .val-table td {
-      padding: 10px 18px;
-      border: 1px solid #dde;
-      text-align: center;
-      background: #fafbff;
-      font-weight: 600;
-      color: #1a1a2e;
-    }
+        main {
+            display: flex;
+            gap: 1rem;
+            flex: 1;
+            min-height: 0;
+        }
 
-    /* Answer buttons */
-    .answer-row {
-      display: flex;
-      gap: 14px;
-      justify-content: center;
-    }
+        .panel {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: opacity 0.3s ease;
+        }
 
-    .answer-row button {
-      flex: 1;
-      max-width: 200px;
-      padding: 14px 0;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
+        .panel-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
 
-    .btn-yes { background: #4caf50; color: #fff; }
-    .btn-yes:hover { background: #43a047; transform: translateY(-1px); }
+        #panel-formel {
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+        }
 
-    .btn-no { background: #ef5350; color: #fff; }
-    .btn-no:hover { background: #e53935; transform: translateY(-1px); }
+        .formula-text {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--text);
+            text-align: center;
+        }
+        
+        .formula-explanation {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
 
-    /* Feedback */
-    .feedback {
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 700;
-      transition: opacity 0.4s;
-    }
+        #panel-tabell {
+            flex: 1;
+            overflow-y: auto;
+        }
 
-    .feedback.correct { color: #2e7d32; }
-    .feedback.wrong { color: #c62828; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1.2rem;
+        }
 
-    .explanation {
-      max-width: 560px;
-      width: 100%;
-      min-height: 24px;
-      font-size: 0.95rem;
-      color: #555;
-      line-height: 1.5;
-      text-align: center;
-      margin-bottom: 10px;
-    }
+        th, td {
+            padding: 0.8rem;
+            text-align: center;
+            border-bottom: 2px solid var(--border);
+        }
 
-    .explanation strong { color: #1a1a2e; }
+        th {
+            font-weight: 700;
+            color: var(--accent);
+        }
 
-    /* Stats bar */
-    .stats-bar {
-      display: flex;
-      gap: 18px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 8px;
-    }
+        #panel-graf {
+            flex: 2;
+        }
 
-    .stat {
-      background: #fff;
-      border-radius: 12px;
-      padding: 10px 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      text-align: center;
-      min-width: 80px;
-    }
+        .chart-container {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            width: 100%;
+        }
 
-    .stat-value { font-size: 1.4rem; font-weight: 700; color: #1a1a2e; }
-    .stat-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
-    .streak-color { color: #ff9800; }
-
-    .hint {
-      margin-top: 16px;
-      font-size: 0.8rem;
-      color: #bbb;
-    }
-
-    .hint kbd {
-      background: #eee;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 1px 6px;
-      font-family: inherit;
-    }
-  </style>
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 
-<h1>Proportionalitet</h1>
-<p class="subtitle">Är sambandet proportionellt? Svara Ja eller Nej.</p>
+    <header>
+        <div class="question-area" id="question-text">Laddar fråga...</div>
+        <div class="controls">
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="toggle-formel" checked> Formel</label>
+                <label><input type="checkbox" id="toggle-tabell" checked> Tabell</label>
+                <label><input type="checkbox" id="toggle-graf" checked> Graf</label>
+            </div>
+            <button onclick="generateScenario()">Nytt scenario 🔄</button>
+        </div>
+    </header>
 
-<div class="card">
-  <div class="card-label" id="card-label">Fråga</div>
-  <div class="scenario" id="scenario"></div>
-  <div id="table-container"></div>
-  <div class="question-text" id="question">Tryck på en knapp för att börja!</div>
-  <div class="answer-row">
-    <button class="btn-yes" onclick="answer(true)">Ja, proportionellt</button>
-    <button class="btn-no" onclick="answer(false)">Nej, inte proportionellt</button>
-  </div>
-</div>
+    <main>
+        <div class="panel" id="panel-formel">
+            <div class="panel-title">Matematisk Formel</div>
+            <div class="formula-text" id="formula-display">y = kx + m</div>
+            <div class="formula-explanation" id="formula-exp"></div>
+        </div>
 
-<div class="feedback" id="feedback"></div>
-<div class="explanation" id="explanation"></div>
+        <div class="panel" id="panel-tabell">
+            <div class="panel-title">Värdetabell</div>
+            <table id="data-table">
+                <thead>
+                    <tr>
+                        <th id="table-x-label">x</th>
+                        <th id="table-y-label">y (Kostnad)</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                </tbody>
+            </table>
+        </div>
 
-<div class="stats-bar">
-  <div class="stat"><div class="stat-value" id="s-correct">0</div><div class="stat-label">Rätt</div></div>
-  <div class="stat"><div class="stat-value" id="s-wrong">0</div><div class="stat-label">Fel</div></div>
-  <div class="stat"><div class="stat-value streak-color" id="s-streak">0</div><div class="stat-label">Streak</div></div>
-  <div class="stat"><div class="stat-value" id="s-best">0</div><div class="stat-label">Bästa</div></div>
-</div>
+        <div class="panel" id="panel-graf">
+            <div class="panel-title">Grafisk Representation</div>
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </main>
 
-<p class="hint"><kbd>←</kbd> Ja &nbsp; <kbd>→</kbd> Nej</p>
+    <script>
+        // Scenariodata med unika meningar för varje situation så språket blir naturligt
+        const scenarios = [
+            {
+                type: 'Frukt',
+                xLabel: 'Vikt (kg)',
+                yLabel: 'Kostnad (kr)',
+                kValues: [15, 20, 25, 30, 35],
+                mValues: [0],
+                items: ["äpplen", "bananer", "apelsiner"],
+                q_xStd: "Hur mycket kostar {x} kg {item}?",
+                q_xHigh: "Om du köper {x} kg {item}, vad blir den totala kostnaden?",
+                q_k: "Vad är kilopriset för dessa {item}?",
+                q_yx: "Om den totala kostnaden blev {y} kr, hur många kg {item} köpte du?"
+            },
+            {
+                type: 'Godis',
+                xLabel: 'Vikt (hg)',
+                yLabel: 'Kostnad (kr)',
+                kValues: [5, 8, 11, 15],
+                mValues: [0],
+                items: ["lösgodis", "choklad", "geléhallon"],
+                q_xStd: "Hur mycket kostar {x} hg {item}?",
+                q_xHigh: "Om du köper {x} hg {item}, vad blir den totala kostnaden?",
+                q_k: "Vad är hektogrampriset för detta {item}?",
+                q_yx: "Om kostnaden landade på {y} kr, hur många hg {item} köpte du?"
+            },
+            {
+                type: 'Hantverkare',
+                xLabel: 'Tid (timmar)',
+                yLabel: 'Kostnad (kr)',
+                kValues: [300, 400, 500, 600],
+                mValues: [0, 200, 400, 500],
+                items: ["snickaren", "rörmokaren", "elektrikern"],
+                q_xStd: "Vad kostar det om {item} arbetar i {x} timmar?",
+                q_xHigh: "Vad blir den totala kostnaden om {item} arbetar i {x} timmar?",
+                q_k: "Vad är timpriset för {item}?",
+                q_yx: "Om fakturan blev {y} kr, hur många timmar arbetade {item}?",
+                q_m: "Hur stor är framkörningsavgiften för {item}?"
+            },
+            {
+                type: 'Kläder online',
+                xLabel: 'Antal (st)',
+                yLabel: 'Total kostnad (kr)',
+                kValues: [100, 150, 200, 250],
+                mValues: [50, 80, 100],
+                items: ["t-shirts", "kepsar", "tröjor"],
+                q_xStd: "Vad kostar det att beställa {x} st {item}?",
+                q_xHigh: "Om du beställer {x} st {item}, vad blir den totala kostnaden?",
+                q_k: "Vad är styckpriset för dessa {item}?",
+                q_yx: "Om totalkostnaden blev {y} kr, hur många {item} beställdes?",
+                q_m: "Hur stor är fraktavgiften?"
+            }
+        ];
 
-<script>
-// ─── State ──────────────────────────────────────
-let currentQ = null;
-let waiting = false;
-let stats = { correct: 0, wrong: 0, streak: 0, best: 0 };
+        let chartInstance = null;
 
-const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-const randInt = (lo, hi) => Math.floor(Math.random() * (hi - lo + 1)) + lo;
-const coin = () => Math.random() < 0.5;
+        // Custom plugin för att rita pilar på slutet av axlarna
+        const axisArrowPlugin = {
+            id: 'axisArrowPlugin',
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                const xAxis = chart.scales.x;
+                const yAxis = chart.scales.y;
 
-// ─── Question generators ────────────────────────
-// Each returns { scenario, table (optional), question, answer: bool, explanation }
+                ctx.save();
+                ctx.fillStyle = '#6b7280'; // Färg som matchar grid/text
+                ctx.beginPath();
 
-const generators = [
-  genUnitPrice,
-  genCraftsman,
-  genTaxi,
-  genPhonePlan,
-  genDelivery,
-  genTableCheck,
-  genCompareOffers,
-  genBulkDeal,
-  genSwimPool,
-  genRentalCar
-];
+                // Pil för Y-axeln (högst upp)
+                const yX = xAxis.left;
+                const yY = yAxis.top;
+                ctx.moveTo(yX - 6, yY);
+                ctx.lineTo(yX + 6, yY);
+                ctx.lineTo(yX, yY - 12);
+                ctx.fill();
 
-// ── 1. Jämförelsepris / Kilopris ──
-function genUnitPrice() {
-  const items = [
-    { name: 'äpplen', unit: 'kg' },
-    { name: 'bananer', unit: 'kg' },
-    { name: 'ris', unit: 'kg' },
-    { name: 'mjöl', unit: 'kg' },
-    { name: 'godis', unit: 'hg' },
-    { name: 'kaffe', unit: 'g', factor: 100 },
-    { name: 'juice', unit: 'liter' },
-    { name: 'mjölk', unit: 'liter' },
-    { name: 'skruvar', unit: 'st' },
-    { name: 'ägg', unit: 'st' },
-  ];
-  const item = pick(items);
-  const pricePerUnit = randInt(5, 40);
-  const amounts = [1, 2, 3, 5];
-  const rows = amounts.map(a => [a, a * pricePerUnit]);
+                // Pil för X-axeln (längst till höger)
+                ctx.beginPath();
+                const xX = xAxis.right;
+                const xY = yAxis.bottom;
+                ctx.moveTo(xX, xY - 6);
+                ctx.lineTo(xX, xY + 6);
+                ctx.lineTo(xX + 12, xY);
+                ctx.fill();
 
-  return {
-    scenario: `Du köper <strong>${item.name}</strong>. Priset är alltid <strong>${pricePerUnit} kr/${item.unit}</strong>.`,
-    table: { headers: [item.unit, 'Pris (kr)'], rows },
-    question: 'Är priset proportionellt mot mängden?',
-    answer: true,
-    explanation: `Ja! Priset per ${item.unit} är alltid ${pricePerUnit} kr. Dubbla mängden → dubbla priset. Inget fast tillägg.`
-  };
-}
+                ctx.restore();
+            }
+        };
 
-// ── 2. Hantverkare med startavgift ──
-function genCraftsman() {
-  const types = [
-    { title: 'rörmokare', verb: 'Rörmokaren' },
-    { title: 'elektriker', verb: 'Elektrikern' },
-    { title: 'snickare', verb: 'Snickaren' },
-    { title: 'målare', verb: 'Målaren' },
-  ];
-  const type = pick(types);
-  const startFee = pick([200, 300, 400, 500, 600, 800]);
-  const hourly = pick([250, 300, 350, 400, 450, 500]);
-  const hours = [1, 2, 3, 4, 5];
-  const rows = hours.map(h => [h, startFee + h * hourly]);
+        function getRandomItem(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
 
-  return {
-    scenario: `${type.verb} tar en <strong>startavgift på ${startFee} kr</strong> och sedan <strong>${hourly} kr/timme</strong>.`,
-    table: { headers: ['Timmar', 'Totalkostnad (kr)'], rows },
-    question: 'Är totalkostnaden proportionell mot antalet timmar?',
-    answer: false,
-    explanation: `Nej! Startavgiften på ${startFee} kr gör att sambandet inte går genom nollpunkten. 0 timmar kostar ${startFee} kr, inte 0 kr. Kvoten kostnad/timmar är inte konstant: ${rows[0][1]}/${rows[0][0]} = ${rows[0][1]} men ${rows[1][1]}/${rows[1][0]} = ${rows[1][1] / rows[1][0]}.`
-  };
-}
+        function generateScenario() {
+            const scenario = getRandomItem(scenarios);
+            const k = getRandomItem(scenario.kValues);
+            const m = getRandomItem(scenario.mValues);
+            const item = getRandomItem(scenario.items);
+            
+            const xStd = Math.floor(Math.random() * 7) + 2; // 2-8
+            const xHigh = Math.floor(Math.random() * 6) + 12; // 12-17
+            const yStd = (k * xStd) + m;
 
-// ── 3. Taxi ──
-function genTaxi() {
-  const startFee = pick([39, 45, 50, 55, 60]);
-  const perKm = pick([10, 12, 15, 18, 20]);
-  const kms = [2, 5, 8, 10, 15];
-  const rows = kms.map(k => [k, startFee + k * perKm]);
+            // Bygg frågor utifrån de skräddarsydda mallarna
+            let possibleQuestions = [
+                scenario.q_xStd.replace('{x}', xStd).replace('{item}', item),
+                scenario.q_xHigh.replace('{x}', xHigh).replace('{item}', item),
+                scenario.q_k.replace('{item}', item),
+                scenario.q_yx.replace('{y}', yStd).replace('{item}', item)
+            ];
 
-  return {
-    scenario: `En taxi har en <strong>grundavgift på ${startFee} kr</strong> och kostar sedan <strong>${perKm} kr/km</strong>.`,
-    table: { headers: ['Kilometer', 'Kostnad (kr)'], rows },
-    question: 'Är kostnaden proportionell mot antalet kilometer?',
-    answer: false,
-    explanation: `Nej! Grundavgiften ${startFee} kr tillkommer oavsett sträcka. Vid 0 km betalar du ändå ${startFee} kr. Kvoten kr/km ändras: ${rows[0][1]}/${rows[0][0]} = ${(rows[0][1] / rows[0][0]).toFixed(1)} men ${rows[2][1]}/${rows[2][0]} = ${(rows[2][1] / rows[2][0]).toFixed(1)}.`
-  };
-}
+            // Lägg till frågan om m-värde enbart om det finns ett m-värde OCH en mall för det (hantverkare/kläder)
+            if (m > 0 && scenario.q_m) {
+                possibleQuestions.push(scenario.q_m.replace('{item}', item));
+            }
 
-// ── 4. Telefonabonnemang ──
-function genPhonePlan() {
-  const isProp = coin();
+            document.getElementById('question-text').innerText = getRandomItem(possibleQuestions);
 
-  if (isProp) {
-    // Kontantkort utan fast avgift
-    const perMin = pick([1, 2, 3]);
-    const mins = [10, 20, 50, 100];
-    const rows = mins.map(m => [m, m * perMin]);
-    return {
-      scenario: `Ett kontantkort kostar <strong>${perMin} kr/minut</strong> utan fast månadsavgift.`,
-      table: { headers: ['Minuter', 'Kostnad (kr)'], rows },
-      question: 'Är kostnaden proportionell mot antalet minuter?',
-      answer: true,
-      explanation: `Ja! Ingen fast avgift — bara ${perMin} kr per minut. Dubbla minuterna → dubbla kostnaden.`
-    };
-  } else {
-    const monthly = pick([49, 79, 99, 129]);
-    const perMin = pick([1, 2, 3]);
-    const mins = [0, 10, 30, 60];
-    const rows = mins.map(m => [m, monthly + m * perMin]);
-    return {
-      scenario: `Ett abonnemang kostar <strong>${monthly} kr/månad</strong> plus <strong>${perMin} kr/minut</strong> för samtal.`,
-      table: { headers: ['Minuter', 'Kostnad (kr)'], rows },
-      question: 'Är totalkostnaden proportionell mot antalet minuter?',
-      answer: false,
-      explanation: `Nej! Fast avgiften ${monthly} kr tillkommer alltid. Även vid 0 minuter betalar du ${monthly} kr.`
-    };
-  }
-}
+            let formelStr = `y = ${k}x`;
+            let expStr = `Där x = ${scenario.xLabel.toLowerCase()} och y = ${scenario.yLabel.toLowerCase()}`;
+            if (m > 0) {
+                formelStr += ` + ${m}`;
+                expStr += `<br>(Start-/fraktavgift: ${m} kr)`;
+            }
+            document.getElementById('formula-display').innerText = formelStr;
+            document.getElementById('formula-exp').innerHTML = expStr;
 
-// ── 5. Leverans / Frakt ──
-function genDelivery() {
-  const isProp = coin();
+            const xData = [];
+            const yData = [];
+            let tableHTML = "";
+            const tablePoints = [0, 1, 2, 3, 4, 5, 8, 10]; 
 
-  if (isProp) {
-    const perItem = pick([15, 20, 25, 30, 40, 50]);
-    const items = ['böcker', 'tröjor', 'muggar', 'posters'];
-    const item = pick(items);
-    const counts = [1, 2, 3, 5, 10];
-    const rows = counts.map(c => [c, c * perItem]);
-    return {
-      scenario: `En webbshop säljer <strong>${item}</strong> för <strong>${perItem} kr/st</strong>. Fri frakt.`,
-      table: { headers: ['Antal', 'Totalpris (kr)'], rows },
-      question: 'Är totalpriset proportionellt mot antalet?',
-      answer: true,
-      explanation: `Ja! Ingen fraktkostnad och samma pris per styck. Dubbla antalet → dubbla priset.`
-    };
-  } else {
-    const shipping = pick([29, 39, 49, 59, 79]);
-    const perItem = pick([15, 20, 25, 30, 40]);
-    const items = ['böcker', 'tröjor', 'muggar', 'posters'];
-    const item = pick(items);
-    const counts = [1, 2, 3, 5];
-    const rows = counts.map(c => [c, shipping + c * perItem]);
-    return {
-      scenario: `En webbshop säljer <strong>${item}</strong> för <strong>${perItem} kr/st</strong> med en <strong>frakt på ${shipping} kr</strong> (oavsett antal).`,
-      table: { headers: ['Antal', 'Totalpris (kr)'], rows },
-      question: 'Är totalpriset proportionellt mot antalet?',
-      answer: false,
-      explanation: `Nej! Frakten ${shipping} kr gör att priset inte startar på 0. Pris per styck sjunker ju fler du köper: ${rows[0][1]}/${rows[0][0]} = ${rows[0][1]} kr/st men ${rows[3][1]}/${rows[3][0]} = ${(rows[3][1] / rows[3][0]).toFixed(1)} kr/st.`
-    };
-  }
-}
+            for (let x = 0; x <= 10; x++) {
+                const y = (k * x) + m;
+                xData.push(x);
+                yData.push(y);
 
-// ── 6. Tabell utan kontext — kolla kvoten ──
-function genTableCheck() {
-  const isProp = coin();
-  const k = randInt(2, 15);
-  const xs = [1, 2, 3, 4, 5, 6];
-  const useXs = xs.slice(0, randInt(4, 6));
+                if (tablePoints.includes(x)) {
+                    tableHTML += `<tr><td>${x}</td><td>${y}</td></tr>`;
+                }
+            }
 
-  if (isProp) {
-    const rows = useXs.map(x => [x, x * k]);
-    return {
-      scenario: 'Titta på tabellen nedan.',
-      table: { headers: ['x', 'y'], rows },
-      question: 'Är y proportionellt mot x?',
-      answer: true,
-      explanation: `Ja! Kvoten y/x = ${k} för alla rader. y = ${k}·x, och det går genom (0, 0).`
-    };
-  } else {
-    const c = randInt(2, 10);
-    const rows = useXs.map(x => [x, x * k + c]);
-    return {
-      scenario: 'Titta på tabellen nedan.',
-      table: { headers: ['x', 'y'], rows },
-      question: 'Är y proportionellt mot x?',
-      answer: false,
-      explanation: `Nej! Kvoten y/x ändras: ${rows[0][1]}/${rows[0][0]} = ${rows[0][1]} men ${rows[1][1]}/${rows[1][0]} = ${(rows[1][1] / rows[1][0]).toFixed(1)}. Det finns en fast del (+${c}) som gör att det inte är proportionellt.`
-    };
-  }
-}
+            document.getElementById('table-x-label').innerText = scenario.xLabel;
+            document.getElementById('table-y-label').innerText = scenario.yLabel;
+            document.getElementById('table-body').innerHTML = tableHTML;
 
-// ── 7. Jämför två erbjudanden ──
-function genCompareOffers() {
-  const items = ['glass', 'pennor', 'batterier', 'tennisbollar', 'cupcakes'];
-  const item = pick(items);
-  const priceA = randInt(5, 15);
-  const countA = randInt(2, 6);
-  const totalA = priceA * countA;
-  const priceB = priceA + pick([-2, -1, 1, 2]);
-  const countB = countA + pick([1, 2, 3]);
-  const totalB = priceB * countB;
+            drawChart(xData, yData, scenario.xLabel, scenario.yLabel);
+        }
 
-  const cheaperIsA = (totalA / countA) < (totalB / countB);
-  const unitA = (totalA / countA).toFixed(2);
-  const unitB = (totalB / countB).toFixed(2);
+        function drawChart(xData, yData, xLabel, yLabel) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
 
-  // This is proportional within each deal (unit price is constant)
-  return {
-    scenario: `<strong>Erbjudande A:</strong> ${countA} ${item} för ${totalA} kr<br><strong>Erbjudande B:</strong> ${countB} ${item} för ${totalB} kr<br><br>Båda butikerna har samma styckpris oavsett hur många du köper (inget fast tillägg).`,
-    table: null,
-    question: 'Är priset proportionellt mot antalet i båda erbjudandena?',
-    answer: true,
-    explanation: `Ja! I varje butik är priset proportionellt — styckpriset är konstant (A: ${unitA} kr/st, B: ${unitB} kr/st). Inget fast tillägg. Men de har olika proportionalitetskonstant (styckpris).`
-  };
-}
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xData,
+                    datasets: [{
+                        label: 'Kostnad',
+                        data: yData,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#4f46e5',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        fill: true,
+                        tension: 0
+                    }]
+                },
+                plugins: [axisArrowPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20,    
+                            right: 20,  
+                            left: 10,
+                            bottom: 10
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} kr`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: xLabel, font: {size: 14, weight: 'bold'} },
+                            grid: { color: '#d1d5db' }, // Lite mörkare för att matcha y-axelns huvudlinjer
+                            ticks: { font: {size: 12} }
+                        },
+                        y: {
+                            title: { display: true, text: yLabel, font: {size: 14, weight: 'bold'} },
+                            grid: { 
+                                // Skapar visuell skillnad mellan huvud- och stödlinjer
+                                color: function(context) {
+                                    return context.index % 2 === 0 ? '#d1d5db' : '#f1f5f9';
+                                }
+                            },
+                            beginAtZero: true,
+                            ticks: { 
+                                maxTicksLimit: 20, // Tvingar fram dubbelt så många linjer
+                                font: {size: 12},
+                                callback: function(value, index) {
+                                    // Visa bara värdet på varannan linje för att slippa plotter
+                                    return index % 2 === 0 ? value : '';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
-// ── 8. Mängdrabatt / stegad prissättning ──
-function genBulkDeal() {
-  const item = pick(['godis', 'frukt', 'kakor', 'bollar']);
-  const basePrice = randInt(8, 20);
-  // Not proportional: price drops after certain quantity
-  const rows = [
-    [1, basePrice],
-    [2, basePrice * 2],
-    [3, basePrice * 3],
-    [5, basePrice * 4],   // discount kicks in
-    [10, basePrice * 7],  // even more discount
-  ];
+        function setupToggles() {
+            const toggleFormel = document.getElementById('toggle-formel');
+            const toggleTabell = document.getElementById('toggle-tabell');
+            const toggleGraf = document.getElementById('toggle-graf');
 
-  return {
-    scenario: `En butik säljer <strong>${item}</strong> och ger <strong>mängdrabatt</strong> — ju fler du köper, desto billigare per styck.`,
-    table: { headers: ['Antal', 'Totalpris (kr)'], rows },
-    question: 'Är totalpriset proportionellt mot antalet?',
-    answer: false,
-    explanation: `Nej! Styckpriset ändras: ${rows[0][1]}/${rows[0][0]} = ${rows[0][1]} kr/st men ${rows[4][1]}/${rows[4][0]} = ${(rows[4][1] / rows[4][0]).toFixed(1)} kr/st. Mängdrabatten gör att kvoten inte är konstant.`
-  };
-}
+            const panelFormel = document.getElementById('panel-formel');
+            const panelTabell = document.getElementById('panel-tabell');
+            const panelGraf = document.getElementById('panel-graf');
 
-// ── 9. Simhall med entré + bantid ──
-function genSwimPool() {
-  const isProp = coin();
+            toggleFormel.addEventListener('change', (e) => {
+                panelFormel.style.display = e.target.checked ? 'flex' : 'none';
+            });
+            toggleTabell.addEventListener('change', (e) => {
+                panelTabell.style.display = e.target.checked ? 'flex' : 'none';
+            });
+            toggleGraf.addEventListener('change', (e) => {
+                panelGraf.style.display = e.target.checked ? 'flex' : 'none';
+            });
+        }
 
-  if (isProp) {
-    const perVisit = pick([60, 80, 100, 120]);
-    const visits = [1, 2, 3, 5, 10];
-    const rows = visits.map(v => [v, v * perVisit]);
-    return {
-      scenario: `En simhall tar <strong>${perVisit} kr per besök</strong>. Inga andra avgifter.`,
-      table: { headers: ['Besök', 'Totalkostnad (kr)'], rows },
-      question: 'Är totalkostnaden proportionell mot antalet besök?',
-      answer: true,
-      explanation: `Ja! Varje besök kostar exakt ${perVisit} kr. Ingen fast avgift — 0 besök = 0 kr.`
-    };
-  } else {
-    const memberFee = pick([200, 300, 500]);
-    const perVisit = pick([40, 50, 60, 80]);
-    const visits = [0, 1, 3, 5, 10];
-    const rows = visits.map(v => [v, memberFee + v * perVisit]);
-    return {
-      scenario: `En simhall kräver ett <strong>medlemskort för ${memberFee} kr</strong>, sedan kostar varje besök <strong>${perVisit} kr</strong>.`,
-      table: { headers: ['Besök', 'Totalkostnad (kr)'], rows },
-      question: 'Är totalkostnaden proportionell mot antalet besök?',
-      answer: false,
-      explanation: `Nej! Medlemsavgiften ${memberFee} kr gör att det inte startar på 0. Vid 0 besök har du redan betalat ${memberFee} kr.`
-    };
-  }
-}
-
-// ── 10. Hyrbil ──
-function genRentalCar() {
-  const isProp = coin();
-
-  if (isProp) {
-    const perKm = pick([2, 3, 4, 5]);
-    const kms = [10, 20, 50, 100, 200];
-    const rows = kms.map(k => [k, k * perKm]);
-    return {
-      scenario: `En bilpool tar <strong>${perKm} kr/km</strong> utan fast avgift.`,
-      table: { headers: ['Kilometer', 'Kostnad (kr)'], rows },
-      question: 'Är kostnaden proportionell mot antalet kilometer?',
-      answer: true,
-      explanation: `Ja! Bara ${perKm} kr/km, ingen startavgift. Kör dubbelt så långt → betala dubbelt.`
-    };
-  } else {
-    const daily = pick([200, 300, 400, 500]);
-    const perKm = pick([2, 3, 4, 5]);
-    const kms = [0, 10, 50, 100, 200];
-    const rows = kms.map(k => [k, daily + k * perKm]);
-    return {
-      scenario: `En hyrbil kostar <strong>${daily} kr/dag</strong> plus <strong>${perKm} kr/km</strong>.`,
-      table: { headers: ['Kilometer', 'Kostnad (kr)'], rows },
-      question: 'Är kostnaden proportionell mot antalet kilometer?',
-      answer: false,
-      explanation: `Nej! Dagshyran ${daily} kr tillkommer alltid. 0 km kostar ändå ${daily} kr.`
-    };
-  }
-}
-
-// ─── Render ─────────────────────────────────────
-function renderTable(tableData) {
-  if (!tableData) return '';
-  let html = '<table class="val-table"><tr>';
-  for (const h of tableData.headers) html += `<th>${h}</th>`;
-  html += '</tr>';
-  for (const row of tableData.rows) {
-    html += '<tr>';
-    for (const cell of row) html += `<td>${cell}</td>`;
-    html += '</tr>';
-  }
-  html += '</table>';
-  return html;
-}
-
-function nextQuestion() {
-  currentQ = pick(generators)();
-  waiting = false;
-
-  document.getElementById('scenario').innerHTML = currentQ.scenario;
-  document.getElementById('table-container').innerHTML = currentQ.table ? renderTable(currentQ.table) : '';
-  document.getElementById('question').textContent = currentQ.question;
-  document.getElementById('feedback').textContent = '';
-  document.getElementById('feedback').className = 'feedback';
-  document.getElementById('explanation').innerHTML = '';
-  document.getElementById('card-label').textContent = 'Fråga';
-}
-
-function answer(val) {
-  if (!currentQ || waiting) return;
-  waiting = true;
-
-  const fb = document.getElementById('feedback');
-  const expl = document.getElementById('explanation');
-
-  if (val === currentQ.answer) {
-    fb.textContent = 'Rätt!';
-    fb.className = 'feedback correct';
-    stats.correct++;
-    stats.streak++;
-    if (stats.streak > stats.best) stats.best = stats.streak;
-  } else {
-    fb.textContent = 'Fel!';
-    fb.className = 'feedback wrong';
-    stats.wrong++;
-    stats.streak = 0;
-  }
-
-  expl.innerHTML = currentQ.explanation;
-  updateStatsUI();
-  saveStats();
-
-  const delay = val === currentQ.answer ? 1200 : 3500;
-  setTimeout(nextQuestion, delay);
-}
-
-// ─── Stats ──────────────────────────────────────
-function updateStatsUI() {
-  document.getElementById('s-correct').textContent = stats.correct;
-  document.getElementById('s-wrong').textContent = stats.wrong;
-  document.getElementById('s-streak').textContent = stats.streak;
-  document.getElementById('s-best').textContent = stats.best;
-}
-
-function saveStats() {
-  localStorage.setItem('prop-stats', JSON.stringify(stats));
-}
-
-function loadStats() {
-  const s = localStorage.getItem('prop-stats');
-  if (s) stats = JSON.parse(s);
-  updateStatsUI();
-}
-
-// ─── Keyboard ───────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowLeft') answer(true);
-  if (e.key === 'ArrowRight') answer(false);
-});
-
-// ─── Init ───────────────────────────────────────
-loadStats();
-nextQuestion();
-</script>
+        window.onload = () => {
+            setupToggles();
+            generateScenario();
+        };
+    </script>
 </body>
 </html>

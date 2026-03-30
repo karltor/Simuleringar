@@ -42,6 +42,28 @@
     .sim-link { display: block; padding: 4px 6px; margin: 2px 0; background: #f8f9fa; border-radius: 4px; text-decoration: none; color: #0366d6; font-size: 0.85rem; border: 1px solid transparent; }
     .sim-link:hover { background: #f0f8ff; border-color: #cce5ff; text-decoration: underline; }
     .active { display: block !important; }
+
+    /* ---- NYA STILAR FÖR MODAL-TABBAR & GITHUB-VERKTYGET ---- */
+    .modal-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #e1e4e8; padding-bottom: 10px; }
+    .tab-btn { background: none; border: none; font-size: 1.05rem; font-weight: bold; color: #666; cursor: pointer; padding: 8px 15px; border-radius: 6px; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    .tab-btn:hover { background: #f0f2f5; color: #333; }
+    .tab-btn.active { color: #007bff; background: #e6f2ff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .flex-row { display: flex; gap: 10px; margin-bottom: 15px; }
+    .flex-row input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.95rem; }
+    .folder-group { margin-bottom: 12px; }
+    .folder-header { display: flex; align-items: center; background: #f1f5f9; padding: 6px 10px; border-radius: 4px; margin-bottom: 5px; }
+    .folder-header input { margin-right: 10px; width: 16px; height: 16px; cursor: pointer; }
+    .folder-header label { cursor: pointer; user-select: none; font-weight: bold; font-size: 14px; flex-grow: 1; }
+    .folder-files { padding-left: 30px; }
+    .file-item { margin-bottom: 4px; display: flex; align-items: center; }
+    .file-item input { margin-right: 10px; width: 14px; height: 14px; cursor: pointer; }
+    .file-item label { cursor: pointer; word-break: break-all; font-family: monospace; font-size: 13px; color: #444; }
+    #status { margin-top: 10px; font-weight: bold; font-size: 0.9rem;}
+    .error { color: #d73a49; }
+    .success { color: #2ea44f; }
   </style>
 </head>
 <body>
@@ -49,7 +71,7 @@
     <h1>🚀 Karls Simuleringar</h1>
     <div class="header-buttons">
       <a href="om-mig.html" class="icon-btn" title="Om Mig">👤</a>
-      <button class="icon-btn" onclick="openModal('test-modal')" title="Testkör HTML-kod">⚡</button>
+      <button class="icon-btn" onclick="openModal('test-modal')" title="Utvecklarverktyg (Sandlåda & GitHub)">⚡</button>
       <a href="https://github.com/karltor/Simuleringar" target="_blank" class="icon-btn" title="GitHub Repo">🐙</a>
       <button class="icon-btn settings-btn" onclick="toggleSettings()" title="Hantera ämnen">⚙️</button>
     </div>
@@ -63,10 +85,31 @@
   <div id="test-modal" class="overlay-modal" onclick="closeOnOutsideClick(event, 'test-modal')">
     <div class="modal-content">
       <button class="close-btn" onclick="closeModal('test-modal')">&times;</button>
-      <h2 style="margin-top:0; color:#1a202c; border-bottom:2px solid #007bff; padding-bottom:10px;">⚡ Sandlådan - Testkör kod</h2>
-      <p style="color:#666; font-size:0.9rem; margin-top:0;">Klistra in din HTML/CSS/JS nedan och klicka på Kör. Koden renderas i en ny flik.</p>
-      <textarea id="code-input" class="code-area" placeholder="<!DOCTYPE html>&#10;<html>&#10;...klistra in kod här..."></textarea>
-      <button class="text-btn" onclick="runHTMLCode()" style="width:100%; font-size:1.1rem; padding:12px;">🚀 Kör koden i ny flik</button>
+      
+      <div class="modal-tabs">
+        <button class="tab-btn active" onclick="switchToolTab('sandbox')">⚡ Sandlåda</button>
+        <button class="tab-btn" onclick="switchToolTab('github')">📦 GitHub Export</button>
+      </div>
+
+      <div id="tab-sandbox" class="tab-content active">
+        <p style="color:#666; font-size:0.9rem; margin-top:0; margin-bottom: 15px;">Klistra in din HTML/CSS/JS nedan och klicka på Kör. Koden renderas i en ny flik.</p>
+        <textarea id="code-input" class="code-area" placeholder="<!DOCTYPE html>&#10;<html>&#10;...klistra in kod här..."></textarea>
+        <button class="text-btn" onclick="runHTMLCode()" style="width:100%; font-size:1.1rem; padding:12px;">🚀 Kör koden i ny flik</button>
+      </div>
+
+      <div id="tab-github" class="tab-content">
+        <p style="color:#666; font-size:0.9rem; margin-top:0; margin-bottom: 15px;">Klistra in en länk till ett publikt GitHub-repo för att snabbt hämta och kopiera koden.</p>
+        
+        <div class="flex-row">
+            <input type="text" id="repoUrl" placeholder="https://github.com/ditt-namn/ditt-repo">
+            <button id="fetchBtn" class="text-btn" style="width: auto;">Hämta</button>
+        </div>
+        
+        <div id="status"></div>
+        <div id="fileList" style="margin-top: 15px; max-height: 350px; overflow-y: auto; border: 1px solid #ccc; padding: 15px; border-radius: 6px; display: none; background: #f8f9fa;"></div>
+        <button id="copyBtn" class="text-btn" style="width:100%; font-size:1.1rem; padding:12px; margin-top:15px; display:none; background-color: #2ea44f;">📋 Kopiera valda filer</button>
+      </div>
+
     </div>
   </div>
 
@@ -209,6 +252,7 @@
 <a class='sim-link' href="./Övrigt-Gruppövningar-På Rätt Spår.html" target="_blank">På Rätt Spår</a>
   </div>
   <script>
+    // Modal-funktioner
     function openModal(id) {
       document.getElementById(id).style.display = 'flex';
       document.body.style.overflow = 'hidden';
@@ -223,6 +267,7 @@
       if (event.target.id === id) closeModal(id);
     }
 
+    // Sandlåde-funktion
     function runHTMLCode() {
       const code = document.getElementById('code-input').value;
       if (!code.trim()) return alert("Klistra in lite kod först!");
@@ -236,6 +281,209 @@
       }
     }
 
+    // Växla mellan Sandlåda och GitHub Export i modalen
+    function switchToolTab(tab) {
+      document.getElementById('tab-sandbox').classList.remove('active');
+      document.getElementById('tab-github').classList.remove('active');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      if (tab === 'sandbox') {
+        document.getElementById('tab-sandbox').classList.add('active');
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      } else {
+        document.getElementById('tab-github').classList.add('active');
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      }
+    }
+
+    // GitHub Export Logik
+    let repoData = { owner: '', repo: '', branch: '' };
+
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+        const urlInput = document.getElementById('repoUrl').value.trim();
+        const statusDiv = document.getElementById('status');
+        const fileListDiv = document.getElementById('fileList');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        if (!urlInput) {
+            statusDiv.textContent = '❌ Vänligen klistra in en GitHub-länk först.';
+            statusDiv.className = 'error';
+            return;
+        }
+
+        statusDiv.textContent = '⏳ Hämtar repoinfo...';
+        statusDiv.className = '';
+        fileListDiv.innerHTML = '';
+        fileListDiv.style.display = 'none';
+        copyBtn.style.display = 'none';
+
+        try {
+            let cleanUrl = urlInput.replace(/\/$/, '');
+            const urlObj = new URL(cleanUrl);
+            const parts = urlObj.pathname.split('/').filter(Boolean);
+            
+            if (parts.length < 2) throw new Error("Ogiltig GitHub URL");
+            repoData.owner = parts[0];
+            repoData.repo = parts[1];
+
+            const repoInfoRes = await fetch(`https://api.github.com/repos/${repoData.owner}/${repoData.repo}`);
+            if (!repoInfoRes.ok) throw new Error("Kunde inte hitta repot. Är det publikt och stavat rätt?");
+            const repoInfo = await repoInfoRes.json();
+            repoData.branch = repoInfo.default_branch;
+
+            const treeRes = await fetch(`https://api.github.com/repos/${repoData.owner}/${repoData.repo}/git/trees/${repoData.branch}?recursive=1`);
+            const treeData = await treeRes.json();
+            
+            if (treeData.truncated) {
+                statusDiv.textContent = '⚠️ Varning: Repot är mycket stort, alla filer kunde inte hämtas.';
+            }
+
+            const files = treeData.tree.filter(item => item.type === 'blob');
+            
+            const filesByDir = {};
+            files.forEach(file => {
+                const lastSlash = file.path.lastIndexOf('/');
+                const dir = lastSlash === -1 ? '/' : file.path.substring(0, lastSlash);
+                const fileName = lastSlash === -1 ? file.path : file.path.substring(lastSlash + 1);
+                
+                if (!filesByDir[dir]) filesByDir[dir] = [];
+                filesByDir[dir].push({ ...file, fileName });
+            });
+
+            const dirs = Object.keys(filesByDir).sort((a, b) => {
+                if (a === '/') return -1;
+                if (b === '/') return 1;
+                return a.localeCompare(b);
+            });
+
+            dirs.forEach((dir, index) => {
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'folder-group';
+                
+                const folderId = `folder-${index}`;
+                const folderName = dir === '/' ? 'Rotmapp (/)' : dir;
+                
+                const folderHeader = document.createElement('div');
+                folderHeader.className = 'folder-header';
+                folderHeader.innerHTML = `
+                    <input type="checkbox" id="${folderId}" class="folder-checkbox">
+                    <label for="${folderId}">📁 ${folderName}</label>
+                `;
+                folderDiv.appendChild(folderHeader);
+
+                const filesDiv = document.createElement('div');
+                filesDiv.className = 'folder-files';
+
+                let checkedCount = 0;
+                const totalFiles = filesByDir[dir].length;
+
+                filesByDir[dir].forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    
+                    const isBinary = /\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|pdf|zip|tar|gz|mp4|mp3|lock)$/i.test(file.path);
+                    const isChecked = !isBinary;
+                    if (isChecked) checkedCount++;
+
+                    fileItem.innerHTML = `
+                        <input type="checkbox" id="chk-${file.sha}" value="${file.path}" class="file-checkbox" data-folder="${folderId}" ${isChecked ? 'checked' : ''}>
+                        <label for="chk-${file.sha}">${file.fileName}</label>
+                    `;
+                    filesDiv.appendChild(fileItem);
+                });
+                
+                folderDiv.appendChild(filesDiv);
+                fileListDiv.appendChild(folderDiv);
+
+                const folderCheckbox = folderHeader.querySelector('.folder-checkbox');
+                if (checkedCount === totalFiles) {
+                    folderCheckbox.checked = true;
+                } else if (checkedCount > 0) {
+                    folderCheckbox.indeterminate = true;
+                }
+            });
+
+            fileListDiv.addEventListener('change', (e) => {
+                if (e.target.classList.contains('folder-checkbox')) {
+                    const folderId = e.target.id;
+                    const isChecked = e.target.checked;
+                    const childCheckboxes = fileListDiv.querySelectorAll(`.file-checkbox[data-folder="${folderId}"]`);
+                    
+                    childCheckboxes.forEach(chk => {
+                        chk.checked = isChecked;
+                    });
+                } 
+                else if (e.target.classList.contains('file-checkbox')) {
+                    const folderId = e.target.getAttribute('data-folder');
+                    const folderCheckbox = document.getElementById(folderId);
+                    const siblings = Array.from(fileListDiv.querySelectorAll(`.file-checkbox[data-folder="${folderId}"]`));
+                    
+                    const allChecked = siblings.every(chk => chk.checked);
+                    const someChecked = siblings.some(chk => chk.checked);
+                    
+                    folderCheckbox.checked = allChecked;
+                    folderCheckbox.indeterminate = someChecked && !allChecked;
+                }
+            });
+
+            fileListDiv.style.display = 'block';
+            copyBtn.style.display = 'block';
+            statusDiv.textContent = `✅ Hittade ${files.length} filer fördelade i ${dirs.length} mappar.`;
+            statusDiv.className = 'success';
+
+        } catch (error) {
+            statusDiv.textContent = `❌ Fel: ${error.message}`;
+            statusDiv.className = 'error';
+        }
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+        const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+        const statusDiv = document.getElementById('status');
+        const copyBtn = document.getElementById('copyBtn');
+        
+        if (checkboxes.length === 0) {
+            statusDiv.textContent = '❌ Inga filer valda!';
+            statusDiv.className = 'error';
+            return;
+        }
+
+        statusDiv.textContent = `⏳ Hämtar och kopierar ${checkboxes.length} filer... Vänligen vänta.`;
+        statusDiv.className = '';
+        copyBtn.disabled = true;
+
+        let finalOutput = '';
+
+        for (const checkbox of checkboxes) {
+            const path = checkbox.value;
+            try {
+                const rawUrl = `https://raw.githubusercontent.com/${repoData.owner}/${repoData.repo}/${repoData.branch}/${path}`;
+                const res = await fetch(rawUrl);
+                
+                if (res.ok) {
+                    const content = await res.text();
+                    finalOutput += `${path}:\n${content}\n\n`;
+                } else {
+                    finalOutput += `${path}:\n[Kunde inte läsa filinnehållet]\n\n`;
+                }
+            } catch (e) {
+                finalOutput += `${path}:\n[Fel vid nätverksanrop]\n\n`;
+            }
+        }
+
+        try {
+            await navigator.clipboard.writeText(finalOutput);
+            statusDiv.textContent = '✅ Klart! Koden är kopierad och redo att klistras in.';
+            statusDiv.className = 'success';
+        } catch (err) {
+            statusDiv.textContent = '❌ Webbläsaren hindrade kopieringen. Du kanske behöver ge sidan tillåtelse till urklippet.';
+            statusDiv.className = 'error';
+        }
+        
+        copyBtn.disabled = false;
+    });
+
+    // Ämnes-inställningar
     function toggleSettings() {
       const modal = document.getElementById('settings-modal');
       modal.style.display = modal.style.display === 'block' ? 'none' : 'block';

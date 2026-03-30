@@ -162,7 +162,7 @@
                     <span>Planetstorlek (Visuell):</span>
                     <span id="sliderValue">20x</span>
                 </label>
-                <input type="range" id="sizeSlider" min="1" max="50" step="1" value="20" oninput="updatePlanetSizes(this.value)">
+                <input type="range" id="sizeSlider" min="1" max="5000" step="1" value="1" oninput="updatePlanetSizes(this.value)">
             </div>
 
             <div class="slider-container">
@@ -170,27 +170,28 @@
                     <span>Animeringshastighet:</span>
                     <span id="speedValue">0.5x</span>
                 </label>
-                <input type="range" id="speedSlider" min="0" max="2" step="0.1" value="0.5" oninput="updateSpeed(this.value)">
+                <input type="range" id="speedSlider" min="-2" max="0.30103" step="0.01" value="-0.30103" oninput="updateSpeed(this.value)">
             </div>
 
             <div class="btn-group">
                 <button onclick="toggleLabels()" style="margin-bottom: 5px;">Visa/Dölj Etiketter</button>
+                <button onclick="toggleOrbits()" style="margin-bottom: 5px;">Visa/Dölj Banor</button>
                 <div style="font-size: 0.85rem; color: #aaa; margin-top: 5px;">Fokusera & Zooma på:</div>
                 <div class="two-col-grid">
                     <div class="col">
-                        <button onclick="flyAndFocus('Solen', 400)">Solen</button>
-                        <button onclick="flyAndFocus('Merkurius', 2)">Merkurius</button>
-                        <button onclick="flyAndFocus('Venus', 3)">Venus</button>
-                        <button onclick="flyAndFocus('Jorden', 3)">Jorden</button>
-                        <button onclick="flyAndFocus('Mars', 2)">Mars</button>
-                        <button onclick="flyAndFocus('Ceres', 0.5)">Ceres</button>
+                        <button onclick="flyAndFocus('Solen', 4.0)">Solen</button>
+                        <button onclick="flyAndFocus('Merkurius', 0.05)">Merkurius</button>
+                        <button onclick="flyAndFocus('Venus', 0.05)">Venus</button>
+                        <button onclick="flyAndFocus('Jorden', 0.15)">Jorden</button>
+                        <button onclick="flyAndFocus('Mars', 0.05)">Mars</button>
+                        <button onclick="flyAndFocus('Ceres', 0.01)">Ceres</button>
                     </div>
                     <div class="col">
-                        <button onclick="flyAndFocus('Jupiter', 25)">Jupiter</button>
-                        <button onclick="flyAndFocus('Saturnus', 20)">Saturnus</button>
-                        <button onclick="flyAndFocus('Uranus', 10)">Uranus</button>
-                        <button onclick="flyAndFocus('Neptunus', 10)">Neptunus</button>
-                        <button onclick="flyAndFocus('Pluto', 1)">Pluto (Kuiper)</button>
+                        <button onclick="flyAndFocus('Jupiter', 0.5)">Jupiter</button>
+                        <button onclick="flyAndFocus('Saturnus', 0.5)">Saturnus</button>
+                        <button onclick="flyAndFocus('Uranus', 0.2)">Uranus</button>
+                        <button onclick="flyAndFocus('Neptunus', 0.2)">Neptunus</button>
+                        <button onclick="flyAndFocus('Pluto', 0.05)">Pluto (Kuiper)</button>
                         <button onclick="flyAndFocus('Oort', 8000000)">Oorts Kometmoln</button>
                     </div>
                 </div>
@@ -205,21 +206,20 @@
         const clock = new THREE.Clock();
 
         let showLabels = true;
+        let showOrbits = true;
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         const interactiveMeshes = [];
         let focusedObject = null;
         const comets = [];
         const cometPaths = [];
+        const orbitLines = []; 
         let globalTimeScale = 0.5;
 
         let flight = null;
         let sunGlowSprite;
 
-        // 1 Enhet i Three.js = 1 Miljon Kilometer
         const DIST_SCALE = 1; 
-        
-        // Sanna radier i miljoner kilometer
         const SUN_RADIUS = 0.696; 
 
         window.onload = function() {
@@ -228,38 +228,13 @@
             document.getElementById('loading').style.opacity = '0';
             setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
             
-            // Justera UI för nya extrem-skalan
-            const sizeSlider = document.getElementById('sizeSlider');
-            sizeSlider.max = "5000";
-            sizeSlider.value = "1000";
-            updatePlanetSizes(1000);
-            
-            // Justera fly-to knapparna så att de passar de nya små radierna
-            const buttons = document.querySelectorAll('.two-col-grid button');
-            const targetDistances = [
-                4.0,   // Solen
-                0.05,  // Merkurius
-                0.05,  // Venus
-                0.15,  // Jorden (För att se månen bra)
-                0.05,  // Mars
-                0.01,  // Ceres
-                0.5,   // Jupiter
-                0.5,   // Saturnus
-                0.2,   // Uranus
-                0.2,   // Neptunus
-                0.05,  // Pluto
-                8000000 // Oort
-            ];
-            buttons.forEach((btn, index) => {
-                const name = btn.innerText.split(' ')[0].replace('Solen', 'Solen').replace('Pluto', 'Pluto');
-                btn.onclick = () => flyAndFocus(name === 'Oorts' ? 'Oort' : name, targetDistances[index]);
-            });
+            updatePlanetSizes(1);
+            updateSpeed(-0.30103);
         };
 
         function init() {
             scene = new THREE.Scene();
             
-            // Extremt låg "near plane" för att inte klippa igenom true-scale planeter när man är inzoomad
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.00001, 15000000);
             camera.position.set(0, 300, 0);
 
@@ -272,7 +247,7 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxDistance = 12000000; 
-            controls.minDistance = 0.0001; // Sänkt drastiskt för att kunna zooma på 1x planeter
+            controls.minDistance = 0.0001; 
             controls.target.set(0, 0, 0);
 
             const ambientLight = new THREE.AmbientLight(0x333333);
@@ -285,15 +260,12 @@
             window.addEventListener('pointerdown', cancelFlight, {passive: true});
             window.addEventListener('touchstart', cancelFlight, {passive: true});
 
-            // --- SKAPA SOLSYSTEMET (NU MED SANNA FYSISKA RADIER I MILJONER KM) ---
+            // --- SKAPA SOLSYSTEMET ---
             createSun();
             
             createPlanet("Merkurius", 0.00244, 58, 0x888888, null, 0.04);
             createPlanet("Venus", 0.00605, 108, 0xe3bb76, null, 0.015);
-            
-            // Jorden & Månen (Månen är ca 0.38 miljoner km bort)
             createPlanet("Jorden", 0.00637, 150, 0x2b82c9, createEarthTexture, 0.01, false, { count: 1, named: ["Månen"] }, 0.384);
-            
             createPlanet("Mars", 0.00339, 228, 0xc1440e, null, 0.008, false, { count: 2, named: ["Phobos", "Deimos"] }, 0.023);
 
             createAsteroidBelt(300, 600, 2500);
@@ -306,7 +278,6 @@
 
             createKuiperBelt(4500, 7500, 12000);
 
-            // Det unika binära Pluto/Charon-systemet
             createPlutoSystem(5900, 0.00008);
             createDwarfPlanet("Eris", 0.00116, 10100, 0xeeeeee, 0.00005);
 
@@ -337,17 +308,26 @@
             interactiveMeshes.push(sun);
 
             const glowCanvas = document.createElement('canvas');
-            glowCanvas.width = 256; glowCanvas.height = 256;
+            glowCanvas.width = 512; glowCanvas.height = 512;
             const glowCtx = glowCanvas.getContext('2d');
-            const glowGrad = glowCtx.createRadialGradient(128, 128, 50, 128, 128, 128);
-            glowGrad.addColorStop(0, 'rgba(255, 200, 50, 0.8)');
-            glowGrad.addColorStop(1, 'rgba(255, 200, 50, 0)');
+            const glowGrad = glowCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
+            
+            glowGrad.addColorStop(0, 'rgba(255, 255, 230, 1)');
+            glowGrad.addColorStop(0.015, 'rgba(255, 230, 150, 0.8)');
+            glowGrad.addColorStop(0.05, 'rgba(255, 200, 50, 0.3)'); 
+            glowGrad.addColorStop(0.3, 'rgba(255, 120, 0, 0.03)');
+            glowGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            
             glowCtx.fillStyle = glowGrad;
-            glowCtx.fillRect(0, 0, 256, 256);
+            glowCtx.fillRect(0, 0, 512, 512);
             const glowTexture = new THREE.CanvasTexture(glowCanvas);
             const glowMaterial = new THREE.SpriteMaterial({ map: glowTexture, transparent: true, blending: THREE.AdditiveBlending });
             sunGlowSprite = new THREE.Sprite(glowMaterial);
+            
+            sunGlowSprite.scale.set(58, 58, 1);
             scene.add(sunGlowSprite);
+            
+            sun.scale.set(SUN_RADIUS, SUN_RADIUS, SUN_RADIUS);
         }
 
         function createPlanet(name, baseRadius, distance, colorHex, textureFunc, speed, hasRings = false, moonData = null, moonBaseDist = 1) {
@@ -392,7 +372,6 @@
                 planetGroup.add(moonSystem);
 
                 for (let i = 0; i < moonData.named.length; i++) {
-                    // Månarna placeras på logiska, sanna proportioner från planeten
                     const mDist = moonBaseDist + (i * moonBaseDist * 0.5);
                     const mGeo = new THREE.SphereGeometry(baseRadius * 0.25, 16, 16);
                     const mMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0 });
@@ -428,6 +407,7 @@
             const pathMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 });
             const pathLine = new THREE.Line(pathGeo, pathMat);
             scene.add(pathLine);
+            orbitLines.push(pathLine);
 
             const label = document.createElement('div');
             label.className = 'planet-label';
@@ -449,30 +429,22 @@
             });
         }
 
-        // --- UNIK PLUTO/CHARON BARYCENTER SETUP ---
         function createPlutoSystem(distance, speed) {
             const orbitContainer = new THREE.Object3D();
             scene.add(orbitContainer);
 
-            // Detta är systemets absoluta position i rymden kring solen
             const systemGroup = new THREE.Group();
             systemGroup.position.x = distance * DIST_SCALE;
             orbitContainer.add(systemGroup);
 
-            // Barycentret snurrar runt sin egen axel
             const barycenter = new THREE.Group();
             systemGroup.add(barycenter);
 
-            // Fysiskt sanna proportioner för Pluto och Charon (i miljoner km)
             const plutoRadius = 0.001188;
             const charonRadius = 0.000606;
-            
-            // Avståndet dem emellan är 19,570 km = 0.01957.
-            // Massfördelningen gör att barycentret ligger 2110 km (0.00211) från Plutos centrum.
             const plutoOffset = -0.00211;
-            const charonOffset = 0.01746; // Resterande avstånd (0.01957 - 0.00211)
+            const charonOffset = 0.01746; 
 
-            // PLUTO
             const plutoGeo = new THREE.SphereGeometry(1, 32, 32);
             const plutoMat = new THREE.MeshStandardMaterial({ color: 0xddccbb, roughness: 0.8 });
             const plutoMesh = new THREE.Mesh(plutoGeo, plutoMat);
@@ -482,7 +454,6 @@
             interactiveMeshes.push(plutoMesh);
             barycenter.add(plutoMesh);
 
-            // CHARON
             const charonGeo = new THREE.SphereGeometry(1, 16, 16);
             const charonMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.9 });
             const charonMesh = new THREE.Mesh(charonGeo, charonMat);
@@ -502,7 +473,6 @@
             cLabel.innerText = "Charon";
             document.getElementById('labels-container').appendChild(cLabel);
 
-            // Ritar Plutos omloppsbana
             const pathGeo = new THREE.BufferGeometry();
             const points = [];
             for (let i = 0; i <= 256; i++) {
@@ -511,19 +481,21 @@
             }
             pathGeo.setFromPoints(points);
             const pathMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 });
-            scene.add(new THREE.Line(pathGeo, pathMat));
+            const pathLine = new THREE.Line(pathGeo, pathMat);
+            scene.add(pathLine);
+            orbitLines.push(pathLine);
 
             planets.push({
                 container: orbitContainer,
-                planetGroup: barycenter, // Vi skalar hela systemet som en enhet så avståndet bevaras i UI!
-                mesh: plutoMesh, // Kameran låser på Pluto själv
+                planetGroup: barycenter, 
+                mesh: plutoMesh, 
                 label: pLabel,
                 charonMesh: charonMesh,
                 charonLabel: cLabel,
                 baseRadius: plutoRadius, 
                 speed: speed,
                 isPlutoSystem: true,
-                barycenterSpeed: 0.5 // Snurrar relativt snabbt runt varandra (6.4 dagar)
+                barycenterSpeed: 0.5 
             });
         }
 
@@ -567,6 +539,28 @@
             }
         }
 
+        function toggleLabels() {
+            showLabels = !showLabels;
+            const labels = document.querySelectorAll('.planet-label');
+            labels.forEach(l => {
+                if(showLabels) l.classList.remove('hidden');
+                else l.classList.add('hidden');
+            });
+        }
+
+        function toggleOrbits() {
+            showOrbits = !showOrbits;
+            orbitLines.forEach(line => line.visible = showOrbits);
+            
+            if (!showOrbits) {
+                cometPaths.forEach(line => line.visible = false);
+            } else {
+                if (focusedObject === null || (flight && flight.isGoingToOort) || camera.position.length() > 50000) {
+                    cometPaths.forEach(line => line.visible = true);
+                }
+            }
+        }
+
         function onMouseClick(event) {
             if(event.target.tagName === 'BUTTON' || event.target.tagName === 'INPUT') return;
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -586,48 +580,43 @@
             }
         }
 
-        function toggleLabels() {
-            showLabels = !showLabels;
-            const labels = document.querySelectorAll('.planet-label');
-            labels.forEach(l => {
-                if(showLabels) l.classList.remove('hidden');
-                else l.classList.add('hidden');
-            });
-        }
-
         function updatePlanetSizes(scaleFactor) {
-            document.getElementById('sliderValue').innerText = (scaleFactor == 1 ? "1x (Sann skala)" : scaleFactor + "x");
+            document.getElementById('sliderValue').innerText = scaleFactor + "x";
             
-            // Uppdatera Solens fasta mesh
-            const sunMesh = interactiveMeshes.find(m => m.userData.name === 'Solen');
-            if (sunMesh) {
-                const sr = SUN_RADIUS * scaleFactor;
-                sunMesh.scale.set(sr, sr, sr);
-            }
-            if (sunGlowSprite) {
-                sunGlowSprite.scale.set(SUN_RADIUS * 6 * scaleFactor, SUN_RADIUS * 6 * scaleFactor, 1);
-            }
-
             planets.forEach(p => {
                 if (p.planetGroup && !p.isInstanced) {
-                    // För barycentret (Pluto) och vanliga planeter
                     p.planetGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 }
             });
 
             if (focusedObject) {
-                if (focusedObject.userData.name === 'Solen') {
-                    controls.minDistance = Math.max(0.0001, SUN_RADIUS * scaleFactor * 1.5);
+                if (focusedObject.userData && focusedObject.userData.name === 'Solen') {
+                    controls.minDistance = Math.max(0.0001, SUN_RADIUS * 1.5); 
+                } else if (focusedObject.userData && (focusedObject.userData.name === 'Pluto' || focusedObject.userData.name === 'Charon') ) {
+                    controls.minDistance = Math.max(0.0001, 0.001188 * scaleFactor * 1.5);
                 } else {
-                    let pData = planets.find(p => p.mesh === focusedObject);
+                    let pData = planets.find(p => p.planetGroup === focusedObject || p.mesh === focusedObject);
                     if (pData) controls.minDistance = Math.max(0.0001, pData.baseRadius * scaleFactor * 1.5);
                 }
             }
         }
 
-        function updateSpeed(scaleFactor) {
-            globalTimeScale = parseFloat(scaleFactor);
-            document.getElementById('speedValue').innerText = scaleFactor + "x";
+        function updateSpeed(logValue) {
+            let speed = Math.pow(10, parseFloat(logValue));
+            
+            let displaySpeed;
+            if (speed >= 1) {
+                displaySpeed = speed.toFixed(1);
+            } else if (speed >= 0.1) {
+                displaySpeed = speed.toFixed(1); 
+            } else {
+                displaySpeed = speed.toFixed(2); 
+            }
+            
+            if(parseFloat(displaySpeed) == 1) displaySpeed = "1.0";
+
+            globalTimeScale = parseFloat(displaySpeed);
+            document.getElementById('speedValue').innerText = displaySpeed + "x";
         }
 
         function createEarthTexture() {
@@ -748,7 +737,7 @@
         // --- INTERAKTION OCH ANIMATION ---
 
         function flyAndFocus(name, requestedDist) {
-            let currentScale = parseFloat(document.getElementById('sizeSlider').value) || 1000;
+            let currentScale = parseFloat(document.getElementById('sizeSlider').value) || 1;
             let targetRadius = 1;
             let finalDist;
 
@@ -759,13 +748,21 @@
                 focusedObject = null;
                 finalDist = 8000000;
             } else {
-                let pData = planets.find(p => p.mesh && p.mesh.userData.name === name);
+                let pData = planets.find(p => 
+                    (p.mesh && p.mesh.userData.name === name) || 
+                    (p.charonMesh && p.charonMesh.userData.name === name)
+                );
+                
                 if (pData) {
-                    focusedObject = pData.mesh;
+                    if (pData.isPlutoSystem) {
+                        focusedObject = pData.planetGroup; 
+                    } else {
+                        focusedObject = pData.mesh;
+                    }
                     targetRadius = pData.baseRadius * currentScale;
                 } else if (name === 'Solen') {
                     focusedObject = interactiveMeshes.find(m => m.userData.name === 'Solen');
-                    targetRadius = SUN_RADIUS * currentScale;
+                    targetRadius = SUN_RADIUS; 
                 }
                 
                 if (currentDist > 50000) {
@@ -778,7 +775,6 @@
             }
 
             controls.minDistance = Math.max(0.0001, targetRadius * 1.5);
-
             let isLogJourney = Math.max(currentDist, finalDist) > 50000;
 
             flight = {
@@ -794,7 +790,7 @@
         }
 
         function cancelFlight() {
-            if (flight && flight.isGoingToOort) {
+            if (flight && flight.isGoingToOort && showOrbits) {
                 cometPaths.forEach(p => p.visible = true);
             }
             flight = null;
@@ -815,7 +811,6 @@
             planets.forEach(p => {
                 if(p.container) p.container.rotation.y += p.speed * delta * 60;
                 
-                // Rotera barycentret för Pluto-Charon systemet
                 if(p.isPlutoSystem) {
                     p.planetGroup.rotation.y += p.barycenterSpeed * delta * 60;
                 }
@@ -823,11 +818,11 @@
                 if(p.mesh && !p.isInstanced) {
                     p.mesh.rotation.y += p.rotationSpeed * delta * 60;
                     
-                    const isFocused = (focusedObject === p.mesh);
+                    const isSystemFocused = (focusedObject === p.planetGroup || focusedObject === p.mesh);
                     let currentMoonOpacity = 0;
 
                     if (p.moonMaterials && p.moonMaterials.length > 0) {
-                        const targetOpacity = isFocused ? 1 : 0;
+                        const targetOpacity = isSystemFocused ? 1 : 0;
                         
                         p.moonAnimators.forEach(anim => {
                             anim.obj.rotation.y += anim.speed * delta * 60;
@@ -840,7 +835,7 @@
                         });
 
                         p.moonLabels.forEach(ml => {
-                            if (currentMoonOpacity > 0.05 && showLabels && isFocused) {
+                            if (currentMoonOpacity > 0.05 && showLabels && isSystemFocused) {
                                 const vector = new THREE.Vector3();
                                 ml.mesh.getWorldPosition(vector);
                                 vector.project(camera);
@@ -860,9 +855,7 @@
                         });
                     }
 
-                    // Hantera Charon Label om vi har den (speciell för Pluto)
                     if (p.charonLabel && showLabels) {
-                        const isSystemFocused = (focusedObject === p.mesh || focusedObject === p.charonMesh);
                         if (isSystemFocused) {
                             p.charonLabel.classList.remove('hidden');
                             p.charonLabel.style.opacity = 1;
@@ -938,7 +931,7 @@
                 camera.position.copy(currentTarget).add(dir.multiplyScalar(currentDist));
 
                 if (t >= 1.0) {
-                    if (flight.isGoingToOort) {
+                    if (flight.isGoingToOort && showOrbits) {
                         cometPaths.forEach(p => p.visible = true); 
                     }
                     flight = null;

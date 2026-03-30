@@ -162,7 +162,7 @@
                     <span>Planetstorlek (Visuell):</span>
                     <span id="sliderValue">20x</span>
                 </label>
-                <input type="range" id="sizeSlider" min="1" max="5000" step="1" value="1" oninput="updatePlanetSizes(this.value)">
+                <input type="range" id="sizeSlider" min="0" max="3" step="0.01" value="0" oninput="updatePlanetSizes(this.value)">
             </div>
 
             <div class="slider-container">
@@ -200,7 +200,6 @@
     </div>
 
 <script>
-        // --- GRUNDLÄGGANDE SETUP ---
         let scene, camera, renderer, controls;
         const planets = [];
         const clock = new THREE.Clock();
@@ -211,7 +210,6 @@
         const mouse = new THREE.Vector2();
         const interactiveMeshes = [];
         let focusedObject = null;
-        const comets = [];
         const cometPaths = [];
         const orbitLines = []; 
         let globalTimeScale = 0.5;
@@ -228,7 +226,7 @@
             document.getElementById('loading').style.opacity = '0';
             setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
             
-            updatePlanetSizes(1);
+            updatePlanetSizes(0);
             updateSpeed(-0.30103);
         };
 
@@ -260,7 +258,6 @@
             window.addEventListener('pointerdown', cancelFlight, {passive: true});
             window.addEventListener('touchstart', cancelFlight, {passive: true});
 
-            // --- SKAPA SOLSYSTEMET ---
             createSun();
             
             createPlanet("Merkurius", 0.00244, 58, 0x888888, null, 0.04);
@@ -271,13 +268,12 @@
             createAsteroidBelt(300, 600, 2500);
             createDwarfPlanet("Ceres", 0.00047, 413, 0x999999, 0.005);
 
-            createPlanet("Jupiter", 0.07149, 779, 0xc88b3a, createJupiterTexture, 0.002, false, { count: 4, named: ["Io", "Europa", "Ganymedes", "Callisto"] }, 1.88);
-            createPlanet("Saturnus", 0.05823, 1434, 0xeaddb9, null, 0.0009, true, { count: 4, named: ["Titan", "Rhea", "Iapetus", "Dione"] }, 1.22);
-            createPlanet("Uranus", 0.02536, 2873, 0x4b70dd, null, 0.0004, false, { count: 4, named: ["Titania", "Oberon", "Umbriel", "Ariel"] }, 0.43);
-            createPlanet("Neptunus", 0.02462, 4495, 0x274687, null, 0.0001, false, { count: 1, named: ["Triton"] }, 0.35);
+            createPlanet("Jupiter", 0.07149, 779, 0xc88b3a, createJupiterTexture, 0.002, false, { count: 95, named: ["Io", "Europa", "Ganymedes", "Callisto"] }, 1.88);
+            createPlanet("Saturnus", 0.05823, 1434, 0xeaddb9, null, 0.0009, true, { count: 124, named: ["Titan", "Rhea", "Iapetus", "Dione"] }, 1.22);
+            createPlanet("Uranus", 0.02536, 2873, 0x4b70dd, null, 0.0004, false, { count: 27, named: ["Titania", "Oberon", "Umbriel", "Ariel"] }, 0.43);
+            createPlanet("Neptunus", 0.02462, 4495, 0x274687, null, 0.0001, false, { count: 14, named: ["Triton"] }, 0.35);
 
             createKuiperBelt(4500, 7500, 12000);
-
             createPlutoSystem(5900, 0.00008);
             createDwarfPlanet("Eris", 0.00116, 10100, 0xeeeeee, 0.00005);
 
@@ -326,7 +322,6 @@
             
             sunGlowSprite.scale.set(58, 58, 1);
             scene.add(sunGlowSprite);
-            
             sun.scale.set(SUN_RADIUS, SUN_RADIUS, SUN_RADIUS);
         }
 
@@ -355,28 +350,27 @@
 
             if (hasRings) {
                 const ringGeo = new THREE.RingGeometry(1.4, 2.2, 64);
-                const ringMat = new THREE.MeshStandardMaterial({ 
-                    color: 0xcfb285, side: THREE.DoubleSide, transparent: true, opacity: 0.8, roughness: 0.5
-                });
+                const ringMat = new THREE.MeshStandardMaterial({ color: 0xcfb285, side: THREE.DoubleSide, transparent: true, opacity: 0.8, roughness: 0.5 });
                 const ringMesh = new THREE.Mesh(ringGeo, ringMat);
                 ringMesh.rotation.x = Math.PI / 2 - 0.3;
                 mesh.add(ringMesh); 
             }
 
-            const moonMaterials = [];
-            const moonLabels = [];
             const moonAnimators = [];
+            const moonLabels = [];
+            let moonSystem = null;
 
             if (moonData && moonData.count > 0) {
-                const moonSystem = new THREE.Group();
+                moonSystem = new THREE.Group();
                 planetGroup.add(moonSystem);
 
                 for (let i = 0; i < moonData.named.length; i++) {
                     const mDist = moonBaseDist + (i * moonBaseDist * 0.5);
                     const mGeo = new THREE.SphereGeometry(baseRadius * 0.25, 16, 16);
-                    const mMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, transparent: true, opacity: 0 });
+                    const mMat = new THREE.MeshStandardMaterial({ color: 0xcccccc });
                     const mMesh = new THREE.Mesh(mGeo, mMat);
                     mMesh.position.x = mDist;
+                    mMesh.userData = { isMoon: true, baseDist: mDist };
 
                     const mOrbit = new THREE.Object3D();
                     mOrbit.rotation.y = Math.random() * Math.PI * 2;
@@ -384,9 +378,8 @@
                     mOrbit.add(mMesh);
                     moonSystem.add(mOrbit);
 
-                    moonMaterials.push(mMat);
                     const keplerSpeed = 0.5 / Math.pow(mDist / moonBaseDist, 1.5);
-                    moonAnimators.push({ obj: mOrbit, speed: keplerSpeed });
+                    moonAnimators.push({ obj: mOrbit, speed: keplerSpeed, index: i, isSwarm: false });
 
                     const label = document.createElement('div');
                     label.className = 'planet-label moon-label hidden';
@@ -394,13 +387,41 @@
                     document.getElementById('labels-container').appendChild(label);
                     moonLabels.push({ element: label, mesh: mMesh });
                 }
+
+                const unnamedCount = moonData.count - moonData.named.length;
+                if (unnamedCount > 0) {
+                    const uGeo = new THREE.SphereGeometry(baseRadius * 0.1, 8, 8);
+                    const uMat = new THREE.MeshStandardMaterial({ color: 0x999999 });
+                    const uInstanced = new THREE.InstancedMesh(uGeo, uMat, unnamedCount);
+                    const dummy = new THREE.Object3D();
+
+                    for (let i = 0; i < unnamedCount; i++) {
+                        const mDist = moonBaseDist * 1.5 + Math.random() * moonBaseDist * 3;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = (Math.random() - 0.5) * Math.PI * 0.4;
+                        
+                        dummy.position.set(
+                            mDist * Math.cos(theta) * Math.cos(phi),
+                            mDist * Math.sin(phi),
+                            mDist * Math.sin(theta) * Math.cos(phi)
+                        );
+                        const s = 0.5 + Math.random() * 1.5;
+                        dummy.scale.set(s, s, s);
+                        dummy.updateMatrix();
+                        uInstanced.setMatrixAt(i, dummy.matrix);
+                    }
+                    
+                    const swarmOrbit = new THREE.Object3D();
+                    swarmOrbit.add(uInstanced);
+                    moonSystem.add(swarmOrbit);
+                    moonAnimators.push({ obj: swarmOrbit, speed: 0.01, isSwarm: true });
+                }
             }
 
             const pathGeo = new THREE.BufferGeometry();
             const points = [];
-            const segments = 256; 
-            for (let i = 0; i <= segments; i++) {
-                const theta = (i / segments) * Math.PI * 2;
+            for (let i = 0; i <= 256; i++) {
+                const theta = (i / 256) * Math.PI * 2;
                 points.push(new THREE.Vector3(Math.cos(theta) * distance, 0, Math.sin(theta) * distance));
             }
             pathGeo.setFromPoints(points);
@@ -419,7 +440,8 @@
                 planetGroup: planetGroup,
                 mesh: mesh,
                 label: label,
-                moonMaterials: moonMaterials,
+                moonSystem: moonSystem,
+                moonBaseDist: moonBaseDist,
                 moonLabels: moonLabels,
                 moonAnimators: moonAnimators,
                 baseRadius: baseRadius, 
@@ -442,14 +464,10 @@
 
             const plutoRadius = 0.001188;
             const charonRadius = 0.000606;
-            const plutoOffset = -0.00211;
-            const charonOffset = 0.01746; 
 
             const plutoGeo = new THREE.SphereGeometry(1, 32, 32);
             const plutoMat = new THREE.MeshStandardMaterial({ color: 0xddccbb, roughness: 0.8 });
             const plutoMesh = new THREE.Mesh(plutoGeo, plutoMat);
-            plutoMesh.scale.set(plutoRadius, plutoRadius, plutoRadius);
-            plutoMesh.position.x = plutoOffset;
             plutoMesh.userData = { name: "Pluto", isPlanet: true };
             interactiveMeshes.push(plutoMesh);
             barycenter.add(plutoMesh);
@@ -457,8 +475,6 @@
             const charonGeo = new THREE.SphereGeometry(1, 16, 16);
             const charonMat = new THREE.MeshStandardMaterial({ color: 0x999999, roughness: 0.9 });
             const charonMesh = new THREE.Mesh(charonGeo, charonMat);
-            charonMesh.scale.set(charonRadius, charonRadius, charonRadius);
-            charonMesh.position.x = charonOffset;
             charonMesh.userData = { name: "Charon", isPlanet: true };
             interactiveMeshes.push(charonMesh);
             barycenter.add(charonMesh);
@@ -493,6 +509,7 @@
                 charonMesh: charonMesh,
                 charonLabel: cLabel,
                 baseRadius: plutoRadius, 
+                charonRadius: charonRadius,
                 speed: speed,
                 isPlutoSystem: true,
                 barycenterSpeed: 0.5 
@@ -504,7 +521,7 @@
         }
 
         function createComets() {
-            const cometCount = 8;
+            const cometCount = 12;
             for (let i = 0; i < cometCount; i++) {
                 const a = 1000000 + Math.random() * 2000000; 
                 const perihelion = 100 + Math.random() * 700;
@@ -524,18 +541,11 @@
                 points.push(new THREE.Vector3(r0 * Math.cos(0), 0, r0 * Math.sin(0)));
                 pathGeo.setFromPoints(points);
                 
-                const pathMat = new THREE.LineBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.4 });
+                const pathMat = new THREE.LineBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.25 });
                 const pathLine = new THREE.Line(pathGeo, pathMat);
                 pathLine.visible = false; 
                 orbitContainer.add(pathLine);
                 cometPaths.push(pathLine);
-
-                const cometGeo = new THREE.SphereGeometry(15, 8, 8);
-                const cometMat = new THREE.MeshBasicMaterial({ color: 0x88ffff });
-                const cometMesh = new THREE.Mesh(cometGeo, cometMat);
-                orbitContainer.add(cometMesh);
-
-                comets.push({ mesh: cometMesh, a: a, e: e, theta: Math.random() * Math.PI * 2 });
             }
         }
 
@@ -580,20 +590,58 @@
             }
         }
 
-        function updatePlanetSizes(scaleFactor) {
-            document.getElementById('sliderValue').innerText = scaleFactor + "x";
+        function updatePlanetSizes(logValue) {
+            let scaleFactor = Math.pow(10, parseFloat(logValue));
+            document.getElementById('sliderValue').innerText = Math.round(scaleFactor) + "x";
             
             planets.forEach(p => {
-                if (p.planetGroup && !p.isInstanced) {
-                    p.planetGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                if (p.isPlutoSystem) {
+                    p.mesh.scale.set(p.baseRadius * scaleFactor, p.baseRadius * scaleFactor, p.baseRadius * scaleFactor);
+                    p.charonMesh.scale.set(p.charonRadius * scaleFactor, p.charonRadius * scaleFactor, p.charonRadius * scaleFactor);
+                    
+                    let minPlutoOffset = -0.00211;
+                    let minCharonOffset = 0.01746;
+                    
+                    let reqDist = (p.baseRadius + p.charonRadius) * scaleFactor * 2.5; 
+                    let actualDist = minCharonOffset - minPlutoOffset;
+                    
+                    if (reqDist > actualDist) {
+                        let expand = reqDist / actualDist;
+                        p.mesh.position.x = minPlutoOffset * expand;
+                        p.charonMesh.position.x = minCharonOffset * expand;
+                    } else {
+                        p.mesh.position.x = minPlutoOffset;
+                        p.charonMesh.position.x = minCharonOffset;
+                    }
+                } else if (p.mesh && !p.isInstanced) {
+                    p.mesh.scale.set(p.baseRadius * scaleFactor, p.baseRadius * scaleFactor, p.baseRadius * scaleFactor);
+                    
+                    if (p.moonAnimators) {
+                        p.moonAnimators.forEach((anim) => {
+                            if (anim.isSwarm) {
+                                let swarmScale = Math.max(1, scaleFactor);
+                                anim.obj.scale.set(swarmScale, swarmScale, swarmScale);
+                            } else {
+                                let mMesh = anim.obj.children[0];
+                                let mBaseDist = mMesh.userData.baseDist;
+                                
+                                let scaledDist = mBaseDist * Math.pow(scaleFactor, 0.8);
+                                let minAllowedDist = p.baseRadius * scaleFactor * (2.5 + anim.index * 1.5);
+                                mMesh.position.x = Math.max(scaledDist, minAllowedDist);
+                                
+                                let moonScale = scaleFactor * 2.0; 
+                                mMesh.scale.set(moonScale, moonScale, moonScale);
+                            }
+                        });
+                    }
                 }
             });
 
             if (focusedObject) {
                 if (focusedObject.userData && focusedObject.userData.name === 'Solen') {
                     controls.minDistance = Math.max(0.0001, SUN_RADIUS * 1.5); 
-                } else if (focusedObject.userData && (focusedObject.userData.name === 'Pluto' || focusedObject.userData.name === 'Charon') ) {
-                    controls.minDistance = Math.max(0.0001, 0.001188 * scaleFactor * 1.5);
+                } else if (focusedObject === interactiveMeshes.find(m=>m.userData.name==='Pluto')?.parent) {
+                    controls.minDistance = Math.max(0.0001, 0.001188 * scaleFactor * 2.5);
                 } else {
                     let pData = planets.find(p => p.planetGroup === focusedObject || p.mesh === focusedObject);
                     if (pData) controls.minDistance = Math.max(0.0001, pData.baseRadius * scaleFactor * 1.5);
@@ -603,18 +651,12 @@
 
         function updateSpeed(logValue) {
             let speed = Math.pow(10, parseFloat(logValue));
-            
             let displaySpeed;
-            if (speed >= 1) {
-                displaySpeed = speed.toFixed(1);
-            } else if (speed >= 0.1) {
-                displaySpeed = speed.toFixed(1); 
-            } else {
-                displaySpeed = speed.toFixed(2); 
-            }
+            if (speed >= 1) displaySpeed = speed.toFixed(1);
+            else if (speed >= 0.1) displaySpeed = speed.toFixed(1); 
+            else displaySpeed = speed.toFixed(2); 
             
             if(parseFloat(displaySpeed) == 1) displaySpeed = "1.0";
-
             globalTimeScale = parseFloat(displaySpeed);
             document.getElementById('speedValue').innerText = displaySpeed + "x";
         }
@@ -707,9 +749,7 @@
                 vertices.push((x / r) * distance, (y / r) * distance, (z / r) * distance);
             }
             geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-            const material = new THREE.PointsMaterial({ 
-                color: 0x778899, size: 500, sizeAttenuation: true, transparent: true, opacity: 0.8
-            });
+            const material = new THREE.PointsMaterial({ color: 0x778899, size: 500, sizeAttenuation: true, transparent: true, opacity: 0.8 });
             const oortCloud = new THREE.Points(geometry, material);
             scene.add(oortCloud);
             planets.push({ container: oortCloud, speed: 0.00001, isInstanced: true });
@@ -734,10 +774,9 @@
             scene.add(stars);
         }
 
-        // --- INTERAKTION OCH ANIMATION ---
-
         function flyAndFocus(name, requestedDist) {
-            let currentScale = parseFloat(document.getElementById('sizeSlider').value) || 1;
+            let logVal = parseFloat(document.getElementById('sizeSlider').value) || 0;
+            let currentScale = Math.pow(10, logVal);
             let targetRadius = 1;
             let finalDist;
 
@@ -782,11 +821,15 @@
                 startTarget: controls.target.clone(),
                 startDist: currentDist,
                 endDist: finalDist,
-                duration: isLogJourney ? 7.0 : 2.5,
+                duration: isLogJourney ? 15.0 : 2.5,
                 isLogarithmic: isLogJourney,
                 isGoingToOort: (name === 'Oort'),
                 time: 0
             };
+
+            let directionVec = camera.position.clone().sub(controls.target).normalize();
+            if (directionVec.lengthSq() === 0) directionVec.set(0, 1, 0);
+            flight.dir = directionVec;
         }
 
         function cancelFlight() {
@@ -819,23 +862,14 @@
                     p.mesh.rotation.y += p.rotationSpeed * delta * 60;
                     
                     const isSystemFocused = (focusedObject === p.planetGroup || focusedObject === p.mesh);
-                    let currentMoonOpacity = 0;
 
-                    if (p.moonMaterials && p.moonMaterials.length > 0) {
-                        const targetOpacity = isSystemFocused ? 1 : 0;
-                        
+                    if (p.moonAnimators && p.moonAnimators.length > 0) {
                         p.moonAnimators.forEach(anim => {
                             anim.obj.rotation.y += anim.speed * delta * 60;
                         });
 
-                        p.moonMaterials.forEach(mat => {
-                            mat.opacity += (targetOpacity - mat.opacity) * 0.1;
-                            mat.visible = mat.opacity > 0.01;
-                            currentMoonOpacity = mat.opacity; 
-                        });
-
                         p.moonLabels.forEach(ml => {
-                            if (currentMoonOpacity > 0.05 && showLabels && isSystemFocused) {
+                            if (showLabels && isSystemFocused) {
                                 const vector = new THREE.Vector3();
                                 ml.mesh.getWorldPosition(vector);
                                 vector.project(camera);
@@ -843,14 +877,12 @@
                                     const x = (vector.x * .5 + .5) * window.innerWidth;
                                     const y = -(vector.y * .5 - .5) * window.innerHeight;
                                     ml.element.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
-                                    ml.element.style.opacity = currentMoonOpacity;
                                     ml.element.classList.remove('hidden');
                                 } else {
                                     ml.element.classList.add('hidden');
                                 }
                             } else {
                                 ml.element.classList.add('hidden');
-                                ml.element.style.opacity = 0;
                             }
                         });
                     }
@@ -858,7 +890,6 @@
                     if (p.charonLabel && showLabels) {
                         if (isSystemFocused) {
                             p.charonLabel.classList.remove('hidden');
-                            p.charonLabel.style.opacity = 1;
                             const vector = new THREE.Vector3();
                             p.charonMesh.getWorldPosition(vector);
                             vector.project(camera);
@@ -871,7 +902,6 @@
                             }
                         } else {
                             p.charonLabel.classList.add('hidden');
-                            p.charonLabel.style.opacity = 0;
                         }
                     }
 
@@ -892,15 +922,6 @@
                 }
             });
 
-            comets.forEach(c => {
-                const r = (c.a * (1 - c.e * c.e)) / (1 + c.e * Math.cos(c.theta));
-                c.mesh.position.set(r * Math.cos(c.theta), 0, r * Math.sin(c.theta));
-                let angularSpeed = 500000 / (r * r);
-                angularSpeed = Math.min(angularSpeed, 2.0); 
-                c.theta += angularSpeed * delta;
-                if (c.theta > Math.PI * 2) c.theta -= Math.PI * 2;
-            });
-
             let targetPos = new THREE.Vector3(0, 0, 0);
             if (focusedObject) {
                 focusedObject.getWorldPosition(targetPos);
@@ -918,17 +939,21 @@
                 if (flight.isLogarithmic) {
                     const logStart = Math.log(flight.startDist);
                     const logEnd = Math.log(flight.endDist);
-                    const distEase = t * t * (3 - 2 * t);
+                    let distEase;
+                    
+                    if (flight.isGoingToOort) {
+                        distEase = Math.pow(t, 6); 
+                    } else {
+                        distEase = 1 - Math.pow(1 - t, 6); 
+                    }
+                    
                     currentDist = Math.exp(logStart + (logEnd - logStart) * distEase);
                 } else {
                     const distEase = t * t * (3 - 2 * t);
                     currentDist = flight.startDist + (flight.endDist - flight.startDist) * distEase;
                 }
 
-                let dir = flight.startPos.clone().sub(flight.startTarget).normalize();
-                if (dir.lengthSq() === 0) dir.set(0, 1, 0);
-
-                camera.position.copy(currentTarget).add(dir.multiplyScalar(currentDist));
+                camera.position.copy(currentTarget).add(flight.dir.clone().multiplyScalar(currentDist));
 
                 if (t >= 1.0) {
                     if (flight.isGoingToOort && showOrbits) {

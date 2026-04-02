@@ -415,7 +415,7 @@
 
             // 4. Calculate Radial Velocity (Velocity along Z axis from camera perspective)
             const currentZ = star.position.z;
-            let rv = (currentZ - prevStarZ); 
+            let rv = -(currentZ - prevStarZ); // INVERTERAD: Kamera är på +Z. Ökande Z = rör sig mot oss = negativ RV (blåförskjutning)
             prevStarZ = currentZ;
 
             // Dynamisk skalning beräknas varje frame för att vara redo för grafen

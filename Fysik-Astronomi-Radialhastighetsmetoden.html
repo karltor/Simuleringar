@@ -6,6 +6,7 @@
     <title>Radialhastighet - Exoplaneter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; color: #fff; font-family: sans-serif; }
         #canvas-container { width: 100vw; height: 65vh; position: relative; }
@@ -43,8 +44,11 @@
             <div class="flex gap-4 mt-2">
                 <button class="btn active" id="btn-single">1. Enkel Planet</button>
                 <button class="btn" id="btn-multi">2. Flera Planeter</button>
-                <button class="btn" id="btn-chaos">3. Kaos</button>
+                <button class="btn" id="btn-chaos">3. Kaos (Rogue Planet)</button>
             </div>
+            <p class="text-lg text-white font-bold bg-black/50 p-2 rounded mt-2 border border-gray-600 inline-block w-max">
+                👆 Dra i rymden med musen/fingret för att rotera kameran!
+            </p>
         </div>
         
         <div class="absolute bottom-4 right-4 z-10 text-right hud-text font-bold text-2xl">
@@ -84,6 +88,14 @@
         
         const pointLight = new THREE.PointLight(0xffffff, 2, 200);
         scene.add(pointLight);
+
+        // Kamerakontroller för att tillåta användaren att snurra på systemet
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enablePan = false;
+        controls.minDistance = 20;
+        controls.maxDistance = 150;
 
         // ==========================================
         // OBJECTS
@@ -184,7 +196,7 @@
             });
         }
 
-        let prevStarZ = 0;
+        let prevStarPos = new THREE.Vector3(0, 0, 0); // Uppdaterad till en 3D-vektor
         let rogueStarOffsetX = 0;
         let rogueStarOffsetZ = 0;
 
@@ -192,7 +204,7 @@
             clearSystem();
             systemMode = mode;
             rogueTimer = 5; // Starta första extremt snabbt
-            prevStarZ = 0;
+            prevStarPos.set(0, 0, 0);
             smoothedMaxRV = 0.02;
             currentPhase = 0;
             rogueStarOffsetX = 0;
@@ -209,12 +221,15 @@
             }
 
             // Initiera stjärnans startposition korrekt för att undvika graf-spikar
+            let initialBaryX = 0;
             let initialBaryZ = 0;
             planets.forEach(p => {
+                const px = Math.cos(p.angle) * p.radius;
                 const pz = Math.sin(p.angle) * p.radius;
+                initialBaryX -= (p.mass * px) / starMass;
                 initialBaryZ -= (p.mass * pz) / starMass;
             });
-            prevStarZ = initialBaryZ;
+            prevStarPos.set(initialBaryX, 0, initialBaryZ);
 
             // SNABBSPOLNING: Simulera 500 frames direkt så att grafen är fylld med en perfekt våg från start!
             for(let i = 0; i < MAX_DATA_POINTS; i++) {
@@ -413,10 +428,18 @@
             // 3. Update Star Position
             star.position.set(baryX, 0, baryZ);
 
-            // 4. Calculate Radial Velocity (Velocity along Z axis from camera perspective)
-            const currentZ = star.position.z;
-            let rv = -(currentZ - prevStarZ); // INVERTERAD: Kamera är på +Z. Ökande Z = rör sig mot oss = negativ RV (blåförskjutning)
-            prevStarZ = currentZ;
+            // 4. Calculate Radial Velocity (Nu baserat på kamerans EXAKTA betraktningsvinkel!)
+            const currentPos = star.position.clone();
+            
+            // Hastighetsvektor i 3D
+            const velocity = new THREE.Vector3().subVectors(currentPos, prevStarPos);
+            // Vektor som pekar från stjärnan direkt in i kameran
+            const cameraDir = new THREE.Vector3().subVectors(camera.position, currentPos).normalize();
+            
+            // Prikprodukt projicerar stjärnans hastighet exakt på siktlinjen
+            let rv = -velocity.dot(cameraDir); // Negativt så rör sig MOT = Blått/Negativt
+            
+            prevStarPos.copy(currentPos);
 
             // Dynamisk skalning beräknas varje frame för att vara redo för grafen
             let currentMaxRV = 0.01;
@@ -448,6 +471,9 @@
 
         function animate() {
             requestAnimationFrame(animate);
+
+            // Uppdaterar kamerarörelsen (för mjuk inbromsning när man släpper musen)
+            controls.update();
 
             // Kör logiken
             updatePhysics();

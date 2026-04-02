@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radialhastighet - Exoplaneter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; color: #fff; font-family: sans-serif; }
+        #canvas-container { width: 100vw; height: 65vh; position: relative; }
+        #graph-container { width: 100vw; height: 35vh; background-color: #050505; border-top: 4px solid #333; position: relative;}
+        canvas { display: block; }
+        
+        /* High contrast UI for projectors */
+        .btn {
+            background-color: #222;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:hover, .btn.active {
+            background-color: #fff;
+            color: #000;
+        }
+        .hud-text {
+            text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 3D View -->
+    <div id="canvas-container">
+        <!-- UI Overlay -->
+        <div class="absolute top-4 left-4 z-10 flex flex-col gap-4">
+            <h1 class="text-4xl font-black text-white uppercase tracking-wider hud-text">Radialhastighetsmetoden</h1>
+            <p class="text-xl text-yellow-300 font-bold hud-text">Observera hur stjärnan rör sig och ändrar färg (Dopplereffekt)</p>
+            <div class="flex gap-4 mt-2">
+                <button class="btn active" id="btn-single">1. Enkel Planet</button>
+                <button class="btn" id="btn-multi">2. Flera Planeter</button>
+                <button class="btn" id="btn-chaos">3. Kaos (Rogue Planet)</button>
+            </div>
+        </div>
+        
+        <div class="absolute bottom-4 right-4 z-10 text-right hud-text font-bold text-2xl">
+            <span class="text-blue-400">Blå = Rör sig mot oss</span><br>
+            <span class="text-red-400">Röd = Rör sig bort</span>
+        </div>
+    </div>
+
+    <!-- 2D Graph View -->
+    <div id="graph-container">
+        <canvas id="graphCanvas"></canvas>
+        <div class="absolute top-2 left-4 text-white font-bold text-xl uppercase tracking-widest">Tid - Hastighetsdiagram (Ljusets Spektrum)</div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 3D SIMULATION SETUP (THREE.JS)
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        // Projector contrast: Add very faint grid/stars if needed, but black is best for contrast.
+        // We will keep it pure black for maximum visibility of the bodies.
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.65), 0.1, 1000);
+        // Position camera to look at the system somewhat edge-on
+        camera.position.set(0, 15, 60); 
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight * 0.65);
+        container.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        
+        const pointLight = new THREE.PointLight(0xffffff, 2, 200);
+        scene.add(pointLight);
+
+        // ==========================================
+        // OBJECTS
+        // ==========================================
+        
+        // 1. Star
+        const starMass = 1000;
+        const starGeometry = new THREE.SphereGeometry(3, 32, 32);
+        const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff }); // Use basic so it's perfectly bright
+        const star = new THREE.Mesh(starGeometry, starMaterial);
+        scene.add(star);
+        
+        // Star glow (sprite)
+        const canvasGlow = document.createElement('canvas');
+        canvasGlow.width = 128;
+        canvasGlow.height = 128;
+        const ctxGlow = canvasGlow.getContext('2d');
+        const gradient = ctxGlow.createRadialGradient(64, 64, 0, 64, 64, 64);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.2, 'rgba(255, 255, 200, 0.8)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctxGlow.fillStyle = gradient;
+        ctxGlow.fillRect(0, 0, 128, 128);
+        const glowTex = new THREE.CanvasTexture(canvasGlow);
+        const glowMat = new THREE.SpriteMaterial({ map: glowTex, color: 0xffffee, transparent: true, blending: THREE.AdditiveBlending });
+        const starGlow = new THREE.Sprite(glowMat);
+        starGlow.scale.set(12, 12, 1);
+        star.add(starGlow);
+
+        // System State Variables
+        let planets = [];
+        let orbits = [];
+        let rogueBodies = []; // Ändrad från rogueBody till en array för att tillåta FLERA
+        let systemMode = 'single'; // 'single', 'multi', 'chaos'
+        let time = 0;
+        let rogueTimer = 10; 
+        let currentPhase = 0; 
+        
+        const planetColors = [0x00FFFF, 0xFF00FF, 0x00FF00]; // Cyan, Magenta, Green - High contrast
+
+        function clearSystem() {
+            planets.forEach(p => scene.remove(p.mesh));
+            orbits.forEach(o => scene.remove(o));
+            rogueBodies.forEach(r => scene.remove(r.mesh));
+            rogueBodies = [];
+            planets = [];
+            orbits = [];
+            time = 0;
+            graphData = []; 
+        }
+
+        function createOrbitLine(radius, color) {
+            const material = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.5 });
+            const geometry = new THREE.BufferGeometry();
+            const points = [];
+            for(let i=0; i<=64; i++) {
+                const angle = (i / 64) * Math.PI * 2;
+                points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
+            }
+            geometry.setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            orbits.push(line);
+        }
+
+        function addPlanet(mass, radius, speed, size, colorHex) {
+            const mat = new THREE.MeshLambertMaterial({ color: colorHex, emissive: colorHex, emissiveIntensity: 0.5 });
+            const geo = new THREE.SphereGeometry(size, 16, 16);
+            const mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+            
+            planets.push({ mass, radius, speed, angle: Math.random() * Math.PI * 2, mesh });
+            createOrbitLine(radius, colorHex);
+        }
+
+        function spawnRoguePlanet() {
+            const mass = 1000 + Math.random() * 2000; // Slumpmässig massa
+            const size = 1.0 + (mass / 1500); // Storlek baserad på massan
+            
+            const hue = Math.random() * 0.1; // Färg från röd till gul-orange
+            const color = new THREE.Color().setHSL(hue, 1.0, 0.5);
+
+            const mat = new THREE.MeshLambertMaterial({ color: color, emissive: color, emissiveIntensity: 0.8 });
+            const geo = new THREE.SphereGeometry(size, 16, 16);
+            const mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+            
+            // Passerar på ungefär samma avstånd som den ordinarie blå planeten (12-20 enheter)
+            const zDirection = Math.random() > 0.5 ? 1 : -1;
+            
+            rogueBodies.push({
+                mass: mass, 
+                mesh: mesh,
+                x: -80,
+                z: zDirection * (12 + Math.random() * 8), 
+                vx: 0.2 + Math.random() * 0.15, // Lite långsammare "flyby"
+                vz: 0 // Åker rakt för en snyggare passage
+            });
+        }
+
+        let prevStarZ = 0;
+        let rogueStarOffsetX = 0;
+        let rogueStarOffsetZ = 0;
+
+        function setupMode(mode) {
+            clearSystem();
+            systemMode = mode;
+            rogueTimer = 5; // Starta första extremt snabbt
+            prevStarZ = 0;
+            smoothedMaxRV = 0.02;
+            currentPhase = 0;
+            rogueStarOffsetX = 0;
+            rogueStarOffsetZ = 0;
+            
+            if (mode === 'single') {
+                addPlanet(80, 15, 0.02, 1.2, planetColors[0]);
+            } else if (mode === 'multi') {
+                addPlanet(40, 10, 0.03, 0.8, planetColors[0]);
+                addPlanet(90, 20, 0.012, 1.4, planetColors[1]);
+                addPlanet(30, 28, 0.007, 0.6, planetColors[2]);
+            } else if (mode === 'chaos') {
+                // Inga ordinarie planeter i kaosläget! Endast rogue planets.
+            }
+
+            // Initiera stjärnans startposition korrekt för att undvika graf-spikar
+            let initialBaryZ = 0;
+            planets.forEach(p => {
+                const pz = Math.sin(p.angle) * p.radius;
+                initialBaryZ -= (p.mass * pz) / starMass;
+            });
+            prevStarZ = initialBaryZ;
+
+            // SNABBSPOLNING: Simulera 500 frames direkt så att grafen är fylld med en perfekt våg från start!
+            for(let i = 0; i < MAX_DATA_POINTS; i++) {
+                updatePhysics();
+            }
+        }
+
+        // ==========================================
+        // 2D GRAPH SETUP (CHART)
+        // ==========================================
+        const graphCanvas = document.getElementById('graphCanvas');
+        const ctx = graphCanvas.getContext('2d');
+        let graphData = [];
+        const MAX_DATA_POINTS = 500; // Fler punkter för en finare våg
+        let smoothedMaxRV = 0.02; // Anpassad från 0.5 så våglängd och amplitud stämmer direkt från start
+
+        function resizeGraph() {
+            graphCanvas.width = document.getElementById('graph-container').clientWidth;
+            graphCanvas.height = document.getElementById('graph-container').clientHeight;
+        }
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / (window.innerHeight * 0.65);
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.65);
+            resizeGraph();
+        });
+        resizeGraph();
+
+        function drawGraph() {
+            ctx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+            
+            const width = graphCanvas.width;
+            const height = graphCanvas.height;
+            const centerY = height / 2;
+
+            // Draw Zero Line (Base velocity)
+            ctx.beginPath();
+            ctx.strokeStyle = '#555';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 10]);
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Y-Axis Labels
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('0', 10, centerY + 6);
+            ctx.fillStyle = '#88ccff';
+            ctx.fillText('↑ Blåförskjutning (Kortare våglängd)', 10, 30);
+            ctx.fillStyle = '#ff8888';
+            ctx.fillText('↓ Rödförskjutning (Längre våglängd)', 10, height - 20);
+
+            if (graphData.length < 2) return;
+
+            // Använder den redan uträknade max-skalan
+            const renderScale = smoothedMaxRV * 1.5;
+
+            const xStep = width / MAX_DATA_POINTS;
+            const wiggleAmp = 25; // Amplituden på själva ljusvågen
+
+            ctx.lineWidth = 5; 
+
+            // Detta gör att grafen alltid fästs vid högerkant och scrollar vänster
+            const xOffset = width - graphData.length * xStep;
+
+            for (let i = 1; i < graphData.length; i++) {
+                const dPrev = graphData[i-1];
+                const dCurr = graphData[i];
+
+                const x1 = xOffset + (i - 1) * xStep;
+                const x2 = xOffset + i * xStep;
+                
+                // Y-koordinaten ritar ut bas-kurvan OCH lägger till sinusvågen
+                const y1 = centerY + (dPrev.rv / renderScale) * (height / 3) + Math.sin(dPrev.phase) * wiggleAmp;
+                const y2 = centerY + (dCurr.rv / renderScale) * (height / 3) + Math.sin(dCurr.phase) * wiggleAmp;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                
+                // Mjuk färgövergång baserat på hastigheten
+                let rvRatioForColor = dCurr.rv / renderScale;
+                rvRatioForColor = Math.max(-1, Math.min(1, rvRatioForColor));
+                
+                let r, g, b;
+                if (rvRatioForColor < 0) {
+                    // Blåförskjutning (över mittlinjen grafiskt, mjukt blått)
+                    const intensity = -rvRatioForColor; 
+                    r = Math.floor(221 - intensity * 119); 
+                    g = Math.floor(221 - intensity * 51);  
+                    b = Math.floor(221 + intensity * 34);  
+                } else {
+                    // Rödförskjutning (under mittlinjen grafiskt, mjukt rött)
+                    const intensity = rvRatioForColor; 
+                    r = Math.floor(221 + intensity * 34);  
+                    g = Math.floor(221 - intensity * 119); 
+                    b = Math.floor(221 - intensity * 119); 
+                }
+                ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+                
+                ctx.stroke();
+            }
+        }
+
+        // ==========================================
+        // UI INTERACTIONS
+        // ==========================================
+        document.getElementById('btn-single').addEventListener('click', (e) => {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            setupMode('single');
+        });
+        document.getElementById('btn-multi').addEventListener('click', (e) => {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            setupMode('multi');
+        });
+        document.getElementById('btn-chaos').addEventListener('click', (e) => {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            setupMode('chaos');
+        });
+
+        // ==========================================
+        // FYSIK & SIMULERING
+        // ==========================================
+        
+        // Separerad fysik-uppdatering så vi kan anropa den vid snabbspolning
+        function updatePhysics() {
+            // 1. Calculate Barycenter (Center of Mass) from planets
+            let baryX = 0;
+            let baryZ = 0;
+
+            planets.forEach(p => {
+                p.angle += p.speed;
+                // Planet position
+                const px = Math.cos(p.angle) * p.radius;
+                const pz = Math.sin(p.angle) * p.radius;
+                
+                p.mesh.position.set(px, 0, pz);
+
+                // Contribution to star's offset
+                baryX -= (p.mass * px) / starMass;
+                baryZ -= (p.mass * pz) / starMass;
+            });
+
+            // 2. Handle Chaos / Rogue Planet Logic
+            if (systemMode === 'chaos') {
+                rogueTimer--;
+                if (rogueTimer <= 0) { // Oregelbunden spawn
+                    spawnRoguePlanet();
+                    // Justerad frekvens: Mindre intensivt, ca 1 till 2 sekunder mellan planeter
+                    rogueTimer = 45 + Math.random() * 60;
+                }
+
+                // Loopa baklänges så vi säkert kan ta bort planeter från arrayen
+                for (let i = rogueBodies.length - 1; i >= 0; i--) {
+                    let rogue = rogueBodies[i];
+                    
+                    // Move rogue
+                    rogue.x += rogue.vx;
+                    rogue.z += rogue.vz;
+                    rogue.mesh.position.set(rogue.x, 0, rogue.z);
+
+                    // Calculate crude gravity impact on star
+                    const dx = rogue.x - baryX;
+                    const dz = rogue.z - baryZ;
+                    const distSq = dx*dx + dz*dz;
+                    const dist = Math.sqrt(distSq);
+
+                    if (dist > 2) {
+                        const force = rogue.mass / distSq;
+                        // Pull star towards rogue (mjukare kraft nu så stjärnan inte slungas iväg helt)
+                        rogueStarOffsetX += (dx / dist) * force * 0.015;
+                        rogueStarOffsetZ += (dz / dist) * force * 0.015;
+                    }
+
+                    // Remove if far away
+                    if (rogue.x > 100) {
+                        scene.remove(rogue.mesh);
+                        rogueBodies.splice(i, 1);
+                    }
+                }
+                
+                // Spring force to slowly return star to normal barycenter after disturbance
+                rogueStarOffsetX *= 0.95;
+                rogueStarOffsetZ *= 0.95;
+                
+                baryX += rogueStarOffsetX;
+                baryZ += rogueStarOffsetZ;
+            }
+
+            // 3. Update Star Position
+            star.position.set(baryX, 0, baryZ);
+
+            // 4. Calculate Radial Velocity (Velocity along Z axis from camera perspective)
+            const currentZ = star.position.z;
+            let rv = (currentZ - prevStarZ); 
+            prevStarZ = currentZ;
+
+            // Dynamisk skalning beräknas varje frame för att vara redo för grafen
+            let currentMaxRV = 0.01;
+            for(let d of graphData) {
+                if(Math.abs(d.rv) > currentMaxRV) currentMaxRV = Math.abs(d.rv);
+            }
+            if(Math.abs(rv) > currentMaxRV) currentMaxRV = Math.abs(rv);
+            smoothedMaxRV = smoothedMaxRV * 0.95 + currentMaxRV * 0.05;
+
+            // Beräkna frekvens för sinusvågen baserat på radialhastigheten (Doppler!)
+            const rvRatio = rv / (smoothedMaxRV + 0.0001); 
+            let freq = 0.3 - (rvRatio * 0.25);
+            freq = Math.max(0.02, freq); // Se till att vågen aldrig stannar helt
+            
+            currentPhase += freq;
+
+            // 6. Update Graph Data
+            graphData.push({ time: time, rv: rv, phase: currentPhase });
+            if (graphData.length > MAX_DATA_POINTS) {
+                graphData.shift(); // Remove oldest
+            }
+
+            time++;
+        }
+
+        // ==========================================
+        // MAIN ANIMATION LOOP
+        // ==========================================
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Kör logiken
+            updatePhysics();
+
+            // 5. Update Star Color (Subtle Doppler Shift) baserat på senaste värdet
+            const latestRV = graphData[graphData.length - 1].rv;
+            let r = 1.0, g = 1.0, b = 1.0;
+            const shiftIntensity = Math.min(Math.abs(latestRV) * 3, 1.0); // Exaggerate for visual
+            
+            if (latestRV > 0) {
+                // Moving away -> Redshift
+                g -= shiftIntensity * 0.5;
+                b -= shiftIntensity * 0.8;
+            } else if (latestRV < 0) {
+                // Moving towards -> Blueshift
+                r -= shiftIntensity * 0.8;
+                g -= shiftIntensity * 0.2;
+            }
+            starMaterial.color.setRGB(r, g, b);
+            starGlow.material.color.setRGB(r, g, b);
+
+            // 7. Render
+            drawGraph();
+            renderer.render(scene, camera);
+        }
+
+        // Init and Start
+        setupMode('single');
+        // Ensure simulation starts running
+        animate();
+
+    </script>
+</body>
+</html>

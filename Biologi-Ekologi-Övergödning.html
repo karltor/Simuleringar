@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Östersjön: Ett Ekosystem i Kris</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-page: #f8fafc;
+            --text-main: #0f172a;
+            --accent-algae: #166534;
+            --accent-hypoxia: #f97316;
+            --accent-foodweb: #9333ea;
+            --accent-link: #3b82f6;
+            --bezier: cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            background-color: var(--bg-page); color: var(--text-main);
+            font-family: 'Outfit', sans-serif; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 120%, rgba(203, 213, 225, 0.5) 0%, rgba(248, 250, 252, 0) 70%);
+            transition: all 1.5s var(--bezier); z-index: 1;
+        }
+
+        #dead-bottom-gradient {
+            position: absolute; bottom: 0; left: 0; width: 100vw; height: 50vh;
+            background: linear-gradient(to top, #111827 0%, #1f2937 40%, transparent 100%);
+            opacity: 0; z-index: 5; pointer-events: none;
+            transition: opacity 5s ease;
+        }
+
+        #presentation-wrapper {
+            position: relative; z-index: 10; width: 90%; max-width: 900px;
+            display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: center; 
+        }
+
+        #main-title {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; text-align: center;
+            letter-spacing: -0.03em; margin: 0; transition: all 1.5s var(--bezier); 
+            opacity: 1; width: 100%; max-width: 900px;
+        }
+
+        .title-top #main-title { top: 10vh; font-size: clamp(1.5rem, 3.5vw, 2.8rem); }
+
+        .slide {
+            position: absolute; width: 100%; opacity: 0; transform: translateY(30px) scale(0.98);
+            transition: all 1s var(--bezier); pointer-events: none; 
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .slide.active { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+        #card {
+            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 3rem 4rem; border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+            width: 100%; text-align: left; transition: all 1s var(--bezier); 
+            opacity: 0; display: flex; flex-direction: column; justify-content: center; 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); margin-top: 5vh; 
+        }
+
+        .text-flow { font-size: clamp(1.2rem, 2vw, 1.8rem); line-height: 1.5; margin: 0; }
+        .chunk { display: none; }
+
+        #the-link { color: var(--accent-link); font-weight: 800; }
+        .kw { font-weight: 800; color: inherit; transition: color 0.5s ease; }
+        .kw-algae { color: var(--accent-algae); position: relative; display: inline-block; }
+        .kw-hypoxia { color: var(--accent-hypoxia); }
+        .kw-foodweb { color: var(--accent-foodweb); }
+
+        /* Magilager överst */
+        #overlay-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100; pointer-events: none; }
+
+        .anim-element { position: absolute; z-index: 101; pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+
+        .egg-container { position: absolute; font-size: 1.2rem; }
+        .egg-icon { position: absolute; top: 0; left: 0; animation: fadeOut 2.5s forwards; animation-delay: 1.5s; }
+        .skull-icon { position: absolute; top: 0; left: 0; opacity: 0; animation: fadeIn 2.5s forwards; animation-delay: 1.5s; }
+
+        @keyframes sinkEggPos {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(50vh) rotate(45deg); }
+        }
+        @keyframes fadeOut { to { opacity: 0; } }
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes festerBubble { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.3) translateY(-2px); opacity: 1; } }
+
+        #controls { position: fixed; bottom: 2rem; display: flex; gap: 1rem; z-index: 200; }
+        button { background: rgba(15, 23, 42, 0.8); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 30px; font-family: inherit; font-size: 1rem; cursor: pointer; backdrop-filter: blur(5px); transition: all 0.2s ease; }
+        button:hover { background: #0f172a; transform: scale(1.05); }
+        #btn-restart { display: none; background: rgba(220, 38, 38, 0.8); }
+        #btn-restart:hover { background: #dc2626; }
+    </style>
+</head>
+<body>
+
+    <div id="bg-overlay"></div>
+    <div id="dead-bottom-gradient"></div>
+    <canvas id="overlay-canvas"></canvas>
+
+    <div id="presentation-wrapper">
+        <h1 id="main-title">Hur påverkar övergödning fiskebeståndet i Östersjön?</h1>
+
+        <div id="slide-1" class="slide">
+            <div id="card">
+                <p class="text-flow">
+                    <span id="chunk-1" class="chunk"><span id="c1-text">Fiskarna dör</span><span id="the-dot">.</span></span>
+                    <span id="chunk-2" class="chunk"><span id="the-link"> eftersom</span> övergödning göder havet och skapar extrem <span class="kw kw-algae" id="word-algae">algblomning</span>.</span>
+                    <span id="chunk-3" class="chunk"> <span class="kw kw-hypoxia" id="word-hypoxia">Syrebrist</span> på bottnarna slår ut ekosystemet. Algerna dör, sjunker och bryts ner.</span>
+                    <span id="chunk-4" class="chunk"> <span class="kw kw-cod" id="word-cod">Torskens</span> ägg är särskilt känsliga för låg syrehalt, vilket minskar reproduktionen.</span>
+                    <span id="chunk-5" class="chunk"> När rovfiskar som torsk minskar rubbas <span class="kw kw-foodweb" id="word-foodweb">näringsväven</span>, vilket kan förstärka effekterna av övergödning.</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="btn-next">Klicka för att fortsätta</button>
+        <button id="btn-restart">Starta om</button>
+    </div>
+
+    <script>
+        // --- State ---
+        let step = 0;
+        const totalSteps = 5;
+        let isAnimating = false; 
+        
+        const speedNormal = 35; 
+        const speedFast = 17;   
+
+        const body = document.body;
+        const slide1 = document.getElementById('slide-1');
+        const card = document.getElementById('card');
+        const bgOverlay = document.getElementById('bg-overlay');
+        const btnNext = document.getElementById('btn-next');
+        const btnRestart = document.getElementById('btn-restart');
+
+        const chunkData = {};
+        
+        let typeWriterTimeout;
+        let algaeInterval;
+        let algaeBubbles = [];
+        let algaeStarted = false;
+        let codSpawned = false;
+        let foodWebSpawned = false;
+        let domElements = []; 
+        let particles = [];
+        
+        const canvas = document.getElementById('overlay-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        // --- TextMotor ---
+        function prepareTextNodes(container) {
+            const spans = [];
+            const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
+            const nodes = [];
+            while(walker.nextNode()) nodes.push(walker.currentNode);
+            
+            nodes.forEach(node => {
+                const text = node.nodeValue;
+                const frag = document.createDocumentFragment();
+                for(let i=0; i<text.length; i++) {
+                    const span = document.createElement('span');
+                    span.textContent = text[i];
+                    span.style.opacity = '0'; 
+                    span.style.transition = 'opacity 0.1s ease'; 
+                    span.parentId = node.parentNode.id || ''; 
+                    frag.appendChild(span);
+                    spans.push({ element: span, parentId: span.parentId });
+                }
+                node.parentNode.replaceChild(frag, node);
+            });
+            return spans;
+        }
+
+        for(let i=1; i<=5; i++) chunkData[i] = prepareTextNodes(document.getElementById(`chunk-${i}`));
+
+        function playTypewriter(spans, speed, onCharReveal, onComplete) {
+            let i = 0; isAnimating = true; btnNext.style.opacity = "0.5";
+            function nextChar() {
+                if (i >= spans.length) {
+                    isAnimating = false; btnNext.style.opacity = "1";
+                    if (onComplete) onComplete();
+                    return;
+                }
+                spans[i].element.style.opacity = '1';
+                if (onCharReveal) onCharReveal(spans[i], i, spans.length);
+                i++; typeWriterTimeout = setTimeout(nextChar, speed);
+            }
+            nextChar();
+        }
+
+        // --- Flödet ---
+        function next() {
+            if (step >= totalSteps || isAnimating) return;
+            step++;
+
+            if (step === 1) {
+                body.classList.add('title-top'); card.style.opacity = '1'; slide1.classList.add('active');
+                document.getElementById('chunk-1').style.display = 'inline';
+                playTypewriter(chunkData[1], speedNormal);
+            }
+            
+            if (step === 2) {
+                const dot = document.getElementById('the-dot');
+                spawnExplosion(dot.getBoundingClientRect().left, dot.getBoundingClientRect().top);
+                dot.style.display = 'none';
+
+                document.getElementById('chunk-2').style.display = 'inline';
+                playTypewriter(chunkData[2], speedFast, (charData) => {
+                    if (charData.parentId === 'word-algae' && !algaeStarted) {
+                        algaeStarted = true;
+                        const wordSpan = document.getElementById('word-algae');
+                        algaeInterval = setInterval(() => { spawnSingleBubbleInside(wordSpan); }, 150);
+                    }
+                }, () => {
+                    bgOverlay.style.background = 'radial-gradient(circle at 50% 120%, rgba(34, 197, 94, 0.2) 0%, rgba(248, 250, 252, 0) 70%)';
+                    setTimeout(() => {
+                        clearInterval(algaeInterval);
+                        while(algaeBubbles.length > 3) {
+                            let b = algaeBubbles.shift();
+                            b.style.transition = 'opacity 1.5s ease';
+                            b.style.opacity = '0';
+                            setTimeout(() => b.remove(), 1500); 
+                        }
+                    }, 2000);
+                });
+            }
+
+            if (step === 3) {
+                document.getElementById('chunk-3').style.display = 'inline';
+                playTypewriter(chunkData[3], speedNormal, null, () => {
+                    document.getElementById('dead-bottom-gradient').style.opacity = '1';
+                });
+            }
+
+            if (step === 4) {
+                document.getElementById('chunk-4').style.display = 'inline';
+                playTypewriter(chunkData[4], speedNormal, (charData) => {
+                    if (charData.parentId === 'word-cod' && !codSpawned) {
+                        codSpawned = true;
+                        const wordRect = document.getElementById('word-cod').getBoundingClientRect();
+                        spawnDynamicCodAndEggs(wordRect.left, wordRect.top);
+                    }
+                });
+            }
+
+            if (step === 5) {
+                document.getElementById('chunk-5').style.display = 'inline';
+                playTypewriter(chunkData[5], speedNormal, (charData) => {
+                    if (charData.parentId === 'word-foodweb' && !foodWebSpawned) {
+                        foodWebSpawned = true;
+                        startFoodWebSim();
+                    }
+                }, () => {
+                    bgOverlay.style.background = 'radial-gradient(circle at 50% 120%, rgba(15, 23, 42, 0.2) 0%, rgba(248, 250, 252, 0) 70%)';
+                    btnNext.style.display = 'none';
+                    btnRestart.style.display = 'block';
+                });
+            }
+        }
+
+        function restart() {
+            if (isAnimating) return;
+            step = 0;
+            
+            clearTimeout(typeWriterTimeout); clearInterval(algaeInterval);
+            slide1.classList.remove('active'); body.classList.remove('title-top');
+            card.style.opacity = '0';
+            bgOverlay.style.background = 'radial-gradient(circle at 50% 120%, rgba(203, 213, 225, 0.5) 0%, rgba(248, 250, 252, 0) 70%)';
+            document.getElementById('dead-bottom-gradient').style.opacity = '0';
+            document.getElementById('the-dot').style.display = 'inline';
+
+            Object.values(chunkData).forEach(spans => spans.forEach(s => s.element.style.opacity = '0'));
+            for(let i=1; i<=5; i++) document.getElementById(`chunk-${i}`).style.display = 'none';
+
+            btnNext.style.display = 'block'; btnRestart.style.display = 'none';
+
+            particles = []; fwPlanktons = []; fwFishes = []; fwCod = null; simActive = false;
+            algaeBubbles.forEach(b => b.remove()); algaeBubbles = [];
+            domElements.forEach(el => el.remove()); domElements = [];
+            algaeStarted = false; codSpawned = false; foodWebSpawned = false; isAnimating = false;
+        }
+
+        document.addEventListener('click', (e) => { if (e.target.id !== 'btn-restart') next(); });
+        btnRestart.addEventListener('click', restart);
+        window.addEventListener('keydown', (e) => { if (e.key === ' ' || e.key === 'ArrowRight') next(); });
+
+        // --- Explosion (Canvas) ---
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.life = 1; this.decay = 0.015;
+                this.color = '#3b82f6'; this.size = Math.random() * 3 + 1;
+                this.vx = (Math.random() - 0.5) * 8; this.vy = (Math.random() - 0.5) * 8;
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= this.decay; }
+            draw(c) {
+                c.fillStyle = this.color; c.globalAlpha = this.life < 0 ? 0 : this.life;
+                c.beginPath(); c.arc(this.x, this.y, this.size, 0, Math.PI*2); c.fill();
+            }
+        }
+        function spawnExplosion(x, y) { for(let i=0; i<40; i++) particles.push(new Particle(x, y)); }
+
+        function spawnSingleBubbleInside(spanElement) {
+            const bubble = document.createElement('span');
+            bubble.className = 'anim-element'; bubble.innerHTML = '🦠'; 
+            bubble.style.position = 'absolute'; bubble.style.left = `${Math.random() * 100}%`;
+            bubble.style.top = `${Math.random() * 100 - 30}%`; bubble.style.fontSize = `${Math.random() * 0.5 + 0.5}em`;
+            bubble.style.color = '#115e59'; bubble.style.animation = 'festerBubble 2s alternate infinite'; 
+            bubble.style.filter = `blur(${Math.random() * 1}px)`;
+            spanElement.appendChild(bubble); algaeBubbles.push(bubble);
+        }
+
+        // --- Torsk & Ägg ---
+        function spawnDynamicCodAndEggs(startX, startY) {
+            const fishEl = document.createElement('div');
+            fishEl.className = 'anim-element'; fishEl.innerHTML = '🐟';
+            fishEl.style.fontSize = '2.5rem';
+            body.appendChild(fishEl); domElements.push(fishEl);
+
+            let startT = performance.now(); let duration = 7000;
+            let eggsSpawned = 0; let totalEggs = 50;
+
+            function animateCod(time) {
+                let p = (time - startT) / duration; if (p > 1) p = 1;
+                let currentX = startX - (600 * p); 
+                let currentY = startY - (100 * Math.sin(p * Math.PI)); 
+
+                fishEl.style.left = `${currentX}px`; fishEl.style.top = `${currentY}px`;
+
+                let targetEggs = Math.floor(p * totalEggs);
+                while(eggsSpawned < targetEggs) {
+                    dropEgg(currentX + 20, currentY + 20); 
+                    eggsSpawned++;
+                }
+
+                if (p < 1) requestAnimationFrame(animateCod);
+                else {
+                    fishEl.style.transition = 'opacity 1s ease'; fishEl.style.opacity = '0';
+                    setTimeout(() => fishEl.remove(), 1000);
+                }
+            }
+            requestAnimationFrame(animateCod);
+        }
+
+        function dropEgg(x, y) {
+            const eggContainer = document.createElement('div');
+            eggContainer.className = 'anim-element egg-container';
+            eggContainer.style.left = `${x}px`; eggContainer.style.top = `${y}px`;
+            eggContainer.style.animation = `sinkEggPos ${4 + Math.random()*2}s linear forwards`; 
+            
+            const eggIcon = document.createElement('span'); eggIcon.innerHTML = '🥚'; eggIcon.className = 'egg-icon';
+            const skullIcon = document.createElement('span'); skullIcon.innerHTML = '💀'; skullIcon.className = 'skull-icon';
+            
+            eggContainer.appendChild(eggIcon); eggContainer.appendChild(skullIcon);
+            body.appendChild(eggContainer); domElements.push(eggContainer);
+
+            setTimeout(() => {
+                eggContainer.style.transition = 'opacity 2s ease';
+                eggContainer.style.opacity = '0';
+                setTimeout(() => eggContainer.remove(), 2000);
+            }, 8000);
+        }
+
+        // --- NÄRINGSVÄV SIMULATOR (Canvas) ---
+        let simActive = false;
+        let fwPlanktons = []; let fwFishes = []; let fwCod = null;
+        let simTime = 0; let lastTime = 0;
+
+        function startFoodWebSim() {
+            simActive = true; simTime = 0; lastTime = performance.now();
+            fwCod = { x: canvas.width * 0.8, y: canvas.height * 0.2, vx: 0, vy: 0, dead: false, deadProgress: 0, fadeProgress: 0 };
+            for(let i=0; i<10; i++) fwFishes.push(createSmallFish()); 
+            for(let i=0; i<40; i++) fwPlanktons.push(createPlankton());
+        }
+
+        function createSmallFish() {
+            return {
+                x: canvas.width/2 + (Math.random()-0.5)*300, y: canvas.height * 0.2 + (Math.random()-0.5)*150,
+                vx: (Math.random()-0.5)*0.8, vy: (Math.random()-0.5)*0.8, // Startar lite långsammare
+                hunger: 0, dead: false, deadProgress: 0
+            };
+        }
+
+        function createPlankton() {
+            return { x: Math.random() * canvas.width, y: Math.random() * (canvas.height * 0.4), vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 };
+        }
+
+        function renderFoodWeb(dt) {
+            if(!simActive) return;
+            simTime += dt;
+
+            // Fas 1: Långsam växtplanktonspawn. Fas 4: MASSIV spawn när småfiskarna dött
+            if (simTime > 13000) {
+                // Extrem algblomning i slutet! Men max 600 partiklar för att inte krascha webbläsaren.
+                if (fwPlanktons.length < 600) {
+                    fwPlanktons.push(createPlankton());
+                    fwPlanktons.push(createPlankton());
+                    fwPlanktons.push(createPlankton());
+                }
+            } else {
+                // Vanlig låg spawnrate i början
+                if(Math.random() < 0.05 && fwPlanktons.length < 100) fwPlanktons.push(createPlankton());
+            }
+
+            // Torsken
+            if(fwCod) {
+                if(!fwCod.dead) {
+                    // Jaga småfisk
+                    let closestFish = null; let minFishDist = Infinity; let fishIndex = -1;
+                    fwFishes.forEach((f, idx) => {
+                        if(f.dead) return;
+                        let d = Math.hypot(f.x - fwCod.x, f.y - fwCod.y);
+                        if(d < minFishDist) { minFishDist = d; closestFish = f; fishIndex = idx; }
+                    });
+
+                    if(closestFish) {
+                        fwCod.vx += (closestFish.x - fwCod.x) * 0.0008;
+                        fwCod.vy += (closestFish.y - fwCod.y) * 0.0008;
+
+                        // Hastighetsspärr för torsk (snabb)
+                        let speed = Math.hypot(fwCod.vx, fwCod.vy);
+                        if(speed > 2.5) { fwCod.vx = (fwCod.vx/speed)*2.5; fwCod.vy = (fwCod.vy/speed)*2.5; }
+
+                        // Torsken Äter
+                        if(minFishDist < 25) {
+                            fwFishes.splice(fishIndex, 1);
+
+                            // Klona ny småfisk från de längst bort (Equilibrium)
+                            let sortedFishes = [...fwFishes].filter(f=>!f.dead).sort((a,b) => {
+                                return Math.hypot(b.x - fwCod.x, b.y - fwCod.y) - Math.hypot(a.x - fwCod.x, a.y - fwCod.y);
+                            });
+                            let spawnParent = sortedFishes[Math.floor(Math.random() * Math.min(3, sortedFishes.length))];
+                            
+                            let newFish = createSmallFish();
+                            if(spawnParent) {
+                                newFish.x = spawnParent.x + (Math.random()-0.5)*20;
+                                newFish.y = spawnParent.y + (Math.random()-0.5)*20;
+                            }
+                            fwFishes.push(newFish);
+                        }
+                    } else {
+                        fwCod.vx *= 0.98; fwCod.vy *= 0.98; 
+                    }
+
+                    // Torsken dör efter 7 sekunder
+                    if(simTime > 7000) fwCod.dead = true;
+                }
+
+                fwCod.x += fwCod.vx; fwCod.y += fwCod.vy;
+                
+                // Rita Torsken
+                ctx.font = '40px Arial';
+                if(fwCod.dead) {
+                    if(fwCod.deadProgress < 1) fwCod.deadProgress += 0.01;
+                    else if(fwCod.fadeProgress < 1) fwCod.fadeProgress += 0.005; 
+
+                    if(fwCod.fadeProgress < 1) {
+                        ctx.globalAlpha = 1 - fwCod.fadeProgress;
+                        if(fwCod.deadProgress < 1) {
+                            ctx.save();
+                            ctx.globalAlpha = (1 - fwCod.deadProgress) * (1 - fwCod.fadeProgress);
+                            ctx.translate(fwCod.x + 20, fwCod.y - 10);
+                            if(fwCod.vx > 0) ctx.scale(-1, 1);
+                            ctx.fillText('🐟', 0, 0);
+                            ctx.restore();
+
+                            ctx.globalAlpha = fwCod.deadProgress * (1 - fwCod.fadeProgress);
+                            ctx.fillText('💀', fwCod.x, fwCod.y);
+                        } else {
+                            ctx.fillText('💀', fwCod.x, fwCod.y);
+                        }
+                    }
+                } else {
+                    ctx.save();
+                    ctx.translate(fwCod.x + 20, fwCod.y - 10);
+                    if(fwCod.vx > 0) ctx.scale(-1, 1); 
+                    ctx.fillText('🐟', 0, 0);
+                    ctx.restore();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            // Torsken är död, Phase 3: Småfiskarna förökar sig galet
+            if(simTime > 7500 && simTime < 11000) {
+                if(Math.random() < 0.1 && fwFishes.length < 40) fwFishes.push(createSmallFish());
+            }
+
+            // Rita Plankton
+            ctx.fillStyle = 'rgba(34, 197, 94, 0.8)';
+            fwPlanktons.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+            });
+
+            // Småfiskar
+            ctx.font = '20px Arial';
+            ctx.filter = 'grayscale(100%)'; 
+            for(let i = fwFishes.length - 1; i >= 0; i--) {
+                let f = fwFishes[i];
+                
+                if(!f.dead) {
+                    let avoidX = 0, avoidY = 0;
+                    if(fwCod && !fwCod.dead) {
+                        let dCod = Math.hypot(f.x - fwCod.x, f.y - fwCod.y);
+                        if(dCod < 150) {
+                            avoidX = (f.x - fwCod.x) * 0.002;
+                            avoidY = (f.y - fwCod.y) * 0.002;
+                        }
+                    }
+
+                    let closest = null; let minDist = Infinity; let cIndex = -1;
+                    fwPlanktons.forEach((p, index) => {
+                        let d = Math.hypot(p.x - f.x, p.y - f.y);
+                        if(d < minDist) { minDist = d; closest = p; cIndex = index; }
+                    });
+
+                    if(closest) {
+                        f.vx += (closest.x - f.x) * 0.001 + avoidX;
+                        f.vy += (closest.y - f.y) * 0.001 + avoidY;
+                        
+                        // SÄNKT HASTIGHET FÖR SMÅFISK! Tredjedel av förut (från 2.5 till 0.8)
+                        let speed = Math.hypot(f.vx, f.vy);
+                        if(speed > 0.8) { f.vx = (f.vx/speed)*0.8; f.vy = (f.vy/speed)*0.8; }
+                        
+                        if(minDist < 15) {
+                            fwPlanktons.splice(cIndex, 1);
+                            f.hunger = 0;
+                        } else { f.hunger += dt; }
+                    } else {
+                        f.hunger += dt * 2; 
+                        f.vx += avoidX; f.vy += avoidY + 0.01; 
+                    }
+
+                    if(simTime > 11000 && f.hunger > 1000) f.dead = true;
+                } else {
+                    f.vy += 0.02; f.vx *= 0.95;
+                    if(f.deadProgress < 1) f.deadProgress += 0.02;
+                }
+
+                f.x += f.vx; f.y += f.vy;
+
+                if(f.deadProgress > 0) {
+                    ctx.filter = 'none'; 
+                    ctx.globalAlpha = f.deadProgress;
+                    ctx.fillText('💀', f.x, f.y);
+                    ctx.filter = 'grayscale(100%)';
+                }
+                if(f.deadProgress < 1) {
+                    ctx.globalAlpha = 1 - f.deadProgress;
+                    ctx.save();
+                    ctx.translate(f.x + 10, f.y - 5);
+                    if(f.vx > 0) ctx.scale(-1, 1); 
+                    ctx.fillText('🐟', 0, 0);
+                    ctx.restore();
+                }
+                ctx.globalAlpha = 1;
+            }
+            ctx.filter = 'none'; 
+        }
+
+        // --- Huvudloop ---
+        function animateLoop(now) {
+            let dt = now - lastTime; lastTime = now;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update(); particles[i].draw(ctx);
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+            renderFoodWeb(dt);
+            requestAnimationFrame(animateLoop);
+        }
+        requestAnimationFrame(animateLoop);
+    </script>
+</body>
+</html>

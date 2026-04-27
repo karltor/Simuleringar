@@ -36,6 +36,66 @@ button {
     margin: 10px;
     cursor: pointer;
     border: 5px solid transparent; /* Added default transparent border for buttons */
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+button:disabled {
+    cursor: default;
+}
+.cta-button {
+    background-color: #2c7;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    padding: 12px 24px;
+    border: none;
+}
+.cta-button:hover {
+    background-color: #1b6;
+}
+#selection-counter {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 8px 12px;
+    background: #eef;
+    border-left: 5px solid #44a;
+    display: inline-block;
+}
+#round-indicator {
+    float: right;
+    font-size: 14px;
+    color: #555;
+    margin-top: 12px;
+}
+#feedback-area {
+    margin-top: 15px;
+    padding: 15px;
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+#feedback-area ul {
+    list-style: none;
+    padding: 0;
+}
+#feedback-area li {
+    padding: 8px;
+    margin: 6px 0;
+    border-radius: 4px;
+}
+.feedback-correct {
+    background: #e6f7e6;
+    border-left: 5px solid #2c7;
+}
+.feedback-wrong {
+    background: #fde8e8;
+    border-left: 5px solid #c33;
+}
+.feedback-missed {
+    background: #fff5d6;
+    border-left: 5px solid #e0a800;
 }
 .tooltip {
     display: none;
@@ -46,7 +106,7 @@ button {
     z-index: 1000;
     max-width: 200px;
 }
-#modal {
+#modal, #intro-modal {
     display: none;
     position: fixed;
     left: 0;
@@ -58,12 +118,21 @@ button {
     align-items: center; /* Centers the modal content vertically */
     justify-content: center; /* Centers the modal content horizontally */
 }
-#modal > div {
+#modal > div, #intro-modal > div {
     background: white;
-    width: 300px;
+    width: 420px;
+    max-width: 90%;
     margin: auto; /* Updated to 'auto' for automatic vertical margin */
-    padding: 20px;
+    padding: 24px;
     text-align: center;
+    border-radius: 8px;
+}
+#intro-modal h2 {
+    margin-top: 0;
+}
+#intro-modal ol {
+    text-align: left;
+    line-height: 1.6;
 }
 
 </style>
@@ -81,11 +150,26 @@ button {
             <svg></svg>
         </section>
         <section id="guessing-game">
-            <h2>Gissa gaserna!</h2>
+            <h2>Gissa gaserna! <span id="round-indicator">Runda 1 av 5</span></h2>
+            <div id="selection-counter">Välj 3 gaser (0/3 valda)</div>
             <div id="quiz-section"></div>
         </section>
-      <div id="modal" style="display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
-          <div style="background: white; width: 300px; margin: 100px auto; padding: 20px; text-align: center;">
+      <div id="intro-modal">
+          <div>
+              <h2>Välkommen till spektroskopi-spelet!</h2>
+              <p>Den färgade rutan ovan visar ett spektrum. De svarta strecken är <strong>absorptionslinjer</strong> – våglängder där gaser i en exoplanets atmosfär har slukat ljuset.</p>
+              <p><strong>Din uppgift:</strong></p>
+              <ol>
+                  <li>Studera var de svarta strecken sitter.</li>
+                  <li>Välj de <strong>3 gaser</strong> som du tror skapat mönstret.</li>
+                  <li>Håll muspekaren över en knapp för att se vid vilka våglängder gasen absorberar.</li>
+              </ol>
+              <p>Du spelar 5 rundor. Efter varje runda får du veta vilka du valde rätt på.</p>
+              <button id="start-game-btn" class="cta-button">Starta spelet</button>
+          </div>
+      </div>
+      <div id="modal">
+          <div>
               <p id="modal-message"></p>
               <p id="countdown"></p>
           </div>
@@ -94,6 +178,7 @@ button {
         <section id="results">
             <h2>Resultat</h2>
             <div id="results-summary"></div>
+            <div id="feedback-area" style="display:none;"></div>
         </section>
     </main>
     <footer>
@@ -104,6 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const spectrumSvg = d3.select('#spectrum-display svg').attr('height', '150');
   const quizSection = document.getElementById('quiz-section');
   const resultsSummary = document.getElementById('results-summary');
+  const selectionCounter = document.getElementById('selection-counter');
+  const roundIndicator = document.getElementById('round-indicator');
+  const feedbackArea = document.getElementById('feedback-area');
   const fullWidth = spectrumSvg.node().getBoundingClientRect().width;
   const nmToPixel = d => Math.log10(d / 280) / Math.log10(10000 / 280) * fullWidth;
   const pixelToNm = p => 280 * Math.pow(10000 / 280, p / fullWidth);
@@ -215,6 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
       quizSection.innerHTML = '';
       blandaGaser().forEach(gas => {
           const knapp = document.createElement('button');
+          knapp.dataset.gasName = gas.name;
           const verktygstips = document.createElement('div');
           verktygstips.className = 'tooltip';
           verktygstips.innerHTML = gas.bands.map(band => `${band.wavelength} nm: ${band.strength}`).join('<br>');
@@ -233,6 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
           });
 
           knapp.addEventListener('click', function() {
+              if (knapp.disabled) return;
               växlaGissning(gas.name, knapp);
           });
 
@@ -255,64 +345,146 @@ document.addEventListener('DOMContentLoaded', function() {
         knapp.style.border = "5px solid black";
       }
     }
-    uppdateraResultatSammanfattning();
+    uppdateraRäknare();
   }
 
-  function uppdateraResultatSammanfattning() {
-    const gissningarKvar = 3 - användarGissningar.length;
-    resultsSummary.textContent = `Gissa ${gissningarKvar} fler gas(er) för att skicka ditt svar.`;
-    if (gissningarKvar === 0) {
-      skickaSvar();
+  function uppdateraRäknare() {
+    const antal = användarGissningar.length;
+    if (antal < 3) {
+      selectionCounter.textContent = `Välj 3 gaser (${antal}/3 valda)`;
+      selectionCounter.style.background = '#eef';
+      selectionCounter.style.borderLeftColor = '#44a';
+      resultsSummary.textContent = '';
+    } else {
+      selectionCounter.textContent = `3/3 valda – klicka på "Skicka svar" nedan`;
+      selectionCounter.style.background = '#dfd';
+      selectionCounter.style.borderLeftColor = '#2c7';
+      visaSkickaKnapp();
     }
+  }
+
+  function visaSkickaKnapp() {
+    if (document.getElementById('skicka-svar-btn')) return;
+    resultsSummary.innerHTML = '';
+    const skickaBtn = document.createElement('button');
+    skickaBtn.id = 'skicka-svar-btn';
+    skickaBtn.className = 'cta-button';
+    skickaBtn.textContent = 'Skicka svar';
+    skickaBtn.addEventListener('click', skickaSvar);
+    resultsSummary.appendChild(skickaBtn);
   }
 
   function skickaSvar() {
     const korrektaSvar = valdaGaser.map(gas => gas.name);
-    const ärKorrekt = användarGissningar.every(gissning => korrektaSvar.includes(gissning)) && användarGissningar.length === valdaGaser.length;
-
-    if (ärKorrekt) {
-      poäng++;
-    }
-    resultsSummary.textContent = rundor < 9 ? "Runda avklarad, förbered för nästa runda." : `Spelet är över. Poäng: ${poäng}/10`;
-
-    rundor++;
-    användarGissningar = [];
-    uppdateraKnapparStil();
-
-    if (rundor < 5) {
-      genereraAbsorptionslinjer();
-    } else {
-      kontrolleraSpelslut();
-    }
-  }
-
-  function uppdateraKnapparStil() {
     const knappar = quizSection.querySelectorAll('button');
+
+    let rundansPoäng = 0;
+    const feedbackPoster = [];
+
+    användarGissningar.forEach(gissning => {
+      const gas = gaser.find(g => g.name === gissning);
+      const band = gas.bands.map(b => `${b.wavelength} nm (${b.strength})`).join(', ');
+      if (korrektaSvar.includes(gissning)) {
+        rundansPoäng++;
+        feedbackPoster.push({
+          klass: 'feedback-correct',
+          text: `✓ <strong>${gissning}</strong> – Rätt! Absorptionslinjerna vid ${band} matchar spektrumet.`
+        });
+      } else {
+        feedbackPoster.push({
+          klass: 'feedback-wrong',
+          text: `✗ <strong>${gissning}</strong> – Fel. Denna gas absorberar vid ${band}, men dessa linjer syns inte i spektrumet.`
+        });
+      }
+    });
+
+    korrektaSvar.forEach(korrekt => {
+      if (!användarGissningar.includes(korrekt)) {
+        const gas = gaser.find(g => g.name === korrekt);
+        const band = gas.bands.map(b => `${b.wavelength} nm (${b.strength})`).join(', ');
+        feedbackPoster.push({
+          klass: 'feedback-missed',
+          text: `Du missade <strong>${korrekt}</strong> – som ger absorption vid ${band}.`
+        });
+      }
+    });
+
     knappar.forEach(knapp => {
-      knapp.style.border = "5px solid transparent";
+      const namn = knapp.dataset.gasName;
+      knapp.disabled = true;
+      if (användarGissningar.includes(namn)) {
+        knapp.style.border = korrektaSvar.includes(namn) ? "5px solid #2c7" : "5px solid #c33";
+      } else if (korrektaSvar.includes(namn)) {
+        knapp.style.border = "5px solid #e0a800";
+      } else {
+        knapp.style.border = "5px solid transparent";
+        knapp.style.opacity = 0.5;
+      }
+    });
+
+    if (rundansPoäng === 3) poäng++;
+    rundor++;
+
+    feedbackArea.style.display = 'block';
+    const ärSista = rundor >= 5;
+    feedbackArea.innerHTML = `
+      <h3>Runda ${rundor} – ${rundansPoäng}/3 rätt</h3>
+      <ul>${feedbackPoster.map(f => `<li class="${f.klass}">${f.text}</li>`).join('')}</ul>
+      <p><strong>Total poäng hittills: ${poäng}/${rundor}</strong></p>
+      <button id="next-round-btn" class="cta-button">${ärSista ? 'Se slutresultat' : 'Nästa runda'}</button>
+    `;
+    resultsSummary.innerHTML = '';
+    selectionCounter.textContent = 'Runda avklarad – läs feedbacken nedan';
+    selectionCounter.style.background = '#eee';
+    selectionCounter.style.borderLeftColor = '#888';
+
+    document.getElementById('next-round-btn').addEventListener('click', () => {
+      feedbackArea.style.display = 'none';
+      feedbackArea.innerHTML = '';
+      if (ärSista) {
+        kontrolleraSpelslut();
+      } else {
+        nästaRunda();
+      }
     });
   }
 
+  function nästaRunda() {
+    användarGissningar = [];
+    roundIndicator.textContent = `Runda ${rundor + 1} av 5`;
+    uppdateraRäknare();
+    genereraAbsorptionslinjer();
+  }
+
   function kontrolleraSpelslut() {
-      document.getElementById('modal-message').textContent = `Du fick ${poäng}/5 rätt!`;
-      document.getElementById('modal').style.display = 'block';
-      startCountdown(5);
+      document.getElementById('modal-message').innerHTML = `<strong>Spelet är över!</strong><br>Du fick ${poäng}/5 rundor helt rätt.`;
+      document.getElementById('modal').style.display = 'flex';
+      startCountdown(8);
   }
 
   function startCountdown(seconds) {
       let counter = seconds;
+      document.getElementById('countdown').textContent = `Spelet börjar om ${counter}...`;
       const interval = setInterval(() => {
-          document.getElementById('countdown').textContent = `Spelet börjar om ${counter}...`;
           counter--;
-          if (counter < 0) {
+          document.getElementById('countdown').textContent = `Spelet börjar om ${counter}...`;
+          if (counter <= 0) {
               clearInterval(interval);
               window.location.reload(); // Reload the page to restart the game
           }
       }, 1000);
   }
 
+  function startaSpel() {
+    document.getElementById('intro-modal').style.display = 'none';
+    genereraAbsorptionslinjer();
+  }
+
   ritaSpektrum();
-  genereraAbsorptionslinjer(); // Starta spelet omedelbart
+  document.getElementById('intro-modal').style.display = 'flex';
+  document.getElementById('start-game-btn').addEventListener('click', startaSpel);
+  // Förbered quiz-knapparna i bakgrunden så att de syns när modalen stängs
+  uppdateraQuizAvsnitt();
 });
 
 </script>

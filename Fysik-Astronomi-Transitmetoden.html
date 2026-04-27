@@ -73,6 +73,117 @@
         }
 
         .highlight { color: #f1c40f; font-weight: bold; }
+
+        .mode-link {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 14px;
+            background: #f1c40f;
+            color: #000;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            pointer-events: auto;
+        }
+        .mode-link:hover { background: #ffd02f; }
+
+        /* === PLAY MODE === */
+        #play-mode {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            padding: 24px 32px;
+            overflow: auto;
+            z-index: 20;
+            display: none;
+        }
+        #play-header h1 {
+            color: #f1c40f;
+            font-size: 1.4rem;
+            margin: 0 0 6px 0;
+        }
+        #play-header p {
+            color: #ccc;
+            max-width: 900px;
+            font-size: 0.9rem;
+        }
+        #play-score {
+            margin-top: 8px;
+            color: #f1c40f;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        #play-graph-wrap {
+            margin: 18px auto;
+            max-width: 1100px;
+            background: #05050a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        canvas#playGraph {
+            width: 100%;
+            height: 360px;
+            display: block;
+        }
+        #play-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin: 16px 0;
+            flex-wrap: wrap;
+        }
+        .answer-btn {
+            padding: 14px 24px;
+            font-size: 1rem;
+            background: #1f2937;
+            color: white;
+            border: 2px solid #444;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 240px;
+        }
+        .answer-btn:hover:not(:disabled) {
+            background: #2c3e50;
+            border-color: #f1c40f;
+        }
+        .answer-btn:disabled { opacity: 0.5; cursor: default; }
+        #play-feedback {
+            max-width: 1100px;
+            margin: 0 auto 16px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            display: none;
+            color: #eee;
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+        #play-feedback.correct {
+            background: rgba(46, 204, 113, 0.18);
+            border-left: 4px solid #2ecc71;
+        }
+        #play-feedback.wrong {
+            background: rgba(231, 76, 60, 0.18);
+            border-left: 4px solid #e74c3c;
+        }
+        #play-feedback button {
+            margin-top: 10px;
+            padding: 10px 18px;
+            background: #f1c40f;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #back-explore {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 21;
+        }
     </style>
 </head>
 <body>
@@ -81,6 +192,24 @@
         <h1>Exoplanet-jakt</h1>
         <p>Vi ser sällan planeterna direkt. Istället mäter vi stjärnans <span class="highlight">luminositet</span>.</p>
         <p style="margin-top:8px;">I "Zooma ut"-läge ser du hur svagt flimret är i verkligheten när en planet passerar.</p>
+        <a href="#play" class="mode-link">▶ Spel-läge: identifiera exoplaneter</a>
+    </div>
+
+    <div id="play-mode">
+        <a href="#" class="mode-link" id="back-explore">← Tillbaka till simuleringen</a>
+        <div id="play-header">
+            <h1>Är detta en exoplanet?</h1>
+            <p>Studera ljuskurvan – ett tid/ljusintensitets-diagram. <strong>Regelbundet återkommande</strong> dippar betyder att samma planet passerar framför stjärnan med fast omloppstid. Slumpmässiga eller kaotiska variationer kommer från brus, asteroider eller andra objekt – inte från en planet.</p>
+            <div id="play-score">Runda 1 · Poäng: 0/0</div>
+        </div>
+        <div id="play-graph-wrap">
+            <canvas id="playGraph"></canvas>
+        </div>
+        <div id="play-buttons">
+            <button class="answer-btn" data-answer="yes">✓ Exoplanet (regelbundna dippar)</button>
+            <button class="answer-btn" data-answer="no">✗ Ingen exoplanet</button>
+        </div>
+        <div id="play-feedback"></div>
     </div>
 
     <div id="controls-bottom-left">
@@ -138,7 +267,8 @@
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
-            camera.position.set(0, 10, 28);
+            // Kameran exakt i banplanet så transiten alltid syns visuellt utan att man behöver vrida
+            camera.position.set(0, 0, 28);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -185,7 +315,11 @@
 
             // Planet
             const planetGeometry = new THREE.SphereGeometry(0.8, 32, 32);
-            const planetMaterial = new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 1 });
+            const planetMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2a2a3a,      // Mörkt blågrått – syns endast som svag reflekterad belysning från stjärnan
+                roughness: 1,
+                metalness: 0
+            });
             planet = new THREE.Mesh(planetGeometry, planetMaterial);
             scene.add(planet);
 
@@ -396,7 +530,195 @@
             renderer.render(scene, camera);
         }
 
-        window.onload = init;
+        // ============================================================
+        // PLAY MODE: identifiera exoplaneter från ljuskurvor
+        // ============================================================
+        let playScore = { correct: 0, total: 0 };
+        let currentScenario = null;
+
+        function generateScenario() {
+            const types = ['exoplanet_clear', 'exoplanet_subtle', 'random_dips', 'asteroids', 'flat'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const N = 600;
+            const data = [];
+            const noiseAmp = 0.0015;
+
+            const dips = [];
+            if (type === 'exoplanet_clear') {
+                const period = 70 + Math.floor(Math.random() * 50);
+                const start = Math.floor(Math.random() * period);
+                const depth = 0.012 + Math.random() * 0.01;
+                for (let t = start; t < N; t += period) dips.push({ t, depth, width: 6 });
+            } else if (type === 'exoplanet_subtle') {
+                const period = 60 + Math.floor(Math.random() * 60);
+                const start = Math.floor(Math.random() * period);
+                const depth = 0.005 + Math.random() * 0.004;
+                for (let t = start; t < N; t += period) dips.push({ t, depth, width: 5 });
+            } else if (type === 'random_dips') {
+                const count = 3 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < count; i++) {
+                    dips.push({
+                        t: 30 + Math.floor(Math.random() * (N - 60)),
+                        depth: 0.006 + Math.random() * 0.014,
+                        width: 3 + Math.floor(Math.random() * 6)
+                    });
+                }
+            } else if (type === 'asteroids') {
+                const count = 35 + Math.floor(Math.random() * 30);
+                for (let i = 0; i < count; i++) {
+                    dips.push({
+                        t: Math.floor(Math.random() * N),
+                        depth: 0.002 + Math.random() * 0.005,
+                        width: 1 + Math.floor(Math.random() * 3)
+                    });
+                }
+            }
+
+            for (let i = 0; i < N; i++) {
+                let val = 1.0 + (Math.random() - 0.5) * noiseAmp * 2;
+                dips.forEach(({ t, depth, width }) => {
+                    const dx = (i - t) / width;
+                    val -= depth * Math.exp(-dx * dx);
+                });
+                data.push(val);
+            }
+
+            return {
+                data,
+                type,
+                isExoplanet: type === 'exoplanet_clear' || type === 'exoplanet_subtle'
+            };
+        }
+
+        function drawPlayGraph(data) {
+            const cnv = document.getElementById('playGraph');
+            const cx = cnv.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            const w = cnv.clientWidth;
+            const h = cnv.clientHeight;
+            cnv.width = w * dpr;
+            cnv.height = h * dpr;
+            cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            cx.fillStyle = '#05050a';
+            cx.fillRect(0, 0, w, h);
+
+            const padL = 70, padR = 20, padT = 20, padB = 38;
+            const plotW = w - padL - padR;
+            const plotH = h - padT - padB;
+
+            const min = Math.min(...data);
+            const max = Math.max(...data);
+            const range = (max - min) || 0.005;
+            const yMin = min - range * 0.25;
+            const yMax = max + range * 0.25;
+
+            cx.strokeStyle = '#222';
+            cx.lineWidth = 1;
+            cx.fillStyle = '#888';
+            cx.font = '11px sans-serif';
+
+            for (let i = 0; i <= 4; i++) {
+                const y = padT + (plotH * i / 4);
+                cx.beginPath();
+                cx.moveTo(padL, y);
+                cx.lineTo(padL + plotW, y);
+                cx.stroke();
+                const val = (yMax - (yMax - yMin) * i / 4).toFixed(4);
+                cx.fillText(val, 8, y + 4);
+            }
+            for (let i = 0; i <= 5; i++) {
+                const x = padL + (plotW * i / 5);
+                cx.beginPath();
+                cx.moveTo(x, padT);
+                cx.lineTo(x, padT + plotH);
+                cx.stroke();
+            }
+
+            cx.strokeStyle = '#f1c40f';
+            cx.lineWidth = 2;
+            cx.shadowBlur = 4;
+            cx.shadowColor = '#f1c40f';
+            cx.beginPath();
+            for (let i = 0; i < data.length; i++) {
+                const x = padL + (i / (data.length - 1)) * plotW;
+                const y = padT + plotH - ((data[i] - yMin) / (yMax - yMin)) * plotH;
+                if (i === 0) cx.moveTo(x, y);
+                else cx.lineTo(x, y);
+            }
+            cx.stroke();
+            cx.shadowBlur = 0;
+
+            cx.fillStyle = '#bbb';
+            cx.font = '12px sans-serif';
+            cx.fillText('Tid (dagar) →', padL + plotW - 90, h - 12);
+            cx.save();
+            cx.translate(18, padT + plotH / 2 + 70);
+            cx.rotate(-Math.PI / 2);
+            cx.fillText('Relativ ljusintensitet', 0, 0);
+            cx.restore();
+        }
+
+        function nextScenario() {
+            currentScenario = generateScenario();
+            drawPlayGraph(currentScenario.data);
+            document.getElementById('play-feedback').style.display = 'none';
+            document.querySelectorAll('.answer-btn').forEach(b => b.disabled = false);
+            document.getElementById('play-score').textContent =
+                `Runda ${playScore.total + 1} · Poäng: ${playScore.correct}/${playScore.total}`;
+        }
+
+        function answerScenario(yes) {
+            if (!currentScenario) return;
+            const correct = (yes === currentScenario.isExoplanet);
+            if (correct) playScore.correct++;
+            playScore.total++;
+
+            const explanations = {
+                exoplanet_clear: 'Det fanns tydligt regelbundna dippar med fast omloppstid – samma planet passerar framför stjärnan flera gånger.',
+                exoplanet_subtle: 'Dipparna var små men kommer med fast period – troligen en mindre planet eller längre omloppstid.',
+                random_dips: 'Dipparna var slumpmässigt placerade utan period – troligen mätbrus eller passerande objekt, inte en planet.',
+                asteroids: 'Många små oregelbundna fluktuationer utan tydlig period – ett asteroidbälte eller stoftmoln, ingen planet.',
+                flat: 'Kurvan var nästan helt platt – ingen planet och inga märkbara objekt passerade stjärnan.'
+            };
+
+            const fb = document.getElementById('play-feedback');
+            fb.style.display = 'block';
+            fb.className = correct ? 'correct' : 'wrong';
+            fb.innerHTML =
+                `<strong>${correct ? '✓ Rätt!' : '✗ Fel.'}</strong> ${explanations[currentScenario.type]}` +
+                `<br><button id="next-scenario-btn">Nästa diagram</button>`;
+            document.getElementById('next-scenario-btn').addEventListener('click', nextScenario);
+            document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+            document.getElementById('play-score').textContent =
+                `Runda ${playScore.total} · Poäng: ${playScore.correct}/${playScore.total}`;
+        }
+
+        function initPlayMode() {
+            document.getElementById('info-overlay').style.display = 'none';
+            document.getElementById('controls-bottom-left').style.display = 'none';
+            document.getElementById('graph-container').style.display = 'none';
+            document.getElementById('play-mode').style.display = 'block';
+
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', () => answerScenario(btn.dataset.answer === 'yes'));
+            });
+            nextScenario();
+            window.addEventListener('resize', () => {
+                if (currentScenario) drawPlayGraph(currentScenario.data);
+            });
+        }
+
+        // Hash-baserad dispatch: laddas om vid byte mellan lägen så vi får en ren start
+        window.addEventListener('hashchange', () => location.reload());
+
+        window.onload = function() {
+            if (window.location.hash === '#play') {
+                initPlayMode();
+            } else {
+                init();
+            }
+        };
     </script>
 </body>
 </html>

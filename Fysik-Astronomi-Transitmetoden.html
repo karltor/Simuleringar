@@ -114,6 +114,40 @@
             font-weight: bold;
             font-size: 0.95rem;
         }
+        #difficulty-selector {
+            margin-top: 10px;
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        .diff-btn {
+            margin-left: 8px;
+            padding: 6px 12px;
+            background: #1f2937;
+            color: #ccc;
+            border: 1px solid #444;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .diff-btn.active {
+            background: #f1c40f;
+            color: #000;
+            border-color: #f1c40f;
+            font-weight: bold;
+        }
+        .diff-btn:hover:not(.active) { background: #2c3e50; }
+        .count-btn {
+            padding: 10px 18px;
+            font-size: 0.95rem;
+            background: #1f2937;
+            color: white;
+            border: 2px solid #f1c40f;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            min-width: 110px;
+        }
+        .count-btn:hover { background: #2c3e50; }
         #play-graph-wrap {
             margin: 18px auto;
             max-width: 1100px;
@@ -200,6 +234,11 @@
         <div id="play-header">
             <h1>Är detta en exoplanet?</h1>
             <p>Studera ljuskurvan – ett tid/ljusintensitets-diagram. <strong>Regelbundet återkommande</strong> dippar betyder att samma planet passerar framför stjärnan med fast omloppstid. Slumpmässiga eller kaotiska variationer kommer från brus, asteroider eller andra objekt – inte från en planet.</p>
+            <div id="difficulty-selector">
+                Svårighet:
+                <button class="diff-btn active" data-diff="easy">Enkel (0–1 planet)</button>
+                <button class="diff-btn" data-diff="hard">Svår (0–3 planeter)</button>
+            </div>
             <div id="play-score">Runda 1 · Poäng: 0/0</div>
         </div>
         <div id="play-graph-wrap">
@@ -535,25 +574,52 @@
         // ============================================================
         let playScore = { correct: 0, total: 0 };
         let currentScenario = null;
+        let difficulty = 'easy';
 
         function generateScenario() {
-            const types = ['exoplanet_clear', 'exoplanet_subtle', 'random_dips', 'asteroids', 'flat'];
-            const type = types[Math.floor(Math.random() * types.length)];
             const N = 600;
             const data = [];
             const noiseAmp = 0.0015;
-
             const dips = [];
+            let type, planetCount = 0;
+
+            if (difficulty === 'easy') {
+                const types = ['exoplanet_clear', 'exoplanet_subtle', 'random_dips', 'asteroids', 'flat'];
+                type = types[Math.floor(Math.random() * types.length)];
+            } else {
+                const types = ['exoplanet_multi', 'exoplanet_multi', 'random_dips', 'asteroids', 'flat'];
+                type = types[Math.floor(Math.random() * types.length)];
+            }
+
             if (type === 'exoplanet_clear') {
+                planetCount = 1;
                 const period = 70 + Math.floor(Math.random() * 50);
                 const start = Math.floor(Math.random() * period);
                 const depth = 0.012 + Math.random() * 0.01;
                 for (let t = start; t < N; t += period) dips.push({ t, depth, width: 6 });
             } else if (type === 'exoplanet_subtle') {
+                planetCount = 1;
                 const period = 60 + Math.floor(Math.random() * 60);
                 const start = Math.floor(Math.random() * period);
                 const depth = 0.005 + Math.random() * 0.004;
                 for (let t = start; t < N; t += period) dips.push({ t, depth, width: 5 });
+            } else if (type === 'exoplanet_multi') {
+                planetCount = 1 + Math.floor(Math.random() * 3); // 1, 2 eller 3
+                // Olika djup per planet så att man visuellt kan särskilja dem
+                const depthTiers = [0.018, 0.012, 0.007];
+                const usedPeriods = [];
+                for (let p = 0; p < planetCount; p++) {
+                    let period, attempts = 0;
+                    do {
+                        period = 55 + Math.floor(Math.random() * 110);
+                        attempts++;
+                    } while (attempts < 30 && usedPeriods.some(up => Math.abs(up - period) < 28));
+                    usedPeriods.push(period);
+                    const start = Math.floor(Math.random() * period);
+                    const depth = depthTiers[p];
+                    const width = 5 + Math.floor(Math.random() * 3);
+                    for (let t = start; t < N; t += period) dips.push({ t, depth, width });
+                }
             } else if (type === 'random_dips') {
                 const count = 3 + Math.floor(Math.random() * 4);
                 for (let i = 0; i < count; i++) {
@@ -586,7 +652,8 @@
             return {
                 data,
                 type,
-                isExoplanet: type === 'exoplanet_clear' || type === 'exoplanet_subtle'
+                planetCount,
+                isExoplanet: planetCount > 0
             };
         }
 
@@ -670,28 +737,88 @@
 
         function answerScenario(yes) {
             if (!currentScenario) return;
-            const correct = (yes === currentScenario.isExoplanet);
-            if (correct) playScore.correct++;
+            // I svårt läge måste man också ange antal planeter när man svarar ja
+            if (yes && difficulty === 'hard') {
+                showCountPicker();
+                return;
+            }
+            finalizeAnswer(yes, null);
+        }
+
+        function showCountPicker() {
+            document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
+            const fb = document.getElementById('play-feedback');
+            fb.style.display = 'block';
+            fb.className = '';
+            fb.style.background = 'rgba(241, 196, 15, 0.12)';
+            fb.style.borderLeft = '4px solid #f1c40f';
+            fb.innerHTML = `
+                <strong>Hur många planeter ser du?</strong>
+                <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap: wrap;">
+                    <button class="count-btn" data-count="1">1 planet</button>
+                    <button class="count-btn" data-count="2">2 planeter</button>
+                    <button class="count-btn" data-count="3">3 planeter</button>
+                </div>
+            `;
+            document.querySelectorAll('.count-btn').forEach(btn => {
+                btn.addEventListener('click', () => finalizeAnswer(true, parseInt(btn.dataset.count)));
+            });
+        }
+
+        function finalizeAnswer(yes, guessedCount) {
+            const correctYesNo = (yes === currentScenario.isExoplanet);
+            const checkCount = (difficulty === 'hard' && yes && guessedCount !== null);
+            const correctCount = checkCount ? (guessedCount === currentScenario.planetCount) : true;
+            const fullyCorrect = correctYesNo && correctCount;
+
+            if (fullyCorrect) playScore.correct++;
             playScore.total++;
 
             const explanations = {
                 exoplanet_clear: 'Det fanns tydligt regelbundna dippar med fast omloppstid – samma planet passerar framför stjärnan flera gånger.',
                 exoplanet_subtle: 'Dipparna var små men kommer med fast period – troligen en mindre planet eller längre omloppstid.',
+                exoplanet_multi: 'Flera överlagrade periodiska mönster – varje planet ger sin egen serie av dippar, ofta med olika djup och period.',
                 random_dips: 'Dipparna var slumpmässigt placerade utan period – troligen mätbrus eller passerande objekt, inte en planet.',
                 asteroids: 'Många små oregelbundna fluktuationer utan tydlig period – ett asteroidbälte eller stoftmoln, ingen planet.',
                 flat: 'Kurvan var nästan helt platt – ingen planet och inga märkbara objekt passerade stjärnan.'
             };
 
+            let resultText;
+            if (fullyCorrect) {
+                resultText = '✓ Helt rätt!';
+            } else if (correctYesNo && !correctCount) {
+                resultText = `✗ Nästan – det var en exoplanet, men ${currentScenario.planetCount} planet${currentScenario.planetCount === 1 ? '' : 'er'}, inte ${guessedCount}.`;
+            } else {
+                resultText = '✗ Fel.';
+            }
+
+            let extra = '';
+            if (currentScenario.isExoplanet) {
+                extra = ` (Korrekt antal: ${currentScenario.planetCount} planet${currentScenario.planetCount === 1 ? '' : 'er'}.)`;
+            }
+
             const fb = document.getElementById('play-feedback');
             fb.style.display = 'block';
-            fb.className = correct ? 'correct' : 'wrong';
+            fb.style.background = '';
+            fb.style.borderLeft = '';
+            fb.className = fullyCorrect ? 'correct' : 'wrong';
             fb.innerHTML =
-                `<strong>${correct ? '✓ Rätt!' : '✗ Fel.'}</strong> ${explanations[currentScenario.type]}` +
+                `<strong>${resultText}</strong> ${explanations[currentScenario.type]}${extra}` +
                 `<br><button id="next-scenario-btn">Nästa diagram</button>`;
             document.getElementById('next-scenario-btn').addEventListener('click', nextScenario);
             document.querySelectorAll('.answer-btn').forEach(b => b.disabled = true);
             document.getElementById('play-score').textContent =
                 `Runda ${playScore.total} · Poäng: ${playScore.correct}/${playScore.total}`;
+        }
+
+        function setDifficulty(newDiff) {
+            if (newDiff === difficulty) return;
+            difficulty = newDiff;
+            playScore = { correct: 0, total: 0 };
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.diff === difficulty);
+            });
+            nextScenario();
         }
 
         function initPlayMode() {
@@ -702,6 +829,9 @@
 
             document.querySelectorAll('.answer-btn').forEach(btn => {
                 btn.addEventListener('click', () => answerScenario(btn.dataset.answer === 'yes'));
+            });
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', () => setDifficulty(btn.dataset.diff));
             });
             nextScenario();
             window.addEventListener('resize', () => {

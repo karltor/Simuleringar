@@ -15,30 +15,68 @@ header {
     background-color: #282c34;
     color: white;
     text-align: center;
-    padding: 10px;
+    padding: 4px 10px;
+}
+header h1 {
+    margin: 0;
+    font-size: 18px;
 }
 main {
-    padding: 20px;
+    padding: 8px 14px;
+}
+#introduction {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    color: #444;
+}
+#introduction p {
+    margin: 0;
+}
+#spectrum-display {
+    margin-bottom: 6px;
 }
 #spectrum-display svg {
     width: 100%;
-    height: 300px;
+    height: 110px;
     border: 1px solid #ccc;
+    display: block;
+}
+#guessing-game h2, #results h2 {
+    margin: 4px 0;
+    font-size: 16px;
+}
+#results {
+    margin-top: 6px;
 }
 footer {
-    text-align: center;
-    padding: 10px;
-    background-color: #282c34;
-    color: white;
+    display: none;
 }
 button {
-    padding: 10px;
-    margin: 10px;
+    padding: 6px 10px;
+    margin: 4px;
     cursor: pointer;
-    border: 5px solid transparent; /* Added default transparent border for buttons */
+    border: 4px solid transparent; /* Added default transparent border for buttons */
     background: #f0f0f0;
     border-radius: 4px;
-    font-size: 14px;
+    font-size: 13px;
+    line-height: 1.3;
+    text-align: center;
+    min-width: 140px;
+}
+.gas-name {
+    font-weight: bold;
+    display: block;
+}
+.gas-bands {
+    display: block;
+    font-size: 11px;
+    color: #555;
+    margin-top: 2px;
+}
+#quiz-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 button:disabled {
     cursor: default;
@@ -55,35 +93,46 @@ button:disabled {
     background-color: #1b6;
 }
 #selection-counter {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: bold;
-    margin: 10px 0;
-    padding: 8px 12px;
+    margin: 4px 0;
+    padding: 4px 10px;
     background: #eef;
-    border-left: 5px solid #44a;
+    border-left: 4px solid #44a;
     display: inline-block;
 }
 #round-indicator {
     float: right;
-    font-size: 14px;
+    font-size: 13px;
     color: #555;
-    margin-top: 12px;
+    margin-top: 6px;
 }
 #feedback-area {
-    margin-top: 15px;
-    padding: 15px;
+    margin-top: 6px;
+    padding: 8px 12px;
     background: #fafafa;
     border: 1px solid #ddd;
     border-radius: 4px;
 }
+#feedback-area h3 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+}
+#feedback-area p {
+    margin: 4px 0;
+    font-size: 13px;
+}
 #feedback-area ul {
     list-style: none;
     padding: 0;
+    margin: 4px 0;
 }
 #feedback-area li {
-    padding: 8px;
-    margin: 6px 0;
+    padding: 4px 8px;
+    margin: 3px 0;
     border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.3;
 }
 .feedback-correct {
     background: #e6f7e6;
@@ -96,15 +145,6 @@ button:disabled {
 .feedback-missed {
     background: #fff5d6;
     border-left: 5px solid #e0a800;
-}
-.tooltip {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    border: 1px solid #d3d3d3;
-    padding: 5px;
-    z-index: 1000;
-    max-width: 200px;
 }
 #modal, #intro-modal {
     display: none;
@@ -144,7 +184,7 @@ button:disabled {
     </header>
     <main>
         <section id="introduction">
-            <p>Lär dig om användningen av spektroskopi för att identifiera atmosfäriska gaser på exoplaneter.</p>
+            <p>Identifiera atmosfäriska gaser på exoplaneter genom att läsa av spektrumets absorptionslinjer.</p>
         </section>
         <section id="spectrum-display">
             <svg></svg>
@@ -160,9 +200,9 @@ button:disabled {
               <p>Den färgade rutan ovan visar ett spektrum. De svarta strecken är <strong>absorptionslinjer</strong> – våglängder där gaser i en exoplanets atmosfär har slukat ljuset.</p>
               <p><strong>Din uppgift:</strong></p>
               <ol>
-                  <li>Studera var de svarta strecken sitter.</li>
-                  <li>Välj de <strong>3 gaser</strong> som du tror skapat mönstret.</li>
-                  <li>Håll muspekaren över en knapp för att se vid vilka våglängder gasen absorberar.</li>
+                  <li>Studera var de svarta strecken sitter (i nm).</li>
+                  <li>På varje knapp står de våglängder där gasen absorberar – jämför med spektrumet.</li>
+                  <li>Tryck på de <strong>3 gaser</strong> som du tror skapat mönstret.</li>
               </ol>
               <p>Du spelar 5 rundor. Efter varje runda får du veta vilka du valde rätt på.</p>
               <button id="start-game-btn" class="cta-button">Starta spelet</button>
@@ -186,7 +226,7 @@ button:disabled {
     </footer>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
-  const spectrumSvg = d3.select('#spectrum-display svg').attr('height', '150');
+  const spectrumSvg = d3.select('#spectrum-display svg').attr('height', '110');
   const quizSection = document.getElementById('quiz-section');
   const resultsSummary = document.getElementById('results-summary');
   const selectionCounter = document.getElementById('selection-counter');
@@ -304,22 +344,10 @@ document.addEventListener('DOMContentLoaded', function() {
       blandaGaser().forEach(gas => {
           const knapp = document.createElement('button');
           knapp.dataset.gasName = gas.name;
-          const verktygstips = document.createElement('div');
-          verktygstips.className = 'tooltip';
-          verktygstips.innerHTML = gas.bands.map(band => `${band.wavelength} nm: ${band.strength}`).join('<br>');
-          knapp.textContent = gas.name;
-          knapp.appendChild(verktygstips);
-
-          knapp.addEventListener('mouseover', function() {
-              verktygstips.style.display = 'block';
-          });
-          knapp.addEventListener('mousemove', function(e) {
-              verktygstips.style.left = `${e.pageX + 10}px`;
-              verktygstips.style.top = `${e.pageY + 10}px`;
-          });
-          knapp.addEventListener('mouseout', function() {
-              verktygstips.style.display = 'none';
-          });
+          knapp.innerHTML = `
+              <span class="gas-name">${gas.name}</span>
+              <span class="gas-bands">${gas.bands.map(b => `${b.wavelength} nm`).join(' · ')}</span>
+          `;
 
           knapp.addEventListener('click', function() {
               if (knapp.disabled) return;

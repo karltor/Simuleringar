@@ -224,6 +224,97 @@ h3 { font-size: 16px; margin: 8px 0 6px 0; }
 footer {
     display: none;
 }
+
+/* === Spelläge (?play) === */
+#play-panel { display: none; }
+body.play-mode #layout { display: none; }
+body.play-mode #play-panel { display: block; }
+body.play-mode #introduction { background: #fffbe6; border-left-color: #e0a800; }
+
+#play-panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 14px 18px;
+}
+#play-scenario {
+    background: #f8f8fa;
+    border-left: 5px solid #44a;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.55;
+    margin-bottom: 12px;
+}
+#play-scenario h3 { margin: 0 0 6px 0; color: #228; }
+#play-clues { margin: 10px 0; }
+.clue {
+    background: #eef4ff;
+    border-left: 4px solid #44a;
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: 4px;
+    font-size: 15px;
+    line-height: 1.45;
+}
+#play-question {
+    margin: 14px 0 8px 0;
+    font-weight: bold;
+    font-size: 16px;
+}
+.guess-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+.guess-btn {
+    padding: 10px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    border: 2px solid #888;
+    background: #f0f0f0;
+    border-radius: 6px;
+    cursor: pointer;
+    min-width: 44px;
+}
+.guess-btn:hover { background: #e6ecff; }
+.guess-btn.selected { background: #44a; color: white; border-color: #228; }
+.guess-btn.outcome { flex: 1 1 30%; min-width: 130px; text-align: center; }
+
+#play-feedback {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 15px;
+    line-height: 1.5;
+    display: none;
+}
+#play-feedback.correct { background: #e6f7e6; border-left: 5px solid #2c7; display: block; }
+#play-feedback.wrong { background: #fde8e8; border-left: 5px solid #c33; display: block; }
+#play-feedback.partial { background: #fff3cd; border-left: 5px solid #e0a800; display: block; }
+
+#play-score {
+    float: right;
+    font-weight: bold;
+    color: #228;
+    background: #eef;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.play-link {
+    display: inline-block;
+    margin-top: 4px;
+    background: #e0a800;
+    color: #222;
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+}
+.play-link:hover { background: #c89000; color: white; }
 </style>
 </head>
 <body>
@@ -235,7 +326,33 @@ footer {
             <p>När forskare söker efter liv ute i rymden händer det ibland att en tidning skriker <em>"Liv hittat på Mars!"</em> – för att veckan efter ändra sig. Hur ska man veta vad man ska tro?</p>
             <p>För att slippa förvirring föreslog NASA år 2021 en <strong>stege med 7 steg</strong> som kallas <strong>CoLD-skalan</strong> (engelska för <em>Confidence of Life Detection</em> = "hur säkra vi är på att vi hittat liv"). Varje upptäckt får klättra uppåt – från första lilla ledtråd (steg 1) till säker bekräftelse (steg 7).</p>
             <p>👉 Välj ett verkligt fall nedan och tryck på <strong>"Nästa steg"</strong>. Se hur upptäckten klättrar – och var den <span style="color:#c33;font-weight:bold">dör</span> eller <span style="color:#44a;font-weight:bold">väntar</span> på mer data.</p>
+            <p id="mode-toggle">
+                <a class="play-link" href="?play">🎮 Spela: gissa var fyndet hamnar!</a>
+                <a class="play-link" href="?" style="display:none;background:#888;color:white;" id="exit-play">← Tillbaka till lärläget</a>
+            </p>
         </section>
+        <div id="play-panel">
+            <div id="play-score">Poäng: 0 / 0</div>
+            <h2 style="margin-top:0;">🎮 Var hamnar fyndet på CoLD-skalan?</h2>
+            <div id="play-scenario"></div>
+            <div id="play-clues"></div>
+            <div class="controls" id="play-controls-top">
+                <button id="clue-btn" class="cta secondary">🔍 Mer information</button>
+            </div>
+            <div id="play-question">På vilket <strong>steg</strong> tror du att fyndet stannar?</div>
+            <div class="guess-row" id="step-guesses"></div>
+            <div id="play-question">Och vad händer där?</div>
+            <div class="guess-row" id="outcome-guesses">
+                <button class="guess-btn outcome" data-outcome="pass">🚀 Klättrar hela vägen till steg 7</button>
+                <button class="guess-btn outcome" data-outcome="wait">⏳ Väntar på mer data</button>
+                <button class="guess-btn outcome" data-outcome="die">✗ Dör – kan inte klättra vidare</button>
+            </div>
+            <div class="controls">
+                <button id="submit-guess-btn" class="cta">Lås in mitt svar</button>
+                <button id="next-scenario-btn" class="cta" style="display:none;">Nästa scenario ▶</button>
+            </div>
+            <div id="play-feedback"></div>
+        </div>
         <div id="layout">
             <div class="panel">
                 <h2>Välj ett fall</h2>
@@ -378,6 +495,27 @@ const resetBtn = document.getElementById('reset-btn');
 let aktivtFall = null;
 let stegIndex = -1;
 
+// === Spelläge-state ===
+const playScenarioEl = document.getElementById('play-scenario');
+const playCluesEl = document.getElementById('play-clues');
+const clueBtn = document.getElementById('clue-btn');
+const stepGuessesEl = document.getElementById('step-guesses');
+const outcomeGuessesEl = document.getElementById('outcome-guesses');
+const submitGuessBtn = document.getElementById('submit-guess-btn');
+const nextScenarioBtn = document.getElementById('next-scenario-btn');
+const playFeedbackEl = document.getElementById('play-feedback');
+const playScoreEl = document.getElementById('play-score');
+
+let playFall = null;
+let playCluesShown = 0;
+let playStepGuess = null;
+let playOutcomeGuess = null;
+let playLocked = false;
+let playOrder = [];
+let playPos = 0;
+let playPoints = 0;
+let playRounds = 0;
+
 function ritaStege() {
   ladderEl.innerHTML = '';
   STEG.forEach(s => {
@@ -491,8 +629,159 @@ function reset() {
 nextBtn.addEventListener('click', nästaSteg);
 resetBtn.addEventListener('click', reset);
 
+// === Spelläge-funktioner ===
+function blandaOrdning() {
+  playOrder = FALL.map((_, i) => i);
+  for (let i = playOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [playOrder[i], playOrder[j]] = [playOrder[j], playOrder[i]];
+  }
+  playPos = 0;
+}
+
+function ritaStegKnappar() {
+  stepGuessesEl.innerHTML = '';
+  for (let n = 1; n <= 7; n++) {
+    const b = document.createElement('button');
+    b.className = 'guess-btn';
+    b.dataset.steg = n;
+    b.textContent = n;
+    b.addEventListener('click', () => {
+      if (playLocked) return;
+      playStepGuess = n;
+      stepGuessesEl.querySelectorAll('.guess-btn').forEach(x =>
+        x.classList.toggle('selected', parseInt(x.dataset.steg) === n));
+    });
+    stepGuessesEl.appendChild(b);
+  }
+}
+
+function laddaScenario() {
+  if (playPos >= playOrder.length) blandaOrdning();
+  playFall = FALL[playOrder[playPos]];
+  playPos++;
+  playCluesShown = 0;
+  playStepGuess = null;
+  playOutcomeGuess = null;
+  playLocked = false;
+
+  playScenarioEl.innerHTML = `<h3>${playFall.namn}</h3><div>${playFall.intro}</div>`;
+  playCluesEl.innerHTML = '';
+  playFeedbackEl.style.display = 'none';
+  playFeedbackEl.className = '';
+  stepGuessesEl.querySelectorAll('.guess-btn').forEach(b => b.classList.remove('selected'));
+  outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(b => b.classList.remove('selected'));
+  submitGuessBtn.style.display = '';
+  submitGuessBtn.disabled = false;
+  nextScenarioBtn.style.display = 'none';
+  clueBtn.disabled = false;
+  clueBtn.textContent = '🔍 Mer information';
+  uppdateraPoäng();
+}
+
+function visaLedtråd() {
+  if (playLocked || !playFall) return;
+  // Visa nästa stegs text MEN dölj typ-ord (pass/die/wait) som skulle avslöja svaret
+  // Stoppa innan sista steget – det skulle annars ge bort facit
+  const max = playFall.steg.length - 1;
+  if (playCluesShown >= max) {
+    clueBtn.disabled = true;
+    clueBtn.textContent = '(Inga fler ledtrådar – gissa nu!)';
+    return;
+  }
+  const händelse = playFall.steg[playCluesShown];
+  // Bara "pass"-steg ges som fria ledtrådar (för dessa har fyndet redan klättrat)
+  // Om det är wait/die hoppar vi inte – men vi når aldrig hit eftersom vi stoppar före sista
+  const div = document.createElement('div');
+  div.className = 'clue';
+  div.innerHTML = `💡 ${händelse.text}`;
+  playCluesEl.appendChild(div);
+  playCluesShown++;
+  if (playCluesShown >= max) {
+    clueBtn.disabled = true;
+    clueBtn.textContent = '(Inga fler ledtrådar – gissa nu!)';
+  }
+}
+
+function låsSvar() {
+  if (playLocked || !playFall) return;
+  if (playStepGuess === null || playOutcomeGuess === null) {
+    playFeedbackEl.className = 'partial';
+    playFeedbackEl.innerHTML = '⚠️ Välj <strong>både</strong> ett steg (1–7) och vad som händer där.';
+    return;
+  }
+  playLocked = true;
+  clueBtn.disabled = true;
+  submitGuessBtn.style.display = 'none';
+  nextScenarioBtn.style.display = '';
+
+  const sista = playFall.steg[playFall.steg.length - 1];
+  const rättSteg = playFall.steg.length;
+  const rättUtfall = sista.typ;
+
+  let stegPoäng = 0;
+  const stegDiff = Math.abs(playStepGuess - rättSteg);
+  if (stegDiff === 0) stegPoäng = 2;
+  else if (stegDiff === 1) stegPoäng = 1;
+  const utfallPoäng = (playOutcomeGuess === rättUtfall) ? 2 : 0;
+  const totalt = stegPoäng + utfallPoäng;
+
+  playPoints += totalt;
+  playRounds++;
+  uppdateraPoäng();
+
+  const utfallText = { pass: '🚀 klättrade hela vägen till steg 7', wait: '⏳ väntar på mer data', die: '✗ dog' }[rättUtfall];
+  let klass = 'wrong';
+  if (totalt === 4) klass = 'correct';
+  else if (totalt >= 2) klass = 'partial';
+
+  playFeedbackEl.className = klass;
+  playFeedbackEl.innerHTML = `
+    <strong>Du fick ${totalt} av 4 poäng.</strong><br>
+    Rätt svar: <strong>steg ${rättSteg}</strong>, där fyndet ${utfallText}.<br><br>
+    <em>Vad som faktiskt hände:</em><br>${sista.text}
+  `;
+}
+
+function uppdateraPoäng() {
+  playScoreEl.textContent = `Poäng: ${playPoints} / ${playRounds * 4}`;
+}
+
+clueBtn.addEventListener('click', visaLedtråd);
+submitGuessBtn.addEventListener('click', låsSvar);
+nextScenarioBtn.addEventListener('click', laddaScenario);
+
 ritaStege();
 ritaFallKnappar();
+ritaStegKnappar();
+
+outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    if (playLocked) return;
+    playOutcomeGuess = b.dataset.outcome;
+    outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(x =>
+      x.classList.toggle('selected', x === b));
+  });
+});
+
+// === Router: ?play aktiverar spelläget ===
+function checkPlayMode() {
+  const params = new URLSearchParams(window.location.search);
+  const playLink = document.querySelector('#mode-toggle .play-link');
+  const exitLink = document.getElementById('exit-play');
+  if (params.has('play')) {
+    document.body.classList.add('play-mode');
+    if (playLink) playLink.style.display = 'none';
+    if (exitLink) exitLink.style.display = 'inline-block';
+    blandaOrdning();
+    laddaScenario();
+  } else {
+    document.body.classList.remove('play-mode');
+    if (playLink) playLink.style.display = 'inline-block';
+    if (exitLink) exitLink.style.display = 'none';
+  }
+}
+checkPlayMode();
 </script>
 </body>
 </html>

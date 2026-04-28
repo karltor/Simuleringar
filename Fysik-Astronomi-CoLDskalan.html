@@ -20,24 +20,25 @@ header {
 }
 header h1 {
     margin: 0;
-    font-size: 18px;
+    font-size: 22px;
 }
 main {
-    padding: 10px 16px;
-    max-width: 1100px;
+    padding: 14px 18px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 #introduction {
-    font-size: 13px;
-    color: #333;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #222;
     background: #fff;
-    border-left: 4px solid #44a;
-    padding: 8px 12px;
-    margin-bottom: 10px;
+    border-left: 5px solid #44a;
+    padding: 12px 16px;
+    margin-bottom: 14px;
 }
-#introduction p { margin: 4px 0; }
-h2 { font-size: 15px; margin: 10px 0 6px 0; }
-h3 { font-size: 14px; margin: 6px 0 4px 0; }
+#introduction p { margin: 6px 0; }
+h2 { font-size: 18px; margin: 12px 0 8px 0; }
+h3 { font-size: 16px; margin: 8px 0 6px 0; }
 
 #layout {
     display: grid;
@@ -62,24 +63,25 @@ h3 { font-size: 14px; margin: 6px 0 4px 0; }
     margin-bottom: 8px;
 }
 .case-btn {
-    padding: 6px 10px;
+    padding: 10px 12px;
     cursor: pointer;
     border: 2px solid #888;
     background: #f0f0f0;
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.3;
+    border-radius: 6px;
+    font-size: 15px;
+    line-height: 1.35;
     text-align: left;
     flex: 1 1 45%;
-    min-width: 130px;
+    min-width: 160px;
+    font-weight: 600;
 }
 .case-btn:hover { background: #e6ecff; }
 .case-btn.active { background: #44a; color: white; border-color: #228; }
 
 .controls {
     display: flex;
-    gap: 6px;
-    margin-top: 6px;
+    gap: 8px;
+    margin-top: 10px;
     flex-wrap: wrap;
 }
 .cta {
@@ -87,10 +89,10 @@ h3 { font-size: 14px; margin: 6px 0 4px 0; }
     color: white;
     font-weight: bold;
     border: none;
-    padding: 8px 14px;
-    border-radius: 4px;
+    padding: 12px 20px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 16px;
 }
 .cta:hover { background: #1b6; }
 .cta.secondary { background: #888; }
@@ -108,20 +110,22 @@ h3 { font-size: 14px; margin: 6px 0 4px 0; }
 }
 .rung {
     border: 2px solid #ccc;
-    border-radius: 6px;
-    padding: 6px 10px;
+    border-radius: 8px;
+    padding: 10px 14px;
+    padding-right: 44px;
     background: #fafafa;
     transition: all 0.4s ease;
     position: relative;
 }
 .rung .rung-title {
     font-weight: bold;
-    font-size: 13px;
+    font-size: 16px;
 }
 .rung .rung-desc {
-    font-size: 12px;
-    color: #555;
-    margin-top: 2px;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #444;
+    margin-top: 4px;
 }
 .rung.passed {
     background: #e6f7e6;
@@ -143,33 +147,34 @@ h3 { font-size: 14px; margin: 6px 0 4px 0; }
 }
 .token {
     position: absolute;
-    right: 8px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 18px;
+    font-size: 24px;
 }
 
 #status-box {
-    margin-top: 8px;
-    padding: 8px 10px;
+    margin-top: 10px;
+    padding: 12px 14px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 16px;
+    line-height: 1.5;
     background: #eef;
-    border-left: 4px solid #44a;
-    min-height: 60px;
+    border-left: 5px solid #44a;
+    min-height: 70px;
+}
+#case-info {
+    font-size: 15px;
+    line-height: 1.5;
+    color: #333;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #f8f8fa;
+    border-radius: 6px;
 }
 #status-box.died { background: #fde8e8; border-left-color: #c33; }
 #status-box.waiting { background: #e8f0ff; border-left-color: #44a; }
 #status-box.complete { background: #e6f7e6; border-left-color: #2c7; }
-
-#case-info {
-    font-size: 12px;
-    color: #444;
-    margin-top: 6px;
-    padding: 6px 8px;
-    background: #f8f8fa;
-    border-radius: 4px;
-}
 
 footer {
     display: none;
@@ -182,8 +187,9 @@ footer {
     </header>
     <main>
         <section id="introduction">
-            <p><strong>CoLD-skalan</strong> (Confidence of Life Detection) föreslogs av NASA år 2021 som ett sätt att kommunicera <em>hur säkra vi är</em> på en upptäckt av liv utanför jorden. Istället för rubriker som "Liv hittat på Mars!" placeras en upptäckt på en stege med <strong>7 steg</strong> – från en första intressant signal (steg 1) hela vägen till oberoende bekräftelse (steg 7).</p>
-            <p>Välj ett verkligt fall nedan och tryck på <strong>"Nästa steg"</strong> för att se hur upptäckten klättrar uppför skalan – och var den fastnar, dör eller väntar på mer data.</p>
+            <p>När forskare söker efter liv ute i rymden händer det ibland att en tidning skriker <em>"Liv hittat på Mars!"</em> – för att veckan efter ändra sig. Hur ska man veta vad man ska tro?</p>
+            <p>För att slippa förvirring föreslog NASA år 2021 en <strong>stege med 7 steg</strong> som kallas <strong>CoLD-skalan</strong> (engelska för <em>Confidence of Life Detection</em> = "hur säkra vi är på att vi hittat liv"). Varje upptäckt får klättra uppåt – från första lilla ledtråd (steg 1) till säker bekräftelse (steg 7).</p>
+            <p>👉 Välj ett verkligt fall nedan och tryck på <strong>"Nästa steg"</strong>. Se hur upptäckten klättrar – och var den <span style="color:#c33;font-weight:bold">dör</span> eller <span style="color:#44a;font-weight:bold">väntar</span> på mer data.</p>
         </section>
         <div id="layout">
             <div class="panel">
@@ -209,105 +215,105 @@ footer {
 const STEG = [
   {
     nr: 1,
-    titel: "Steg 1 – Möjlig signal upptäckt",
-    kort: "En signal som <em>skulle kunna</em> komma från liv har observerats.",
-    exempel: "Ex: ett teleskop ser en gas i en exoplanets atmosfär, eller ett rymdsondsinstrument visar utslag som biologi kan förklara."
+    titel: "Steg 1 – Vi har sett något spännande",
+    kort: "Ett instrument visar en signal som <em>skulle kunna</em> komma från liv.",
+    exempel: "T.ex. ett teleskop upptäcker en gas i luften runt en planet långt borta, eller en rymdsond mäter något konstigt i marken."
   },
   {
     nr: 2,
-    titel: "Steg 2 – Instrument & kontamination uteslutna",
-    kort: "Signalen är inte ett mätfel, brus eller jordisk förorening.",
-    exempel: "Ex: instrumentet kalibreras om, mätningen upprepas, kontrollprover analyseras. Många 'liv-upptäckter' faller här."
+    titel: "Steg 2 – Det är inget mätfel",
+    kort: "Signalen är på riktigt – inte ett trasigt instrument eller smuts från jorden.",
+    exempel: "Forskarna kollar att utrustningen fungerar och att inga bakterier från jorden råkat följa med rymdsonden. Många \"liv-upptäckter\" stannar här."
   },
   {
     nr: 3,
-    titel: "Steg 3 – Signalen är verkligen en biosignatur",
-    kort: "Det vi mätt är faktiskt något som biologi <em>kan</em> producera (rätt molekyl, rätt isotop, rätt mönster).",
-    exempel: "Ex: spektrallinjen tolkas rätt, molekylen identifieras säkert – inte förväxlad med en annan."
+    titel: "Steg 3 – Vi vet vad signalen betyder",
+    kort: "Vi är säkra på vilken molekyl eller struktur vi sett – och den kan komma från liv.",
+    exempel: "Tänk dig att du ser ett fotavtryck i sanden. Här bekräftar vi: ja, det ÄR ett fotavtryck, inte bara en grop. Och fotavtryck kan djur lämna."
   },
   {
     nr: 4,
-    titel: "Steg 4 – Icke-biologiska källor i miljön uteslutna",
-    kort: "Geologi, kemi, fotokemi eller strålning kan inte förklara fyndet.",
-    exempel: "Ex: vulkaner, kometer, UV-driven kemi eller mineralreaktioner kan också skapa molekylen – kan vi utesluta dem?"
+    titel: "Steg 4 – Inget annat än liv kan ha gjort det",
+    kort: "Vi har testat alla andra möjliga förklaringar – vulkaner, blixtar, solens strålning – och de funkar inte.",
+    exempel: "Tillbaka till fotavtrycket: kan vinden ha format det? Kan en sten ha trillat ner? Om alla andra förklaringar faller bort återstår ett djur."
   },
   {
     nr: 5,
-    titel: "Steg 5 – Oberoende mätning bekräftar signalen",
-    kort: "Ett annat instrument, ett annat team eller en annan metod ser samma sak.",
-    exempel: "Ex: ett rymdteleskop bekräftar vad ett markteleskop såg, eller en ny rymdsond återbesöker platsen."
+    titel: "Steg 5 – Någon annan ser samma sak",
+    kort: "Ett annat forskarteam med ett annat instrument upptäcker exakt samma sak.",
+    exempel: "Som när du tror att du sett ett norrsken – och din kompis i nästa stad också ser det. Då vet du att det inte var inbillning."
   },
   {
     nr: 6,
-    titel: "Steg 6 – Alla rimliga icke-biologiska hypoteser uteslutna",
-    kort: "Hela paletten av abiotiska förklaringar har testats och fallit.",
-    exempel: "Ex: laboratorieexperiment, modellering och teori visar att inget annat än liv passar all data."
+    titel: "Steg 6 – Alla tvivel är borta",
+    kort: "Forskare runt hela världen har testat varje annan idé – inget annat än liv passar.",
+    exempel: "Det är inte längre EN grupp som tycker det är liv. Hela forskarvärlden är överens efter många experiment och beräkningar."
   },
   {
     nr: 7,
-    titel: "Steg 7 – Oberoende bevislinje stödjer slutsatsen",
-    kort: "En helt annan typ av bevis pekar åt samma håll – starkast möjliga säkerhet.",
-    exempel: "Ex: man har inte bara hittat en gas utan också mikroskopisk struktur, isotopmönster och kemiska gradienter som alla stämmer med liv."
+    titel: "Steg 7 – Två helt olika bevis pekar åt samma håll",
+    kort: "Inte bara en gas – utan också t.ex. mikroskopiska former och kemi som passar liv. Säkerheten är som starkast.",
+    exempel: "Som att hitta både fotavtrycket OCH päls OCH bajs från djuret. Då är det knappast något annat än ett djur."
   }
 ];
 
 const FALL = [
   {
-    namn: "ALH84001 – Marsmeteoriten (1996)",
-    intro: "President Bill Clinton höll presskonferens. Forskare hittade strukturer i en Marsmeteorit som <em>liknade</em> bakteriefossiler. Hur högt klättrade fyndet?",
+    namn: "Marsmeteoriten ALH84001 (1996)",
+    intro: "En sten från Mars hittades i Antarktis. Inuti såg forskarna pyttesmå former som liknade bakterier. USA:s president gick ut i TV och berättade om upptäckten!",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: små maskliknande strukturer + magnetit + organiska molekyler i meteoriten." },
-      { typ: "pass", text: "2. Inte kontamination – meteoritens inre var skyddat (även om jordisk inblandning senare diskuterats)." },
-      { typ: "pass", text: "3. Strukturerna och molekylerna är sådana som <em>kan</em> ha biologiskt ursprung." },
-      { typ: "die",  text: "4. <strong>Här dog fyndet.</strong> Magnetitkristallerna och 'mikrofossilerna' kunde förklaras av rent geokemiska processer. Strukturerna var dessutom mindre än kända jordiska bakterier. Den abiotiska förklaringen kunde inte uteslutas." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Maskliknande former hittades inuti meteoriten – något att titta närmare på." },
+      { typ: "pass", text: "<strong>Steg 2.</strong> Inte mätfel – formerna fanns djupt inne i stenen, skyddade från jordens bakterier." },
+      { typ: "pass", text: "<strong>Steg 3.</strong> Formerna ser ut som något bakterier <em>kan</em> ha gjort." },
+      { typ: "die",  text: "<strong>Steg 4 – här dog fyndet! ✗</strong><br>Det visade sig att <em>vanlig kemi</em> kan göra exakt samma sorts former, helt utan liv. Formerna var dessutom mycket mindre än några bakterier vi känner till på jorden. Vi kunde alltså inte utesluta att det bara var sten som råkat se levande ut." }
     ]
   },
   {
-    namn: "Viking Labeled Release (1976)",
-    intro: "NASA:s Viking-landare blandade Marsjord med näringslösning märkt med radioaktivt kol. Mätningen gav utslag – som om något åt näringen!",
+    namn: "Viking-experimentet på Mars (1976)",
+    intro: "NASA:s Viking-landare hällde \"mat\" (näringslösning) på Marsjord för att se om det fanns mikrober som kunde äta upp den. Och något hände – det bubblade upp gas, precis som om något levde där!",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: radioaktivt CO₂ frigjordes ur jorden, precis som mikrober skulle göra." },
-      { typ: "pass", text: "2. Instrumentet fungerade och resultatet upprepades." },
-      { typ: "die",  text: "3. <strong>Här dog (de flesta) fyndet.</strong> Ett annat Viking-instrument hittade <em>inga</em> organiska molekyler. Reaktionen kunde förklaras av starkt oxiderande ämnen i jorden (perklorater, senare bekräftade). Signalen var alltså troligen ren kemi, inte biologi – även om en minoritet av forskare än idag tolkar det som möjligt liv." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Marsjorden gav ifrån sig gas när den blandades med näring – precis som om bakterier åt." },
+      { typ: "pass", text: "<strong>Steg 2.</strong> Instrumenten fungerade och försöket upprepades flera gånger." },
+      { typ: "die",  text: "<strong>Steg 3 – här dog fyndet för de flesta forskare. ✗</strong><br>Ett annat instrument på Viking letade efter byggstenar för liv (organiska ämnen) i samma jord – och hittade <em>inga</em>. Liv utan byggstenar går inte. Senare upptäcktes att Marsjorden innehåller starka kemikalier (perklorater) som <em>själva</em> kan skapa bubblorna. Troligen var det alltså bara kemi, inte liv." }
     ]
   },
   {
     namn: "Fosfin på Venus (2020)",
-    intro: "Ett team rapporterade att de upptäckt fosfin (PH₃) i Venus moln – en gas som på jorden bara produceras av liv eller industri.",
+    intro: "Ett forskarteam meddelade att de hittat gasen fosfin i Venus moln. På jorden tillverkas fosfin nästan bara av bakterier (eller fabriker). Var det ett tecken på liv i Venus moln?",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: spektrallinje vid 1,1 mm tolkades som fosfin i molnlagret." },
-      { typ: "die",  text: "2. <strong>Här haltade fyndet redan.</strong> Återanalys av data och nya mätningar av andra team antydde att signalen kunde vara svaveldioxid (SO₂) i högre atmosfärslager – alltså möjligen ett mätfel/feltolkning. Debatten pågår, men fyndet klättrade aldrig stadigt vidare." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Teleskop såg ett mönster i ljuset från Venus som kunde betyda fosfin." },
+      { typ: "die",  text: "<strong>Steg 2 – fyndet vacklade redan här. ✗</strong><br>Andra forskare gick igenom samma data och med nya mätningar – och tyckte att signalen lika gärna kunde vara en helt annan gas (svaveldioxid). Instrumentet kanske helt enkelt blandade ihop två gaser. Diskussionen pågår än idag, men fyndet kunde aldrig klättra säkert vidare." }
     ]
   },
   {
-    namn: "DMS på K2-18b (2023)",
-    intro: "James Webb-teleskopet upptäckte möjlig dimetylsulfid (DMS) i atmosfären på exoplaneten K2-18b – en molekyl som på jorden mest produceras av plankton.",
+    namn: "DMS på exoplaneten K2-18b (2023)",
+    intro: "Rymdteleskopet James Webb undersökte luften runt en planet 124 ljusår bort. De såg ett svagt spår av gasen DMS – en gas som på jorden mest tillverkas av plankton i havet.",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: spektrum från JWST visade en svag topp där DMS absorberar." },
-      { typ: "pass", text: "2. Inte kontamination – JWST är i rymden, långt från jordisk DMS." },
-      { typ: "wait", text: "3. <strong>Här väntar fyndet.</strong> Detektionen av just DMS är statistiskt svag. Det krävs fler observationer för att säkert säga att det <em>är</em> DMS och inte t.ex. metan eller överlappande molekyler." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Webb-teleskopet såg en liten topp i ljuset där DMS skulle ge utslag." },
+      { typ: "pass", text: "<strong>Steg 2.</strong> Inte mätfel från jorden – Webb-teleskopet är ute i rymden, långt från allt jordiskt." },
+      { typ: "wait", text: "<strong>Steg 3 – fyndet väntar. ⏳</strong><br>Signalen är så svag att forskarna inte är säkra på om det <em>verkligen</em> är DMS, eller någon annan gas som råkar likna. Vi måste vänta på fler och bättre mätningar innan vi vågar säga något." }
     ]
   },
   {
-    namn: "Metanplymer på Mars (Curiosity)",
-    intro: "Curiosity-rovern och rymdsonden Mars Express har båda mätt tillfälliga utbrott av metan i Marsatmosfären.",
+    namn: "Metan-utsläpp på Mars (Curiosity-rovern)",
+    intro: "Mars-roboten Curiosity har gång på gång uppmätt små puffar av metan i Marsluften. Metan är spännande för på jorden kommer mycket av den från kor, bakterier och annat liv.",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: metan (CH₄) varierar mellan årstider i Gale-kratern." },
-      { typ: "pass", text: "2. Instrumentet kalibrerades, signalen är reell." },
-      { typ: "pass", text: "3. Metan <em>är</em> en känd biosignatur (men också en geokemisk gas)." },
-      { typ: "wait", text: "4. <strong>Här väntar fyndet.</strong> Metan kan komma från serpentinisering (vatten + olivin), gamla gasförråd som läcker, eller mikrober. Vi behöver mätningar av <em>isotopförhållanden</em> (¹²C/¹³C) för att gå vidare – levande organismer föredrar lättare kol." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Metan dyker upp och försvinner i Mars luft – något skapar den hela tiden." },
+      { typ: "pass", text: "<strong>Steg 2.</strong> Roboten är välkalibrerad – mätningen är inget fel." },
+      { typ: "pass", text: "<strong>Steg 3.</strong> Det är säkert metan, ingen annan gas." },
+      { typ: "wait", text: "<strong>Steg 4 – fyndet väntar. ⏳</strong><br>Metan kan komma från mikrober – men också från reaktioner mellan vatten och vissa mineraler djupt under marken, helt utan liv. För att gå vidare behöver vi en ny rymdsond som kan mäta vilken <em>sorts</em> kol metanen är gjord av (levande varelser föredrar en lättare sort). Den mätningen finns inte än." }
     ]
   },
   {
-    namn: "Hypotetiskt: Syre + metan tillsammans på exoplanet",
-    intro: "Föreställ dig att JWST eller dess efterföljare en dag mäter <em>både</em> syre (O₂) och metan (CH₄) i en jordlik exoplanets atmosfär. På jorden förstör dessa varandra – de kan bara samexistera om något fyller på dem ständigt.",
+    namn: "Tänk om: syre OCH metan på samma planet",
+    intro: "Tänk dig att vi i framtiden hittar en planet med <em>både</em> syre och metan i luften. På jorden \"slåss\" de gaserna och förstör varandra på kort tid – så om båda finns måste något hela tiden fylla på. På jorden är det livet som gör det.",
     steg: [
-      { typ: "pass", text: "1. Möjlig signal: två oförenliga gaser i samma atmosfär." },
-      { typ: "pass", text: "2. Spektrum bekräftas i flera transit-mätningar – ingen kontamination." },
-      { typ: "pass", text: "3. Molekylerna är säkert identifierade." },
-      { typ: "pass", text: "4. Modellering visar att vulkanism + fotokemi inte räcker för att förklara obalansen." },
-      { typ: "pass", text: "5. Ett annat teleskop bekräftar oberoende samma spektrum." },
-      { typ: "wait", text: "6. <strong>Vi närmar oss toppen, men väntar.</strong> Alla möjliga abiotiska scenarier (ovanliga geokemiska cykler, atmosfärsflykt) måste testas i lab och modeller innan vi kan ta steget vidare." }
+      { typ: "pass", text: "<strong>Steg 1.</strong> Vi ser två gaser i luften som inte borde finnas tillsammans." },
+      { typ: "pass", text: "<strong>Steg 2.</strong> Mätningen upprepas – inget mätfel." },
+      { typ: "pass", text: "<strong>Steg 3.</strong> Vi är säkra på att det är just syre och metan." },
+      { typ: "pass", text: "<strong>Steg 4.</strong> Forskarna räknar på vulkaner, blixtar och solens strålning – inget av det räcker för att förklara båda gaserna." },
+      { typ: "pass", text: "<strong>Steg 5.</strong> Ett annat teleskop ser exakt samma sak." },
+      { typ: "wait", text: "<strong>Steg 6 – nästan i mål, men vi väntar. ⏳</strong><br>Innan hela forskarvärlden är överens måste varje liten alternativ idé testas i laboratorium. Det tar år. Men kommer vi förbi steg 6 och hittar t.ex. säsongsväxlingar i gaserna – då närmar vi oss steg 7 och en riktig livsupptäckt!" }
     ]
   }
 ];

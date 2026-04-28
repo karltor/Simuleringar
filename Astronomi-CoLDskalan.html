@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoLD-skalan – så bedöms upptäckter av utomjordiskt liv</title>
+    <style>
+body, html {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background: #f4f6fa;
+}
+header {
+    background-color: #282c34;
+    color: white;
+    text-align: center;
+    padding: 6px 10px;
+}
+header h1 {
+    margin: 0;
+    font-size: 18px;
+}
+main {
+    padding: 10px 16px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+#introduction {
+    font-size: 13px;
+    color: #333;
+    background: #fff;
+    border-left: 4px solid #44a;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+}
+#introduction p { margin: 4px 0; }
+h2 { font-size: 15px; margin: 10px 0 6px 0; }
+h3 { font-size: 14px; margin: 6px 0 4px 0; }
+
+#layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 800px) {
+    #layout { grid-template-columns: 1fr; }
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+#cases {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.case-btn {
+    padding: 6px 10px;
+    cursor: pointer;
+    border: 2px solid #888;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: left;
+    flex: 1 1 45%;
+    min-width: 130px;
+}
+.case-btn:hover { background: #e6ecff; }
+.case-btn.active { background: #44a; color: white; border-color: #228; }
+
+.controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+.cta {
+    background: #2c7;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.cta:hover { background: #1b6; }
+.cta.secondary { background: #888; }
+.cta.secondary:hover { background: #666; }
+.cta:disabled { background: #bbb; cursor: not-allowed; }
+
+#ladder-wrap {
+    position: relative;
+}
+#ladder {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+    padding: 4px;
+}
+.rung {
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 10px;
+    background: #fafafa;
+    transition: all 0.4s ease;
+    position: relative;
+}
+.rung .rung-title {
+    font-weight: bold;
+    font-size: 13px;
+}
+.rung .rung-desc {
+    font-size: 12px;
+    color: #555;
+    margin-top: 2px;
+}
+.rung.passed {
+    background: #e6f7e6;
+    border-color: #2c7;
+}
+.rung.current {
+    background: #fff3cd;
+    border-color: #e0a800;
+    box-shadow: 0 0 0 3px rgba(224,168,0,0.25);
+}
+.rung.died {
+    background: #fde8e8;
+    border-color: #c33;
+}
+.rung.waiting {
+    background: #e8f0ff;
+    border-color: #44a;
+    border-style: dashed;
+}
+.token {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+}
+
+#status-box {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #eef;
+    border-left: 4px solid #44a;
+    min-height: 60px;
+}
+#status-box.died { background: #fde8e8; border-left-color: #c33; }
+#status-box.waiting { background: #e8f0ff; border-left-color: #44a; }
+#status-box.complete { background: #e6f7e6; border-left-color: #2c7; }
+
+#case-info {
+    font-size: 12px;
+    color: #444;
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: #f8f8fa;
+    border-radius: 4px;
+}
+
+footer {
+    display: none;
+}
+</style>
+</head>
+<body>
+    <header>
+        <h1>CoLD-skalan – Confidence of Life Detection</h1>
+    </header>
+    <main>
+        <section id="introduction">
+            <p><strong>CoLD-skalan</strong> (Confidence of Life Detection) föreslogs av NASA år 2021 som ett sätt att kommunicera <em>hur säkra vi är</em> på en upptäckt av liv utanför jorden. Istället för rubriker som "Liv hittat på Mars!" placeras en upptäckt på en stege med <strong>7 steg</strong> – från en första intressant signal (steg 1) hela vägen till oberoende bekräftelse (steg 7).</p>
+            <p>Välj ett verkligt fall nedan och tryck på <strong>"Nästa steg"</strong> för att se hur upptäckten klättrar uppför skalan – och var den fastnar, dör eller väntar på mer data.</p>
+        </section>
+        <div id="layout">
+            <div class="panel">
+                <h2>Välj ett fall</h2>
+                <div id="cases"></div>
+                <div id="case-info"></div>
+                <div class="controls">
+                    <button id="next-btn" class="cta">Nästa steg ▲</button>
+                    <button id="reset-btn" class="cta secondary">Börja om</button>
+                </div>
+                <div id="status-box">Välj ett fall till vänster för att börja.</div>
+            </div>
+            <div class="panel">
+                <h2>CoLD-stegen (klättra nerifrån och upp)</h2>
+                <div id="ladder-wrap">
+                    <div id="ladder"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer><p>Karls Simulatorer</p></footer>
+<script>
+const STEG = [
+  {
+    nr: 1,
+    titel: "Steg 1 – Möjlig signal upptäckt",
+    kort: "En signal som <em>skulle kunna</em> komma från liv har observerats.",
+    exempel: "Ex: ett teleskop ser en gas i en exoplanets atmosfär, eller ett rymdsondsinstrument visar utslag som biologi kan förklara."
+  },
+  {
+    nr: 2,
+    titel: "Steg 2 – Instrument & kontamination uteslutna",
+    kort: "Signalen är inte ett mätfel, brus eller jordisk förorening.",
+    exempel: "Ex: instrumentet kalibreras om, mätningen upprepas, kontrollprover analyseras. Många 'liv-upptäckter' faller här."
+  },
+  {
+    nr: 3,
+    titel: "Steg 3 – Signalen är verkligen en biosignatur",
+    kort: "Det vi mätt är faktiskt något som biologi <em>kan</em> producera (rätt molekyl, rätt isotop, rätt mönster).",
+    exempel: "Ex: spektrallinjen tolkas rätt, molekylen identifieras säkert – inte förväxlad med en annan."
+  },
+  {
+    nr: 4,
+    titel: "Steg 4 – Icke-biologiska källor i miljön uteslutna",
+    kort: "Geologi, kemi, fotokemi eller strålning kan inte förklara fyndet.",
+    exempel: "Ex: vulkaner, kometer, UV-driven kemi eller mineralreaktioner kan också skapa molekylen – kan vi utesluta dem?"
+  },
+  {
+    nr: 5,
+    titel: "Steg 5 – Oberoende mätning bekräftar signalen",
+    kort: "Ett annat instrument, ett annat team eller en annan metod ser samma sak.",
+    exempel: "Ex: ett rymdteleskop bekräftar vad ett markteleskop såg, eller en ny rymdsond återbesöker platsen."
+  },
+  {
+    nr: 6,
+    titel: "Steg 6 – Alla rimliga icke-biologiska hypoteser uteslutna",
+    kort: "Hela paletten av abiotiska förklaringar har testats och fallit.",
+    exempel: "Ex: laboratorieexperiment, modellering och teori visar att inget annat än liv passar all data."
+  },
+  {
+    nr: 7,
+    titel: "Steg 7 – Oberoende bevislinje stödjer slutsatsen",
+    kort: "En helt annan typ av bevis pekar åt samma håll – starkast möjliga säkerhet.",
+    exempel: "Ex: man har inte bara hittat en gas utan också mikroskopisk struktur, isotopmönster och kemiska gradienter som alla stämmer med liv."
+  }
+];
+
+const FALL = [
+  {
+    namn: "ALH84001 – Marsmeteoriten (1996)",
+    intro: "President Bill Clinton höll presskonferens. Forskare hittade strukturer i en Marsmeteorit som <em>liknade</em> bakteriefossiler. Hur högt klättrade fyndet?",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: små maskliknande strukturer + magnetit + organiska molekyler i meteoriten." },
+      { typ: "pass", text: "2. Inte kontamination – meteoritens inre var skyddat (även om jordisk inblandning senare diskuterats)." },
+      { typ: "pass", text: "3. Strukturerna och molekylerna är sådana som <em>kan</em> ha biologiskt ursprung." },
+      { typ: "die",  text: "4. <strong>Här dog fyndet.</strong> Magnetitkristallerna och 'mikrofossilerna' kunde förklaras av rent geokemiska processer. Strukturerna var dessutom mindre än kända jordiska bakterier. Den abiotiska förklaringen kunde inte uteslutas." }
+    ]
+  },
+  {
+    namn: "Viking Labeled Release (1976)",
+    intro: "NASA:s Viking-landare blandade Marsjord med näringslösning märkt med radioaktivt kol. Mätningen gav utslag – som om något åt näringen!",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: radioaktivt CO₂ frigjordes ur jorden, precis som mikrober skulle göra." },
+      { typ: "pass", text: "2. Instrumentet fungerade och resultatet upprepades." },
+      { typ: "die",  text: "3. <strong>Här dog (de flesta) fyndet.</strong> Ett annat Viking-instrument hittade <em>inga</em> organiska molekyler. Reaktionen kunde förklaras av starkt oxiderande ämnen i jorden (perklorater, senare bekräftade). Signalen var alltså troligen ren kemi, inte biologi – även om en minoritet av forskare än idag tolkar det som möjligt liv." }
+    ]
+  },
+  {
+    namn: "Fosfin på Venus (2020)",
+    intro: "Ett team rapporterade att de upptäckt fosfin (PH₃) i Venus moln – en gas som på jorden bara produceras av liv eller industri.",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: spektrallinje vid 1,1 mm tolkades som fosfin i molnlagret." },
+      { typ: "die",  text: "2. <strong>Här haltade fyndet redan.</strong> Återanalys av data och nya mätningar av andra team antydde att signalen kunde vara svaveldioxid (SO₂) i högre atmosfärslager – alltså möjligen ett mätfel/feltolkning. Debatten pågår, men fyndet klättrade aldrig stadigt vidare." }
+    ]
+  },
+  {
+    namn: "DMS på K2-18b (2023)",
+    intro: "James Webb-teleskopet upptäckte möjlig dimetylsulfid (DMS) i atmosfären på exoplaneten K2-18b – en molekyl som på jorden mest produceras av plankton.",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: spektrum från JWST visade en svag topp där DMS absorberar." },
+      { typ: "pass", text: "2. Inte kontamination – JWST är i rymden, långt från jordisk DMS." },
+      { typ: "wait", text: "3. <strong>Här väntar fyndet.</strong> Detektionen av just DMS är statistiskt svag. Det krävs fler observationer för att säkert säga att det <em>är</em> DMS och inte t.ex. metan eller överlappande molekyler." }
+    ]
+  },
+  {
+    namn: "Metanplymer på Mars (Curiosity)",
+    intro: "Curiosity-rovern och rymdsonden Mars Express har båda mätt tillfälliga utbrott av metan i Marsatmosfären.",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: metan (CH₄) varierar mellan årstider i Gale-kratern." },
+      { typ: "pass", text: "2. Instrumentet kalibrerades, signalen är reell." },
+      { typ: "pass", text: "3. Metan <em>är</em> en känd biosignatur (men också en geokemisk gas)." },
+      { typ: "wait", text: "4. <strong>Här väntar fyndet.</strong> Metan kan komma från serpentinisering (vatten + olivin), gamla gasförråd som läcker, eller mikrober. Vi behöver mätningar av <em>isotopförhållanden</em> (¹²C/¹³C) för att gå vidare – levande organismer föredrar lättare kol." }
+    ]
+  },
+  {
+    namn: "Hypotetiskt: Syre + metan tillsammans på exoplanet",
+    intro: "Föreställ dig att JWST eller dess efterföljare en dag mäter <em>både</em> syre (O₂) och metan (CH₄) i en jordlik exoplanets atmosfär. På jorden förstör dessa varandra – de kan bara samexistera om något fyller på dem ständigt.",
+    steg: [
+      { typ: "pass", text: "1. Möjlig signal: två oförenliga gaser i samma atmosfär." },
+      { typ: "pass", text: "2. Spektrum bekräftas i flera transit-mätningar – ingen kontamination." },
+      { typ: "pass", text: "3. Molekylerna är säkert identifierade." },
+      { typ: "pass", text: "4. Modellering visar att vulkanism + fotokemi inte räcker för att förklara obalansen." },
+      { typ: "pass", text: "5. Ett annat teleskop bekräftar oberoende samma spektrum." },
+      { typ: "wait", text: "6. <strong>Vi närmar oss toppen, men väntar.</strong> Alla möjliga abiotiska scenarier (ovanliga geokemiska cykler, atmosfärsflykt) måste testas i lab och modeller innan vi kan ta steget vidare." }
+    ]
+  }
+];
+
+const ladderEl = document.getElementById('ladder');
+const casesEl = document.getElementById('cases');
+const caseInfoEl = document.getElementById('case-info');
+const statusEl = document.getElementById('status-box');
+const nextBtn = document.getElementById('next-btn');
+const resetBtn = document.getElementById('reset-btn');
+
+let aktivtFall = null;
+let stegIndex = -1;
+
+function ritaStege() {
+  ladderEl.innerHTML = '';
+  STEG.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'rung';
+    div.dataset.steg = s.nr;
+    div.innerHTML = `
+      <div class="rung-title">${s.titel}</div>
+      <div class="rung-desc">${s.kort}<br><span style="color:#777">${s.exempel}</span></div>
+      <span class="token"></span>
+    `;
+    ladderEl.appendChild(div);
+  });
+}
+
+function ritaFallKnappar() {
+  casesEl.innerHTML = '';
+  FALL.forEach((f, i) => {
+    const b = document.createElement('button');
+    b.className = 'case-btn';
+    b.textContent = f.namn;
+    b.addEventListener('click', () => väljFall(i));
+    casesEl.appendChild(b);
+  });
+}
+
+function rensaStege() {
+  document.querySelectorAll('.rung').forEach(r => {
+    r.classList.remove('passed','current','died','waiting');
+    r.querySelector('.token').textContent = '';
+  });
+}
+
+function väljFall(i) {
+  aktivtFall = FALL[i];
+  stegIndex = -1;
+  document.querySelectorAll('.case-btn').forEach((b, j) => {
+    b.classList.toggle('active', i === j);
+  });
+  caseInfoEl.innerHTML = `<strong>${aktivtFall.namn}</strong><br>${aktivtFall.intro}`;
+  statusEl.className = '';
+  statusEl.innerHTML = `Tryck på <strong>"Nästa steg ▲"</strong> för att börja klättra.`;
+  rensaStege();
+  nextBtn.disabled = false;
+}
+
+function nästaSteg() {
+  if (!aktivtFall) {
+    statusEl.innerHTML = 'Välj ett fall först.';
+    return;
+  }
+  stegIndex++;
+  if (stegIndex >= aktivtFall.steg.length) {
+    nextBtn.disabled = true;
+    return;
+  }
+  const händelse = aktivtFall.steg[stegIndex];
+  const stegNr = stegIndex + 1;
+  const rung = document.querySelector(`.rung[data-steg="${stegNr}"]`);
+
+  // markera tidigare steg som passerade
+  for (let n = 1; n < stegNr; n++) {
+    const r = document.querySelector(`.rung[data-steg="${n}"]`);
+    r.classList.remove('current');
+    r.classList.add('passed');
+    r.querySelector('.token').textContent = '✓';
+  }
+
+  rung.classList.remove('current','passed','died','waiting');
+
+  if (händelse.typ === 'pass') {
+    rung.classList.add('current');
+    rung.querySelector('.token').textContent = '🚀';
+    statusEl.className = '';
+    statusEl.innerHTML = händelse.text;
+  } else if (händelse.typ === 'die') {
+    rung.classList.add('died');
+    rung.querySelector('.token').textContent = '✗';
+    statusEl.className = 'died';
+    statusEl.innerHTML = händelse.text + '<br><br><em>Fyndet klättrar inte vidare på CoLD-skalan.</em>';
+    nextBtn.disabled = true;
+  } else if (händelse.typ === 'wait') {
+    rung.classList.add('waiting');
+    rung.querySelector('.token').textContent = '⏳';
+    statusEl.className = 'waiting';
+    statusEl.innerHTML = händelse.text + '<br><br><em>Vi väntar på mer data – fyndet pausar här.</em>';
+    nextBtn.disabled = true;
+  }
+
+  // om sista steget är ett "pass" och fallet når 7
+  if (händelse.typ === 'pass' && stegNr === 7) {
+    statusEl.className = 'complete';
+    statusEl.innerHTML += '<br><br><strong>Topp av skalan! Oberoende bevislinjer stödjer slutsatsen.</strong>';
+    nextBtn.disabled = true;
+  }
+}
+
+function reset() {
+  aktivtFall = null;
+  stegIndex = -1;
+  document.querySelectorAll('.case-btn').forEach(b => b.classList.remove('active'));
+  rensaStege();
+  caseInfoEl.innerHTML = '';
+  statusEl.className = '';
+  statusEl.innerHTML = 'Välj ett fall till vänster för att börja.';
+  nextBtn.disabled = false;
+}
+
+nextBtn.addEventListener('click', nästaSteg);
+resetBtn.addEventListener('click', reset);
+
+ritaStege();
+ritaFallKnappar();
+</script>
+</body>
+</html>

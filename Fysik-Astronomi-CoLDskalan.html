@@ -16,27 +16,66 @@ header {
     background-color: #282c34;
     color: white;
     text-align: center;
-    padding: 6px 10px;
+    padding: 4px 10px;
 }
 header h1 {
     margin: 0;
-    font-size: 22px;
+    font-size: 18px;
 }
 main {
-    padding: 14px 18px;
+    padding: 8px 14px;
     max-width: 1200px;
     margin: 0 auto;
 }
-#introduction {
-    font-size: 16px;
-    line-height: 1.5;
-    color: #222;
-    background: #fff;
-    border-left: 5px solid #44a;
-    padding: 12px 16px;
-    margin-bottom: 14px;
+/* Modal-bakgrund + ruta */
+#intro-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
-#introduction p { margin: 6px 0; }
+#intro-modal.open { display: flex; }
+#intro-modal-box {
+    background: #fff;
+    border-left: 6px solid #44a;
+    border-radius: 8px;
+    padding: 18px 22px;
+    max-width: 640px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    font-size: 15px;
+    line-height: 1.5;
+}
+#intro-modal-box p { margin: 6px 0; }
+#intro-modal-box h2 { margin-top: 0; }
+#intro-close-btn { margin-top: 10px; }
+
+/* Liten info-knapp i hörnet */
+#info-btn {
+    position: fixed;
+    top: 8px;
+    right: 10px;
+    z-index: 900;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid #888;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    color: #228;
+}
+#info-btn:hover { background: #fff; }
+
+/* Mode-toggle som flyttats ovanför layouten */
+#mode-toggle {
+    margin: 0 0 8px 0;
+    text-align: right;
+}
 h2 { font-size: 18px; margin: 12px 0 8px 0; }
 h3 { font-size: 16px; margin: 8px 0 6px 0; }
 
@@ -229,7 +268,6 @@ footer {
 #play-panel { display: none; }
 body.play-mode #layout { display: none; }
 body.play-mode #play-panel { display: block; }
-body.play-mode #introduction { background: #fffbe6; border-left-color: #e0a800; }
 
 #play-panel {
     background: #fff;
@@ -332,15 +370,20 @@ body.play-mode #introduction { background: #fffbe6; border-left-color: #e0a800; 
         <h1>CoLD-skalan – Confidence of Life Detection</h1>
     </header>
     <main>
-        <section id="introduction">
-            <p>När forskare söker efter liv ute i rymden händer det ibland att en tidning skriker <em>"Liv hittat på Mars!"</em> – för att veckan efter ändra sig. Hur ska man veta vad man ska tro?</p>
-            <p>För att slippa förvirring föreslog NASA år 2021 en <strong>stege med 7 steg</strong> som kallas <strong>CoLD-skalan</strong> (engelska för <em>Confidence of Life Detection</em> = "hur säkra vi är på att vi hittat liv"). Varje upptäckt får klättra uppåt – från första lilla ledtråd (steg 1) till säker bekräftelse (steg 7).</p>
-            <p>👉 Välj ett verkligt fall nedan och tryck på <strong>"Nästa steg"</strong>. Se hur upptäckten klättrar – och var den <span style="color:#c33;font-weight:bold">dör</span> eller <span style="color:#44a;font-weight:bold">väntar</span> på mer data.</p>
-            <p id="mode-toggle">
-                <a class="play-link" href="?play">🎮 Spela: gissa var fyndet hamnar!</a>
-                <a class="play-link" href="?" style="display:none;background:#888;color:white;" id="exit-play">← Tillbaka till lärläget</a>
-            </p>
-        </section>
+        <button id="info-btn" title="Visa introduktion">ℹ️</button>
+        <div id="intro-modal" role="dialog" aria-modal="true">
+            <div id="intro-modal-box">
+                <h2>CoLD-skalan</h2>
+                <p>När forskare söker efter liv ute i rymden händer det ibland att en tidning skriker <em>"Liv hittat på Mars!"</em> – för att veckan efter ändra sig. Hur ska man veta vad man ska tro?</p>
+                <p>För att slippa förvirring föreslog NASA år 2021 en <strong>stege med 7 steg</strong> som kallas <strong>CoLD-skalan</strong> (engelska för <em>Confidence of Life Detection</em> = "hur säkra vi är på att vi hittat liv"). Varje upptäckt får klättra uppåt – från första lilla ledtråd (steg 1) till säker bekräftelse (steg 7).</p>
+                <p>👉 Välj ett verkligt fall och tryck på <strong>"Nästa steg"</strong>. Se hur upptäckten klättrar – och var den <span style="color:#c33;font-weight:bold">dör</span> eller <span style="color:#44a;font-weight:bold">väntar</span> på mer data.</p>
+                <button id="intro-close-btn" class="cta">Kom igång</button>
+            </div>
+        </div>
+        <p id="mode-toggle">
+            <a class="play-link" href="?play">🎮 Spela: tecken på liv eller dött spår?</a>
+            <a class="play-link" href="?" style="display:none;background:#888;color:white;" id="exit-play">← Tillbaka till lärläget</a>
+        </p>
         <div id="play-panel">
             <div id="play-score">Poäng: 0</div>
             <h2 style="margin-top:0;">🎮 Tecken på liv – eller dött spår?</h2>
@@ -814,6 +857,22 @@ nextScenarioBtn.addEventListener('click', laddaScenario);
 
 ritaStege();
 ritaFallKnappar();
+
+// === Intro-modal ===
+const introModal = document.getElementById('intro-modal');
+const introCloseBtn = document.getElementById('intro-close-btn');
+const infoBtn = document.getElementById('info-btn');
+function openIntro() { introModal.classList.add('open'); }
+function closeIntro() { introModal.classList.remove('open'); }
+introCloseBtn.addEventListener('click', closeIntro);
+infoBtn.addEventListener('click', openIntro);
+introModal.addEventListener('click', (e) => { if (e.target === introModal) closeIntro(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeIntro(); });
+// Visa modalen vid första besöket per session
+if (!sessionStorage.getItem('coldIntroSeen')) {
+  openIntro();
+  sessionStorage.setItem('coldIntroSeen', '1');
+}
 
 // === Router: ?play aktiverar spelläget ===
 function checkPlayMode() {

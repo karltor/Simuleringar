@@ -247,7 +247,17 @@ body.play-mode #introduction { background: #fffbe6; border-left-color: #e0a800; 
     margin-bottom: 12px;
 }
 #play-scenario h3 { margin: 0 0 6px 0; color: #228; }
-#play-clues { margin: 10px 0; }
+#play-clues, #play-history { margin: 10px 0; }
+#current-step-label {
+    margin: 14px 0 6px 0;
+    font-size: 15px;
+    color: #444;
+    background: #f0f4ff;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border-left: 3px solid #44a;
+}
+#play-finding { margin: 6px 0 10px 0; }
 .clue {
     background: #eef4ff;
     border-left: 4px solid #44a;
@@ -332,26 +342,22 @@ body.play-mode #introduction { background: #fffbe6; border-left-color: #e0a800; 
             </p>
         </section>
         <div id="play-panel">
-            <div id="play-score">Poäng: 0 / 0</div>
-            <h2 style="margin-top:0;">🎮 Var hamnar fyndet på CoLD-skalan?</h2>
+            <div id="play-score">Poäng: 0</div>
+            <h2 style="margin-top:0;">🎮 Tecken på liv – eller dött spår?</h2>
             <div id="play-scenario"></div>
-            <div id="play-clues"></div>
-            <div class="controls" id="play-controls-top">
-                <button id="clue-btn" class="cta secondary">🔍 Mer information</button>
-            </div>
-            <div id="play-question">På vilket <strong>steg</strong> tror du att fyndet stannar?</div>
-            <div class="guess-row" id="step-guesses"></div>
-            <div id="play-question">Och vad händer där?</div>
-            <div class="guess-row" id="outcome-guesses">
-                <button class="guess-btn outcome" data-outcome="pass">🚀 Klättrar hela vägen till steg 7</button>
-                <button class="guess-btn outcome" data-outcome="wait">⏳ Väntar på mer data</button>
-                <button class="guess-btn outcome" data-outcome="die">✗ Dör – kan inte klättra vidare</button>
-            </div>
-            <div class="controls">
-                <button id="submit-guess-btn" class="cta">Lås in mitt svar</button>
-                <button id="next-scenario-btn" class="cta" style="display:none;">Nästa scenario ▶</button>
+            <div id="play-history"></div>
+            <div id="current-step-label">Vi är på <strong>steg 1</strong> av CoLD-skalan.</div>
+            <div id="play-finding"></div>
+            <div id="play-question">Vad gör fyndet här?</div>
+            <div class="guess-row" id="climb-die-row">
+                <button class="guess-btn outcome" id="climb-btn" data-choice="climb">🚀 Tecken på liv – klättra upp</button>
+                <button class="guess-btn outcome" id="die-btn" data-choice="die">✗ Dött spår – fyndet faller</button>
             </div>
             <div id="play-feedback"></div>
+            <div class="controls">
+                <button id="next-round-btn" class="cta" style="display:none;">Nästa ledtråd ▲</button>
+                <button id="next-scenario-btn" class="cta" style="display:none;">Nytt scenario ▶</button>
+            </div>
         </div>
         <div id="layout">
             <div class="panel">
@@ -485,6 +491,78 @@ const FALL = [
   }
 ];
 
+// === Spelläge: helt egna scenarier (separata från lärarläget) ===
+// Varje scenario har en följd av "rundor" – en per CoLD-steg.
+// I varje runda visas ett påstående och spelaren väljer "climb" eller "die".
+// Rätt svar: "climb" om informationen verkligen uppfyller stegets krav,
+//            "die" om fyndet faller här (kontamination, alternativ förklaring, m.m.).
+const PLAY_FALL = [
+  {
+    namn: "Isborrning på Europa (framtida uppdrag)",
+    intro: "År 2042 borrar en sond genom Jupiters måne Europas iskapa och tar upp havsvatten från det dolda havet under isen.",
+    rundor: [
+      { påstående: "I mikroskopet syns små stavformade strukturer, ca 1 µm stora – ungefär lika stora som jordbakterier.", rätt: "climb",
+        förklaring: "Det är en signal som SKULLE kunna komma från liv – exakt vad steg 1 frågar efter." },
+      { påstående: "Genetisk analys av strukturerna visar DNA som matchar exakt en jordbakterie från fabriken där borrhuvudet tillverkades.", rätt: "die",
+        förklaring: "Kontamination från jorden! Steg 2 kräver att signalen INTE är ett mätfel eller bortsläpat skräp – här faller fyndet." }
+    ]
+  },
+  {
+    namn: "Aminosyror i en kometkärna",
+    intro: "En sond samlar in damm från en komet och tar prover tillbaka till jorden.",
+    rundor: [
+      { påstående: "Provet innehåller glycin – en av de aminosyror som bygger upp proteiner i allt liv på jorden.", rätt: "climb",
+        förklaring: "Något spännande har upptäckts – steg 1 klarat." },
+      { påstående: "Mätningen upprepas i tre olika labb runt om i världen och alla får samma resultat. Provröret var förseglat ända sedan rymden.", rätt: "climb",
+        förklaring: "Inget mätfel, ingen kontamination – steg 2 klarat." },
+      { påstående: "Spektrometern bekräftar exakt vilken molekyl det är: glycin, samma som i levande celler.", rätt: "climb",
+        förklaring: "Vi vet vad signalen betyder – steg 3 klarat." },
+      { påstående: "Labbexperiment visar att UV-strålning och kosmisk strålning kan tillverka glycin från enkla gaser HELT utan liv – och så bildas det troligen i kometen.", rätt: "die",
+        förklaring: "Steg 4 kräver att INGET annat än liv kan förklara fyndet. Glycin kan bildas av ren kemi i rymden – fyndet faller här." }
+    ]
+  },
+  {
+    namn: "Konstig radiosignal från Proxima b",
+    intro: "Ett radioteleskop i Australien fångar en smal, regelbunden signal från stjärnan Proxima Centauri – där det finns en planet i den beboeliga zonen.",
+    rundor: [
+      { påstående: "Signalen är på en enda exakt frekvens, något som naturen sällan producerar – men teknik gör det.", rätt: "climb",
+        förklaring: "En signal värd att titta närmare på – steg 1 klarat." },
+      { påstående: "När forskarna vrider antennen bort från Proxima försvinner signalen – men kommer tillbaka när de vrider tillbaka. Plus: signalen visar sig komma från en mobiltelefonmast 3 km bort som råkat sända i samma riktning.", rätt: "die",
+        förklaring: "Klassiskt mätfel – signalen kom från jorden. Steg 2 misslyckas." }
+    ]
+  },
+  {
+    namn: "Metan-pulser på en exoplanet",
+    intro: "Ett teleskop ser metan i atmosfären på en stenplanet 40 ljusår bort.",
+    rundor: [
+      { påstående: "Metan dyker upp och försvinner med årstiderna – som om något producerar den i omgångar.", rätt: "climb",
+        förklaring: "Spännande mönster – steg 1 klarat." },
+      { påstående: "Tre olika rymdteleskop ser samma sak vid olika tidpunkter. Ingen instrument-buggar.", rätt: "climb",
+        förklaring: "Inget mätfel – steg 2 klarat." },
+      { påstående: "Spektrum visar tydligt CH₄ – det är säkert metan.", rätt: "climb",
+        förklaring: "Vi vet vad signalen är – steg 3 klarat." },
+      { påstående: "Forskarna räknar igenom alla kemiska reaktioner och vulkanism. Inget icke-levande kan förklara så mycket metan – inte heller säsongsvariationen.", rätt: "climb",
+        förklaring: "Alla alternativa förklaringar är uteslutna – steg 4 klarat." },
+      { påstående: "Ett konkurrerande forskarteam med ett HELT annat instrument ser exakt samma metanpulser.", rätt: "climb",
+        förklaring: "Oberoende bekräftelse – steg 5 klarat." },
+      { påstående: "Efter tre års granskning säger en liten grupp forskare att de hittat ett kryphål: en sällsynt mineralreaktion under hög tryck KAN faktiskt göra metan i puffar. Det räcker för att inte alla är överens.", rätt: "die",
+        förklaring: "Steg 6 kräver att HELA forskarvärlden är överens. Den lilla luckan stoppar fyndet." }
+    ]
+  },
+  {
+    namn: "Mikrofossiler i en Marsmeteorit",
+    intro: "En sten från Mars hittas i Sahara år 2031. Den har legat orörd i öknen i hundra år.",
+    rundor: [
+      { påstående: "Mikroskopet visar förgrenade trådar i stenen – som påminner om svampmycel.", rätt: "climb",
+        förklaring: "Något att titta närmare på – steg 1 klarat." },
+      { påstående: "Trådarna sitter djupt inne i en sluten gasficka som varit förseglad sedan stenen lämnade Mars. Inga jordbakterier kan ha kommit in.", rätt: "climb",
+        förklaring: "Inte kontamination – steg 2 klarat." },
+      { påstående: "Kemisk analys visar att trådarna består av ett mineral som heter magnetit – inget biologiskt material alls.", rätt: "die",
+        förklaring: "Steg 3 kräver att vi vet att signalen är något som kan komma från liv. Rena mineralkristaller kan inte vara liv – fyndet faller här." }
+    ]
+  }
+];
+
 const ladderEl = document.getElementById('ladder');
 const casesEl = document.getElementById('cases');
 const caseInfoEl = document.getElementById('case-info');
@@ -497,24 +575,22 @@ let stegIndex = -1;
 
 // === Spelläge-state ===
 const playScenarioEl = document.getElementById('play-scenario');
-const playCluesEl = document.getElementById('play-clues');
-const clueBtn = document.getElementById('clue-btn');
-const stepGuessesEl = document.getElementById('step-guesses');
-const outcomeGuessesEl = document.getElementById('outcome-guesses');
-const submitGuessBtn = document.getElementById('submit-guess-btn');
-const nextScenarioBtn = document.getElementById('next-scenario-btn');
+const playHistoryEl = document.getElementById('play-history');
+const stepLabelEl = document.getElementById('current-step-label');
+const playFindingEl = document.getElementById('play-finding');
+const climbBtn = document.getElementById('climb-btn');
+const dieBtn = document.getElementById('die-btn');
 const playFeedbackEl = document.getElementById('play-feedback');
+const nextRoundBtn = document.getElementById('next-round-btn');
+const nextScenarioBtn = document.getElementById('next-scenario-btn');
 const playScoreEl = document.getElementById('play-score');
 
 let playFall = null;
-let playCluesShown = 0;
-let playStepGuess = null;
-let playOutcomeGuess = null;
+let playRound = 0;          // index i aktuella scenariots rundor
 let playLocked = false;
 let playOrder = [];
 let playPos = 0;
 let playPoints = 0;
-let playRounds = 0;
 
 function ritaStege() {
   ladderEl.innerHTML = '';
@@ -631,7 +707,7 @@ resetBtn.addEventListener('click', reset);
 
 // === Spelläge-funktioner ===
 function blandaOrdning() {
-  playOrder = FALL.map((_, i) => i);
+  playOrder = PLAY_FALL.map((_, i) => i);
   for (let i = playOrder.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [playOrder[i], playOrder[j]] = [playOrder[j], playOrder[i]];
@@ -639,130 +715,105 @@ function blandaOrdning() {
   playPos = 0;
 }
 
-function ritaStegKnappar() {
-  stepGuessesEl.innerHTML = '';
-  for (let n = 1; n <= 7; n++) {
-    const b = document.createElement('button');
-    b.className = 'guess-btn';
-    b.dataset.steg = n;
-    b.textContent = n;
-    b.addEventListener('click', () => {
-      if (playLocked) return;
-      playStepGuess = n;
-      stepGuessesEl.querySelectorAll('.guess-btn').forEach(x =>
-        x.classList.toggle('selected', parseInt(x.dataset.steg) === n));
-    });
-    stepGuessesEl.appendChild(b);
-  }
+function uppdateraPoäng() {
+  playScoreEl.textContent = `Poäng: ${playPoints}`;
 }
 
 function laddaScenario() {
   if (playPos >= playOrder.length) blandaOrdning();
-  playFall = FALL[playOrder[playPos]];
+  playFall = PLAY_FALL[playOrder[playPos]];
   playPos++;
-  playCluesShown = 0;
-  playStepGuess = null;
-  playOutcomeGuess = null;
+  playRound = 0;
   playLocked = false;
 
   playScenarioEl.innerHTML = `<h3>${playFall.namn}</h3><div>${playFall.intro}</div>`;
-  playCluesEl.innerHTML = '';
+  playHistoryEl.innerHTML = '';
   playFeedbackEl.style.display = 'none';
   playFeedbackEl.className = '';
-  stepGuessesEl.querySelectorAll('.guess-btn').forEach(b => b.classList.remove('selected'));
-  outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(b => b.classList.remove('selected'));
-  submitGuessBtn.style.display = '';
-  submitGuessBtn.disabled = false;
+  nextRoundBtn.style.display = 'none';
   nextScenarioBtn.style.display = 'none';
-  clueBtn.disabled = false;
-  clueBtn.textContent = '🔍 Mer information';
+  visaRunda();
   uppdateraPoäng();
 }
 
-function visaLedtråd() {
-  if (playLocked || !playFall) return;
-  // Visa nästa stegs text MEN dölj typ-ord (pass/die/wait) som skulle avslöja svaret
-  // Stoppa innan sista steget – det skulle annars ge bort facit
-  const max = playFall.steg.length - 1;
-  if (playCluesShown >= max) {
-    clueBtn.disabled = true;
-    clueBtn.textContent = '(Inga fler ledtrådar – gissa nu!)';
-    return;
-  }
-  const händelse = playFall.steg[playCluesShown];
-  // Bara "pass"-steg ges som fria ledtrådar (för dessa har fyndet redan klättrat)
-  // Om det är wait/die hoppar vi inte – men vi når aldrig hit eftersom vi stoppar före sista
-  const div = document.createElement('div');
-  div.className = 'clue';
-  div.innerHTML = `💡 ${händelse.text}`;
-  playCluesEl.appendChild(div);
-  playCluesShown++;
-  if (playCluesShown >= max) {
-    clueBtn.disabled = true;
-    clueBtn.textContent = '(Inga fler ledtrådar – gissa nu!)';
-  }
+function visaRunda() {
+  const r = playFall.rundor[playRound];
+  const stegNr = playRound + 1;
+  const stegInfo = STEG[playRound];
+  stepLabelEl.innerHTML = `Vi är på <strong>steg ${stegNr}</strong>: <em>${stegInfo.titel.replace(/^Steg \d+ – /, '')}</em>`;
+  playFindingEl.innerHTML = `<div class="clue" style="border-left-color:#e0a800;background:#fffbe6;">📰 ${r.påstående}</div>`;
+  playFeedbackEl.style.display = 'none';
+  playFeedbackEl.className = '';
+  climbBtn.classList.remove('selected');
+  dieBtn.classList.remove('selected');
+  climbBtn.disabled = false;
+  dieBtn.disabled = false;
+  nextRoundBtn.style.display = 'none';
+  nextScenarioBtn.style.display = 'none';
+  playLocked = false;
 }
 
-function låsSvar() {
-  if (playLocked || !playFall) return;
-  if (playStepGuess === null || playOutcomeGuess === null) {
-    playFeedbackEl.className = 'partial';
-    playFeedbackEl.innerHTML = '⚠️ Välj <strong>både</strong> ett steg (1–7) och vad som händer där.';
-    return;
-  }
+function svara(val) {
+  if (playLocked) return;
+  const r = playFall.rundor[playRound];
+  const stegNr = playRound + 1;
   playLocked = true;
-  clueBtn.disabled = true;
-  submitGuessBtn.style.display = 'none';
-  nextScenarioBtn.style.display = '';
+  climbBtn.disabled = true;
+  dieBtn.disabled = true;
+  (val === 'climb' ? climbBtn : dieBtn).classList.add('selected');
 
-  const sista = playFall.steg[playFall.steg.length - 1];
-  const rättSteg = playFall.steg.length;
-  const rättUtfall = sista.typ;
-
-  let stegPoäng = 0;
-  const stegDiff = Math.abs(playStepGuess - rättSteg);
-  if (stegDiff === 0) stegPoäng = 2;
-  else if (stegDiff === 1) stegPoäng = 1;
-  const utfallPoäng = (playOutcomeGuess === rättUtfall) ? 2 : 0;
-  const totalt = stegPoäng + utfallPoäng;
-
-  playPoints += totalt;
-  playRounds++;
+  const rätt = (val === r.rätt);
+  if (rätt) playPoints++;
   uppdateraPoäng();
 
-  const utfallText = { pass: '🚀 klättrade hela vägen till steg 7', wait: '⏳ väntar på mer data', die: '✗ dog' }[rättUtfall];
-  let klass = 'wrong';
-  if (totalt === 4) klass = 'correct';
-  else if (totalt >= 2) klass = 'partial';
+  // Lägg till runda i historiken
+  const histDiv = document.createElement('div');
+  histDiv.className = 'clue';
+  const ikon = r.rätt === 'climb' ? '🚀' : '✗';
+  histDiv.style.borderLeftColor = r.rätt === 'climb' ? '#2c7' : '#c33';
+  histDiv.innerHTML = `<strong>Steg ${stegNr}:</strong> ${ikon} ${r.förklaring}`;
+  playHistoryEl.appendChild(histDiv);
 
-  playFeedbackEl.className = klass;
-  playFeedbackEl.innerHTML = `
-    <strong>Du fick ${totalt} av 4 poäng.</strong><br>
-    Rätt svar: <strong>steg ${rättSteg}</strong>, där fyndet ${utfallText}.<br><br>
-    <em>Vad som faktiskt hände:</em><br>${sista.text}
-  `;
+  if (rätt) {
+    playFeedbackEl.className = 'correct';
+    playFeedbackEl.innerHTML = `<strong>✅ Rätt!</strong> ${r.förklaring}`;
+    playFeedbackEl.style.display = 'block';
+    if (r.rätt === 'climb' && playRound + 1 < playFall.rundor.length) {
+      // Klättra vidare – nästa runda
+      nextRoundBtn.style.display = '';
+    } else if (r.rätt === 'climb' && playRound + 1 >= playFall.rundor.length) {
+      // Sista rundan var en klättring → nådde toppen
+      playFeedbackEl.innerHTML += `<br><br>🏆 <strong>Fyndet klättrade hela vägen!</strong>`;
+      nextScenarioBtn.style.display = '';
+    } else {
+      // Rätt att fyndet dog
+      playFeedbackEl.innerHTML += `<br><br>Du stoppade fyndet i tid – fortsätt med ett nytt scenario.`;
+      nextScenarioBtn.style.display = '';
+    }
+  } else {
+    playFeedbackEl.className = 'wrong';
+    if (val === 'climb') {
+      playFeedbackEl.innerHTML = `<strong>❌ Fel.</strong> Du lät fyndet klättra, men: ${r.förklaring}`;
+    } else {
+      playFeedbackEl.innerHTML = `<strong>❌ Fel.</strong> Du dödade fyndet, men: ${r.förklaring}`;
+    }
+    playFeedbackEl.style.display = 'block';
+    nextScenarioBtn.style.display = '';
+  }
 }
 
-function uppdateraPoäng() {
-  playScoreEl.textContent = `Poäng: ${playPoints} / ${playRounds * 4}`;
+function nästaRunda() {
+  playRound++;
+  visaRunda();
 }
 
-clueBtn.addEventListener('click', visaLedtråd);
-submitGuessBtn.addEventListener('click', låsSvar);
+climbBtn.addEventListener('click', () => svara('climb'));
+dieBtn.addEventListener('click', () => svara('die'));
+nextRoundBtn.addEventListener('click', nästaRunda);
 nextScenarioBtn.addEventListener('click', laddaScenario);
 
 ritaStege();
 ritaFallKnappar();
-ritaStegKnappar();
-
-outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    if (playLocked) return;
-    playOutcomeGuess = b.dataset.outcome;
-    outcomeGuessesEl.querySelectorAll('.guess-btn').forEach(x =>
-      x.classList.toggle('selected', x === b));
-  });
-});
 
 // === Router: ?play aktiverar spelläget ===
 function checkPlayMode() {

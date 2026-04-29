@@ -575,6 +575,9 @@
         let playScore = { correct: 0, total: 0 };
         let currentScenario = null;
         let difficulty = 'easy';
+        let lastOutcome = null; // 'planet' | 'noplanet'
+        let streakCount = 0;
+        const MAX_STREAK = 2;
 
         function generateScenario() {
             const N = 600;
@@ -583,12 +586,30 @@
             const dips = [];
             let type, planetCount = 0;
 
-            if (difficulty === 'easy') {
-                const types = ['exoplanet_clear', 'exoplanet_subtle', 'random_dips', 'asteroids', 'flat'];
-                type = types[Math.floor(Math.random() * types.length)];
+            // Välj först om det ska vara exoplanet eller inte (≈50/50),
+            // men tvinga fram byte om vi haft samma utfall MAX_STREAK gånger i rad.
+            let wantPlanet;
+            if (streakCount >= MAX_STREAK && lastOutcome) {
+                wantPlanet = lastOutcome !== 'planet';
             } else {
-                const types = ['exoplanet_multi', 'exoplanet_multi', 'random_dips', 'asteroids', 'flat'];
-                type = types[Math.floor(Math.random() * types.length)];
+                wantPlanet = Math.random() < 0.5;
+            }
+
+            if (difficulty === 'easy') {
+                if (wantPlanet) {
+                    const planetTypes = ['exoplanet_clear', 'exoplanet_subtle'];
+                    type = planetTypes[Math.floor(Math.random() * planetTypes.length)];
+                } else {
+                    const noTypes = ['random_dips', 'asteroids', 'flat'];
+                    type = noTypes[Math.floor(Math.random() * noTypes.length)];
+                }
+            } else {
+                if (wantPlanet) {
+                    type = 'exoplanet_multi';
+                } else {
+                    const noTypes = ['random_dips', 'asteroids', 'flat'];
+                    type = noTypes[Math.floor(Math.random() * noTypes.length)];
+                }
             }
 
             if (type === 'exoplanet_clear') {
@@ -647,6 +668,14 @@
                     val -= depth * Math.exp(-dx * dx);
                 });
                 data.push(val);
+            }
+
+            const outcome = planetCount > 0 ? 'planet' : 'noplanet';
+            if (outcome === lastOutcome) {
+                streakCount++;
+            } else {
+                streakCount = 1;
+                lastOutcome = outcome;
             }
 
             return {

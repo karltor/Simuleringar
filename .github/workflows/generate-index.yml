@@ -10,6 +10,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Generate HTML Files
         run: |
           
@@ -177,6 +179,10 @@ jobs:
               .changelog-type.andring { color: #1e40af; background: #eff6ff; }
               .changelog-link { color: #0366d6; text-decoration: none; min-width: 0; display: block; padding: 5px 8px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
               .changelog-link:hover { background: #f0f8ff; text-decoration: underline; }
+              .changelog-list.collapsed .changelog-entry.beyond-limit { display: none; }
+              .changelog-toggle { display: none; width: 100%; padding: 8px; background: #f8f9fa; border: none; border-top: 1px solid #e1e4e8; color: #0366d6; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+              .changelog-toggle:hover { background: #f0f8ff; }
+              .changelog-toggle.visible { display: block; }
             </style>
           </head>
           <body>
@@ -249,7 +255,8 @@ jobs:
           current_sub=""
           current_cat=""
           
-          sort raw_data.txt | while IFS='|' read -r sub cat_name sim_name f; do
+          sort raw_data.txt > sorted_data.txt
+          while IFS='|' read -r sub cat_name sim_name f; do
             if [ "$sub" != "$current_sub" ]; then
               if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
               if [ "$current_sub" != "" ]; then echo "</div></div>" >> index.html; fi
@@ -271,7 +278,7 @@ jobs:
             fi
             
             echo "<a class='sim-link' href=\"$f\" target=\"_blank\">$sim_name</a>" >> index.html
-          done
+          done < sorted_data.txt
 
           if [ "$current_sub" != "" ]; then
              if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
@@ -283,7 +290,7 @@ jobs:
           # ==========================================
           echo "<div class='subject-block changelog-block' data-subject='Ändringslogg' data-hidden-default='true'>" >> index.html
           echo "<div class='subject-title'>📜 Ändringslogg <span>-</span></div>" >> index.html
-          echo "<div class='content-wrapper active'><div class='changelog-list'>" >> index.html
+          echo "<div class='content-wrapper active'><div class='changelog-list collapsed'>" >> index.html
 
           git -c core.quotePath=false log --reverse --name-status --pretty=format:'==DATE==%ad' --date=format:'%-d %b' 2>/dev/null | awk -v OFS='\t' '
             BEGIN {
@@ -312,6 +319,7 @@ jobs:
             }
           ' | tac > changelog_data.txt
 
+          entry_idx=0
           while IFS=$'\t' read -r date type file; do
             base="${file%.html}"
             sim_name=$(echo "$base" | awk -F'-' '{ for(i=3;i<=NF;i++) printf "%s%s", (i>3?"-":""), $i; print "" }')
@@ -320,10 +328,13 @@ jobs:
             [ "$type" = "Ändring" ] && type_class="andring"
             href_file=$(printf '%s' "$file" | sed 's/&/\&amp;/g')
             display_name=$(printf '%s' "$sim_name" | sed 's/&/\&amp;/g')
-            echo "<div class='changelog-entry'><span class='changelog-date'>$date</span><span class='changelog-type $type_class'>$type</span><a class='changelog-link' href=\"./$href_file\" target=\"_blank\" title=\"$display_name\">$display_name</a></div>" >> index.html
+            entry_idx=$((entry_idx + 1))
+            extra_class=""
+            [ "$entry_idx" -gt 20 ] && extra_class=" beyond-limit"
+            echo "<div class='changelog-entry$extra_class'><span class='changelog-date'>$date</span><span class='changelog-type $type_class'>$type</span><a class='changelog-link' href=\"./$href_file\" target=\"_blank\" title=\"$display_name\">$display_name</a></div>" >> index.html
           done < changelog_data.txt
 
-          echo "</div></div></div>" >> index.html
+          echo "</div><button class='changelog-toggle' type='button'>Visa fler ↓</button></div></div>" >> index.html
 
           cat <<'EOF' >> index.html
             </div>
@@ -576,6 +587,21 @@ jobs:
               document.addEventListener('DOMContentLoaded', () => {
                 const hiddenSubjects = JSON.parse(localStorage.getItem('hidden-subjects') || '[]');
                 const settingsList = document.getElementById('settings-list');
+
+                // Ändringslogg: Visa fler / Visa färre
+                document.querySelectorAll('.changelog-block').forEach(cBlock => {
+                  const list = cBlock.querySelector('.changelog-list');
+                  const toggle = cBlock.querySelector('.changelog-toggle');
+                  if (!list || !toggle) return;
+                  const hiddenCount = list.querySelectorAll('.changelog-entry.beyond-limit').length;
+                  if (hiddenCount === 0) return;
+                  toggle.classList.add('visible');
+                  toggle.textContent = `Visa fler ↓ (${hiddenCount} till)`;
+                  toggle.addEventListener('click', () => {
+                    const collapsed = list.classList.toggle('collapsed');
+                    toggle.textContent = collapsed ? `Visa fler ↓ (${hiddenCount} till)` : 'Visa färre ↑';
+                  });
+                });
 
                 document.querySelectorAll('.subject-block').forEach(block => {
                   const titleEl = block.querySelector('.subject-title');

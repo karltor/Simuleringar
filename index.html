@@ -64,6 +64,21 @@
     #status { margin-top: 10px; font-weight: bold; font-size: 0.9rem;}
     .error { color: #d73a49; }
     .success { color: #2ea44f; }
+
+    /* ---- ÄNDRINGSLOGG ---- */
+    .changelog-block { order: 999; }
+    .changelog-block .subject-title { background: #6b46c1; }
+    .changelog-block .content-wrapper { padding: 0; }
+    .changelog-list { display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto; }
+    .changelog-entry { display: grid; grid-template-columns: 58px 64px minmax(0, 1fr); align-items: stretch; font-size: 0.78rem; border-bottom: 1px solid #f0f0f0; }
+    .changelog-entry:last-child { border-bottom: none; }
+    .changelog-entry > * { display: flex; align-items: center; padding: 5px 8px; }
+    .changelog-date { color: #555; font-variant-numeric: tabular-nums; white-space: nowrap; justify-content: flex-end; }
+    .changelog-type { font-size: 0.7rem; font-weight: 600; justify-content: center; border-left: 1px solid #e1e4e8; border-right: 1px solid #e1e4e8; white-space: nowrap; letter-spacing: 0.2px; }
+    .changelog-type.ny { color: #065f46; background: #ecfdf5; }
+    .changelog-type.andring { color: #1e40af; background: #eff6ff; }
+    .changelog-link { color: #0366d6; text-decoration: none; min-width: 0; display: block; padding: 5px 8px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .changelog-link:hover { background: #f0f8ff; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -255,6 +270,64 @@
 <a class='sim-link' href="./Övrigt-Gruppövningar-Lock and Key.html" target="_blank">Lock and Key</a>
 <a class='sim-link' href="./Övrigt-Gruppövningar-På Rätt Spår.html" target="_blank">På Rätt Spår</a>
   </div>
+<div class='subject-block changelog-block' data-subject='Ändringslogg' data-hidden-default='true'>
+<div class='subject-title'>📜 Ändringslogg <span>-</span></div>
+<div class='content-wrapper active'>
+<div class='changelog-list'>
+<div class='changelog-entry'><span class='changelog-date'>21 apr</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Astronomi-En Stjärna Föds.html" target="_blank" title="En Stjärna Föds">En Stjärna Föds</a></div>
+<div class='changelog-entry'><span class='changelog-date'>15 apr</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Biologi-Ekologi-Övergödning.html" target="_blank" title="Övergödning">Övergödning</a></div>
+<div class='changelog-entry'><span class='changelog-date'>2 apr</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Fysik-Astronomi-Radialhastighetsmetoden.html" target="_blank" title="Radialhastighetsmetoden">Radialhastighetsmetoden</a></div>
+<div class='changelog-entry'><span class='changelog-date'>31 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Fysik-Astronomi-Solsystemet.html" target="_blank" title="Solsystemet">Solsystemet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>30 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Fysik-Astronomi-Solsystemet.html" target="_blank" title="Solsystemet">Solsystemet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>30 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Astronomi-Solsystemet.html" target="_blank" title="Solsystemet">Solsystemet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>23 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Elektromagnetism-Permanent Magnet.html" target="_blank" title="Permanent Magnet">Permanent Magnet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>23 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Matematik-Samband-Proportionalitet.html" target="_blank" title="Proportionalitet">Proportionalitet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>22 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Samband-Proportionalitet.html" target="_blank" title="Proportionalitet">Proportionalitet</a></div>
+<div class='changelog-entry'><span class='changelog-date'>22 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Matematik-Övrigt-Countdown.html" target="_blank" title="Countdown">Countdown</a></div>
+<div class='changelog-entry'><span class='changelog-date'>22 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Matematik-Taluppfattning-Potenser.html" target="_blank" title="Potenser">Potenser</a></div>
+<div class='changelog-entry'><span class='changelog-date'>21 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Övrigt-Gruppövningar-Jeopardy.html" target="_blank" title="Jeopardy">Jeopardy</a></div>
+<div class='changelog-entry'><span class='changelog-date'>18 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Övrigt-Gruppövningar-På Rätt Spår.html" target="_blank" title="På Rätt Spår">På Rätt Spår</a></div>
+<div class='changelog-entry'><span class='changelog-date'>16 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Matematik-Samband-Koordinatsystem.html" target="_blank" title="Koordinatsystem">Koordinatsystem</a></div>
+<div class='changelog-entry'><span class='changelog-date'>16 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Samband-Koordinatsystem.html" target="_blank" title="Koordinatsystem">Koordinatsystem</a></div>
+<div class='changelog-entry'><span class='changelog-date'>13 mar</span><span class='changelog-type andring'>Ändring</span><a class='changelog-link' href="./Fysik-Krafter-Tröghetslagen.html" target="_blank" title="Tröghetslagen">Tröghetslagen</a></div>
+<div class='changelog-entry'><span class='changelog-date'>13 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Övrigt-Gruppövningar-Lock and Key.html" target="_blank" title="Lock and Key">Lock and Key</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Övrigt-Gruppövningar-Jeopardy.html" target="_blank" title="Jeopardy">Jeopardy</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Övrigt-Klockan.html" target="_blank" title="Klockan">Klockan</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Övrigt-Countdown.html" target="_blank" title="Countdown">Countdown</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Ränta på Ränta.html" target="_blank" title="Ränta på Ränta">Ränta på Ränta</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Primtal.html" target="_blank" title="Primtal">Primtal</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Potenser.html" target="_blank" title="Potenser">Potenser</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Multiplicera med 10.html" target="_blank" title="Multiplicera med 10">Multiplicera med 10</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Hitta Kvadratroten.html" target="_blank" title="Hitta Kvadratroten">Hitta Kvadratroten</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Taluppfattning-Förläng bråk till 100.html" target="_blank" title="Förläng bråk till 100">Förläng bråk till 100</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Statistik-Diagram.html" target="_blank" title="Diagram">Diagram</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Sannolikhetslära-Falsk Tärning.html" target="_blank" title="Falsk Tärning">Falsk Tärning</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Sannolikhetslära-2 Tiosidiga Tärningar.html" target="_blank" title="2 Tiosidiga Tärningar">2 Tiosidiga Tärningar</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Samband-Decimalform Procentform.html" target="_blank" title="Decimalform Procentform">Decimalform Procentform</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Problemlösning-Lösenord.html" target="_blank" title="Lösenord">Lösenord</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Geometri-Pythagoras Golf.html" target="_blank" title="Pythagoras Golf">Pythagoras Golf</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Matematik-Geometri-Cirkel.html" target="_blank" title="Cirkel">Cirkel</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Kemi-Organisk Kemi-Plastproduktion.html" target="_blank" title="Plastproduktion">Plastproduktion</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Kemi-Grunder-Kemiska föreningar.html" target="_blank" title="Kemiska föreningar">Kemiska föreningar</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Värmelära-Tid och Temperatur Diagram.html" target="_blank" title="Tid och Temperatur Diagram">Tid och Temperatur Diagram</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Optik-Våglängd.html" target="_blank" title="Våglängd">Våglängd</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Ljud-Dopplereffekten.html" target="_blank" title="Dopplereffekten">Dopplereffekten</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Krafter-Tyngdacceleration.html" target="_blank" title="Tyngdacceleration">Tyngdacceleration</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Krafter-Tröghetslagen.html" target="_blank" title="Tröghetslagen">Tröghetslagen</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Krafter-Fritt Fall.html" target="_blank" title="Fritt Fall">Fritt Fall</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Krafter-Fritt Fall sidled.html" target="_blank" title="Fritt Fall sidled">Fritt Fall sidled</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Elektromagnetism-AC Lampa.html" target="_blank" title="AC Lampa">AC Lampa</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Atomfysik-Tjernobylolyckan.html" target="_blank" title="Tjernobylolyckan">Tjernobylolyckan</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Atomfysik-Strålningstyper.html" target="_blank" title="Strålningstyper">Strålningstyper</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Atomfysik-Kol 14 Metoden.html" target="_blank" title="Kol 14 Metoden">Kol 14 Metoden</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Atomfysik-Fission.html" target="_blank" title="Fission">Fission</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Atomfysik-Betakaskad.html" target="_blank" title="Betakaskad">Betakaskad</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Astronomi-Transitmetoden.html" target="_blank" title="Transitmetoden">Transitmetoden</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Fysik-Astronomi-Spektroskopi och exoplaneters gaser.html" target="_blank" title="Spektroskopi och exoplaneters gaser">Spektroskopi och exoplaneters gaser</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Biologi-Ekologi-Anrikning av Miljögifter.html" target="_blank" title="Anrikning av Miljögifter">Anrikning av Miljögifter</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Biologi-Ekologi-Abiotiska och biotiska faktorer.html" target="_blank" title="Abiotiska och biotiska faktorer">Abiotiska och biotiska faktorer</a></div>
+<div class='changelog-entry'><span class='changelog-date'>12 mar</span><span class='changelog-type ny'>Ny fil</span><a class='changelog-link' href="./Biologi-Centrala Nervsystemet-Nervsignaler &amp; Hormoner.html" target="_blank" title="Nervsignaler &amp; Hormoner">Nervsignaler &amp; Hormoner</a></div>
+</div></div></div>
   <script>
     // Modal-funktioner
     function openModal(id) {
@@ -510,7 +583,17 @@
         const content = block.querySelector('.content-wrapper');
         const span = titleEl.querySelector('span');
         const subjectName = block.getAttribute('data-subject');
-        
+        const hiddenByDefault = block.dataset.hiddenDefault === 'true';
+        const seenKey = 'subject-seen-' + subjectName;
+
+        if (hiddenByDefault && !localStorage.getItem(seenKey)) {
+          if (!hiddenSubjects.includes(subjectName)) {
+            hiddenSubjects.push(subjectName);
+            localStorage.setItem('hidden-subjects', JSON.stringify(hiddenSubjects));
+          }
+          localStorage.setItem(seenKey, '1');
+        }
+
         if (hiddenSubjects.includes(subjectName)) block.style.display = 'none';
 
         const label = document.createElement('label');

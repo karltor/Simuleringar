@@ -162,6 +162,21 @@ jobs:
               #status { margin-top: 10px; font-weight: bold; font-size: 0.9rem;}
               .error { color: #d73a49; }
               .success { color: #2ea44f; }
+
+              /* ---- ÄNDRINGSLOGG ---- */
+              .changelog-block { order: 999; }
+              .changelog-block .subject-title { background: #6b46c1; }
+              .changelog-block .content-wrapper { padding: 0; }
+              .changelog-list { display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto; }
+              .changelog-entry { display: grid; grid-template-columns: 58px 64px minmax(0, 1fr); align-items: stretch; font-size: 0.78rem; border-bottom: 1px solid #f0f0f0; }
+              .changelog-entry:last-child { border-bottom: none; }
+              .changelog-entry > * { display: flex; align-items: center; padding: 5px 8px; }
+              .changelog-date { color: #555; font-variant-numeric: tabular-nums; white-space: nowrap; justify-content: flex-end; }
+              .changelog-type { font-size: 0.7rem; font-weight: 600; justify-content: center; border-left: 1px solid #e1e4e8; border-right: 1px solid #e1e4e8; white-space: nowrap; letter-spacing: 0.2px; }
+              .changelog-type.ny { color: #065f46; background: #ecfdf5; }
+              .changelog-type.andring { color: #1e40af; background: #eff6ff; }
+              .changelog-link { color: #0366d6; text-decoration: none; min-width: 0; display: block; padding: 5px 8px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+              .changelog-link:hover { background: #f0f8ff; text-decoration: underline; }
             </style>
           </head>
           <body>
@@ -262,6 +277,53 @@ jobs:
              if [ "$current_cat" != "" ]; then echo "</div></div>" >> index.html; fi
              echo "</div></div>" >> index.html
           fi
+
+          # ==========================================
+          # 2b. GENERERA ÄNDRINGSLOGG-KOLUMN (från git log)
+          # ==========================================
+          echo "<div class='subject-block changelog-block' data-subject='Ändringslogg' data-hidden-default='true'>" >> index.html
+          echo "<div class='subject-title'>📜 Ändringslogg <span>-</span></div>" >> index.html
+          echo "<div class='content-wrapper active'><div class='changelog-list'>" >> index.html
+
+          git -c core.quotePath=false log --reverse --name-status --pretty=format:'==DATE==%ad' --date=format:'%-d %b' 2>/dev/null | awk -v OFS='\t' '
+            BEGIN {
+              date = ""
+              m["Jan"]="jan"; m["Feb"]="feb"; m["Mar"]="mar"; m["Apr"]="apr"
+              m["May"]="maj"; m["Jun"]="jun"; m["Jul"]="jul"; m["Aug"]="aug"
+              m["Sep"]="sep"; m["Oct"]="okt"; m["Nov"]="nov"; m["Dec"]="dec"
+            }
+            /^==DATE==/ {
+              raw = substr($0, 9)
+              split(raw, p, " ")
+              date = p[1] " " (m[p[2]] ? m[p[2]] : tolower(p[2]))
+              next
+            }
+            /^[AM]\t/ {
+              status = substr($0, 1, 1)
+              file = substr($0, 3)
+              if (file !~ /\.html$/) next
+              if (file == "index.html" || file == "om-mig.html") next
+              if (file ~ /^\.github/) next
+              type = (status == "A") ? "Ny fil" : "Ändring"
+              key = date "|" file "|" type
+              if (key in seen) next
+              seen[key] = 1
+              print date, type, file
+            }
+          ' | tac > changelog_data.txt
+
+          while IFS=$'\t' read -r date type file; do
+            base="${file%.html}"
+            sim_name=$(echo "$base" | awk -F'-' '{ for(i=3;i<=NF;i++) printf "%s%s", (i>3?"-":""), $i; print "" }')
+            [ -z "$sim_name" ] && sim_name="$base"
+            type_class="ny"
+            [ "$type" = "Ändring" ] && type_class="andring"
+            href_file=$(printf '%s' "$file" | sed 's/&/\&amp;/g')
+            display_name=$(printf '%s' "$sim_name" | sed 's/&/\&amp;/g')
+            echo "<div class='changelog-entry'><span class='changelog-date'>$date</span><span class='changelog-type $type_class'>$type</span><a class='changelog-link' href=\"./$href_file\" target=\"_blank\" title=\"$display_name\">$display_name</a></div>" >> index.html
+          done < changelog_data.txt
+
+          echo "</div></div></div>" >> index.html
 
           cat <<'EOF' >> index.html
             </div>
@@ -520,7 +582,17 @@ jobs:
                   const content = block.querySelector('.content-wrapper');
                   const span = titleEl.querySelector('span');
                   const subjectName = block.getAttribute('data-subject');
-                  
+                  const hiddenByDefault = block.dataset.hiddenDefault === 'true';
+                  const seenKey = 'subject-seen-' + subjectName;
+
+                  if (hiddenByDefault && !localStorage.getItem(seenKey)) {
+                    if (!hiddenSubjects.includes(subjectName)) {
+                      hiddenSubjects.push(subjectName);
+                      localStorage.setItem('hidden-subjects', JSON.stringify(hiddenSubjects));
+                    }
+                    localStorage.setItem(seenKey, '1');
+                  }
+
                   if (hiddenSubjects.includes(subjectName)) block.style.display = 'none';
 
                   const label = document.createElement('label');

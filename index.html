@@ -661,11 +661,11 @@
       });
 
       document.querySelectorAll('.category-name').forEach(catEl => {
-        const content = catEl.nextElementSibling; 
-        const span = catEl.querySelectorAll('span')[1]; 
+        const content = catEl.nextElementSibling;
+        const span = catEl.querySelectorAll('span')[1];
         const categoryName = catEl.parentElement.getAttribute('data-category');
         const subjectName = catEl.closest('.subject-block').getAttribute('data-subject');
-        
+
         const storageKey = 'toggle-cat-' + subjectName + '-' + categoryName;
 
         if (localStorage.getItem(storageKey) === 'closed') {
@@ -680,6 +680,15 @@
           localStorage.setItem(storageKey, isOpen ? 'open' : 'closed');
         });
       });
+
+      if (new URLSearchParams(window.location.search).has('sandbox')) {
+        openModal('test-modal');
+        switchToolTab('sandbox');
+        const codeInput = document.getElementById('code-input');
+        if (codeInput) {
+          requestAnimationFrame(() => codeInput.focus());
+        }
+      }
     });
   </script>
 </body>

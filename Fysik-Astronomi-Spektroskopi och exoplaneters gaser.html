@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const selectionCounter = document.getElementById('selection-counter');
   const roundIndicator = document.getElementById('round-indicator');
   const feedbackArea = document.getElementById('feedback-area');
-  const fullWidth = spectrumSvg.node().getBoundingClientRect().width;
+  let fullWidth = spectrumSvg.node().getBoundingClientRect().width;
   const nmToPixel = d => Math.log10(d / 280) / Math.log10(10000 / 280) * fullWidth;
   const pixelToNm = p => 280 * Math.pow(10000 / 280, p / fullWidth);
   let previousCombinations = [];
@@ -252,6 +252,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   function ritaSpektrum() {
+      fullWidth = spectrumSvg.node().getBoundingClientRect().width;
+      spectrumSvg.selectAll('*').remove();
       const defs = spectrumSvg.append('defs');
       const gradient = defs.append('linearGradient')
           .attr('id', 'visibleSpectrumGradient')
@@ -311,22 +313,27 @@ document.addEventListener('DOMContentLoaded', function() {
       previousCombinations.push(newCombination);
 
       fadeOutIn(() => {
-          spectrumSvg.selectAll('rect.absorption').remove();
-          valdaGaser.forEach(gas => {
-              gas.bands.forEach(band => {
-                  spectrumSvg.append('rect')
-                      .attr('class', 'absorption')
-                      .attr('x', nmToPixel(band.wavelength))
-                      .attr('y', 40)
-                      .attr('width', '3px')
-                      .attr('height', 400)
-                      .attr('fill', 'black')
-                      .attr('opacity', { 'mycket stark': 0.8, 'stark': 0.6, 'måttlig': 0.4, 'mycket svag': 0.2 }[band.strength]);
-              });
-          });
+          ritaAbsorptionslinjer();
           uppdateraQuizAvsnitt();
         });
 
+  }
+
+  function ritaAbsorptionslinjer() {
+      spectrumSvg.selectAll('rect.absorption').remove();
+      if (!valdaGaser || valdaGaser.length === 0) return;
+      valdaGaser.forEach(gas => {
+          gas.bands.forEach(band => {
+              spectrumSvg.append('rect')
+                  .attr('class', 'absorption')
+                  .attr('x', nmToPixel(band.wavelength))
+                  .attr('y', 40)
+                  .attr('width', '3px')
+                  .attr('height', 400)
+                  .attr('fill', 'black')
+                  .attr('opacity', { 'mycket stark': 0.8, 'stark': 0.6, 'måttlig': 0.4, 'mycket svag': 0.2 }[band.strength]);
+          });
+      });
   }
   function fadeOutIn(callback) {
       const spectrumElement = document.getElementById('spectrum-display');
@@ -513,6 +520,22 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('start-game-btn').addEventListener('click', startaSpel);
   // Förbered quiz-knapparna i bakgrunden så att de syns när modalen stängs
   uppdateraQuizAvsnitt();
+
+  let resizeTimeout;
+  const omRita = () => {
+      const nyBredd = spectrumSvg.node().getBoundingClientRect().width;
+      if (Math.abs(nyBredd - fullWidth) < 1) return;
+      ritaSpektrum();
+      ritaAbsorptionslinjer();
+  };
+  const planeraOmRita = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(omRita, 120);
+  };
+  window.addEventListener('resize', planeraOmRita);
+  if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(planeraOmRita).observe(spectrumSvg.node());
+  }
 });
 
 </script>

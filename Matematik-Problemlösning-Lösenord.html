@@ -3,190 +3,641 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kod-Ords Lek</title>
+<title>Lösenord – Escape Room</title>
 <style>
+  :root {
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #dbeafe;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #f0f0f0;
+    min-height: 100%;
+    color: #1e293b;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, var(--accent-soft), transparent 55%),
+      #f1f5f9;
   }
-  canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+  canvas#fx {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 60;
   }
-  #inputContainer {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    z-index: 2;
-  }
-  .inputField {
-    width: 40px;
-    height: 40px;
-    margin: 0 5px;
-    font-size: 20px;
-    text-align: center;
-    border: 2px solid #000; /* Svart kant för att se rutan bättre */
-  }
-  .correct {
-    border: 2px solid green; /* Grön kant för korrekta svar */
-  }
-  #submitBtn {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    z-index: 50;
-    margin-top: 10px; /* Lägg till lite marginal ovanför knappen */
-  }
-  .tooltip {
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 18px 60px;
     position: relative;
-    display: inline-block;
+    z-index: 1;
   }
-  .tooltipText {
-    visibility: hidden;
-    width: 200px;
-    background-color: black;
+  header.topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand .lock {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
+  }
+  .brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.1;
+  }
+  .brand .sub {
+    margin: 2px 0 0;
+    font-size: .9rem;
+    color: #64748b;
+  }
+  .home-link {
+    text-decoration: none;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: .85rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    transition: .15s;
+  }
+  .home-link:hover { background: #f8fafc; transform: translateY(-1px); }
+
+  .room-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0 20px;
+    flex-wrap: wrap;
+  }
+  .room-tabs a {
+    text-decoration: none;
+    font-weight: 600;
+    font-size: .9rem;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    transition: .15s;
+  }
+  .room-tabs a:hover { transform: translateY(-1px); border-color: #cbd5e1; }
+  .room-tabs a.active {
+    background: var(--accent);
+    border-color: var(--accent);
     color: #fff;
+    box-shadow: 0 4px 12px -2px var(--accent);
+  }
+
+  .intro {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 5px solid var(--accent);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 18px -10px rgba(15,23,42,.25);
+  }
+  .intro p { margin: 0; color: #475569; font-size: .98rem; }
+  .intro strong { color: #1e293b; }
+
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    font-size: .9rem;
+    color: #64748b;
+  }
+  .progress .bar {
+    flex: 1;
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress .bar > span {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+    transition: width .35s ease;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 18px 18px 16px;
+    box-shadow: 0 8px 24px -16px rgba(15,23,42,.4);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: box-shadow .2s, transform .2s, border-color .2s;
+  }
+  .card:hover { box-shadow: 0 14px 30px -16px rgba(15,23,42,.45); transform: translateY(-2px); }
+  .card.solved {
+    border-color: #86efac;
+    background: linear-gradient(180deg, #f0fdf4, #fff 60%);
+  }
+  .card.wrong {
+    border-color: #fca5a5;
+    animation: shake .35s;
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .badge {
+    flex: none;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .95rem;
+  }
+  .card.solved .badge { background: #bbf7d0; color: #166534; }
+  .topic {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    font-weight: 700;
+    color: #94a3b8;
+  }
+  .card.solved .topic { color: #4ade80; }
+  .question {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+  .answer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .answer-row input {
+    width: 56px;
+    height: 56px;
     text-align: center;
-    border-radius: 6px;
-    padding: 5px;
-    position: absolute;
-    z-index: 3;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -100px;
-    font-size: 14px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    text-transform: uppercase;
+    transition: .15s;
   }
-  .tooltip:hover .tooltipText {
-    visibility: visible;
+  .answer-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px var(--accent-soft);
   }
-  #popup {
+  .card.solved .answer-row input {
+    border-color: #22c55e;
+    background: #dcfce7;
+    color: #166534;
+  }
+  .card.wrong .answer-row input {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+  .slot-label { font-size: .8rem; color: #94a3b8; }
+  .card.solved .slot-label::after { content: " ✓"; color: #22c55e; font-weight: 700; }
+
+  .hint-btn {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: .85rem;
+    cursor: pointer;
+    padding: 2px 0;
+    font-weight: 600;
+  }
+  .hint-btn:hover { text-decoration: underline; }
+  .hint-text {
     display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #fff;
-    padding: 20px;
+    background: var(--accent-soft);
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    z-index: 4;
+    padding: 8px 12px;
+    font-size: .88rem;
+    color: #334155;
+  }
+  .hint-text.show { display: block; }
+
+  .actions {
+    margin-top: 26px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 28px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -8px var(--accent);
+    transition: .15s;
+  }
+  button.primary:hover { background: var(--accent-dark); transform: translateY(-2px); }
+  button.ghost {
+    background: #fff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: .15s;
+  }
+  button.ghost:hover { background: #f8fafc; }
+  .feedback {
+    font-size: .95rem;
+    font-weight: 600;
+  }
+  .feedback.ok { color: #16a34a; }
+  .feedback.bad { color: #dc2626; }
+
+  /* Success overlay */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.55);
+    backdrop-filter: blur(3px);
+    z-index: 70;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .overlay .panel {
+    background: #fff;
+    border-radius: 20px;
+    padding: 34px 40px;
+    text-align: center;
+    max-width: 460px;
+    box-shadow: 0 25px 60px -20px rgba(0,0,0,.5);
+    animation: pop .3s ease;
+  }
+  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .overlay .panel .big { font-size: 3rem; margin-bottom: 6px; }
+  .overlay .panel h2 { margin: 0 0 8px; font-size: 1.5rem; }
+  .overlay .panel p { margin: 0 0 18px; color: #475569; }
+  .overlay .panel .code {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: .35em;
+    background: var(--accent-soft);
+    color: var(--accent-dark);
+    padding: 8px 16px 8px 22px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+  }
+  .overlay .panel button {
+    background: var(--accent);
+    color: #fff; border: none;
+    border-radius: 10px; padding: 10px 22px;
+    font-weight: 700; cursor: pointer;
+  }
+
+  @media (max-width: 520px) {
+    .brand h1 { font-size: 1.25rem; }
+    .answer-row input { width: 48px; height: 48px; font-size: 1.35rem; }
   }
 </style>
 </head>
 <body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <span class="lock">🔐</span>
+      <div>
+        <h1 id="roomTitle">Lösenord</h1>
+        <p class="sub" id="roomSub">Knäck koden!</p>
+      </div>
+    </div>
+    <a class="home-link" href="./index.html">← Alla simuleringar</a>
+  </header>
 
+  <nav class="room-tabs" id="roomTabs">
+    <a href="?1" data-room="1">🧩 Åk 7</a>
+    <a href="?2" data-room="2">📐 Åk 8</a>
+    <a href="?3" data-room="3">🧮 Åk 9</a>
+  </nav>
 
-<div id="inputContainer">
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char1"><span class="tooltipText">Värdet på x i ekvationen 2x + 6 = 14</span></div>
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char2"><span class="tooltipText">Bokstaven på plats 6 i alfabetet</span></div>
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char3"><span class="tooltipText">Första siffran i produkten av sidor i en triangel och hörn i en rektangel</span></div>
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char4"><span class="tooltipText">Om du sparar 200 kr varje dag, hur många dagar tar det att spara 1600 kr?</span></div>
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char5"><span class="tooltipText">Om du slår en tärning tre gånger och får summan 9, vad är medelvärdet av dina kast?</span></div>
-  <div class="tooltip"><input type="text" maxlength="1" class="inputField" id="char6"><span class="tooltipText">Bokstavspositionen från X värde i ekvationen 2(x+1)=8</span></div>
-  <button id="submitBtn" onclick="validatePassword()">Skicka in</button>
+  <div class="intro">
+    <p id="introText"></p>
+  </div>
+
+  <div class="progress">
+    <span id="progressText">0 / 6 lösta</span>
+    <span class="bar"><span id="progressBar"></span></span>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="actions">
+    <button class="primary" id="submitBtn">🔓 Lås upp</button>
+    <button class="ghost" id="resetBtn">↺ Börja om</button>
+    <span class="feedback" id="feedback"></span>
+  </div>
 </div>
 
+<div class="overlay" id="overlay">
+  <div class="panel">
+    <div class="big">🎉</div>
+    <h2 id="winTitle">Du knäckte koden!</h2>
+    <p id="winMsg"></p>
+    <div class="code" id="winCode"></div>
+    <div><button id="winClose">Stäng</button></div>
+  </div>
+</div>
 
+<script>
+const ROOMS = {
+  1: {
+    label: "Åk 7",
+    title: "Trollkarlens Lösenord",
+    sub: "Sex ledtrådar – sex tecken i koden.",
+    accent: "#2563eb", accentDark: "#1d4ed8", accentSoft: "#dbeafe",
+    intro: "Trollkarlen har låst in sina hemligheter. Lös varje ledtråd, skriv in tecknet i rutan och tryck på <strong>Lås upp</strong>. Fastnar du? Klicka på <strong>Visa ledtråd</strong>.",
+    win: 'Bra jobbat! Ropa "Allakazam!"',
+    clues: [
+      { topic: "Ekvationer", q: "Värdet på x i ekvationen 2x + 6 = 14.", hint: "Subtrahera 6 från båda sidor och dela sedan med 2.", a: "4" },
+      { topic: "Mönster", q: "Bokstaven på plats 6 i alfabetet (A = 1, B = 2 …).", hint: "A, B, C, D, E … vilken bokstav kommer sedan?", a: "F" },
+      { topic: "Geometri", q: "Första siffran i produkten av antalet sidor i en triangel och antalet hörn i en rektangel.", hint: "3 sidor · 4 hörn = ? Vilken är den första siffran i svaret?", a: "1" },
+      { topic: "Vardagsmatte", q: "Du sparar 200 kr varje dag. Hur många dagar tar det att spara ihop 1600 kr?", hint: "1600 ÷ 200.", a: "8" },
+      { topic: "Medelvärde", q: "Du slår en tärning tre gånger och summan blir 9. Vad är medelvärdet av kasten?", hint: "Medelvärde = summan delat på antalet kast.", a: "3" },
+      { topic: "Ekvationer", q: "Skriv bokstaven vars plats i alfabetet är lika med x i ekvationen 2(x + 1) = 8.", hint: "Lös ekvationen: x + 1 = 4, alltså x = 3. Vilken bokstav har plats 3?", a: "C" },
+    ]
+  },
+  2: {
+    label: "Åk 8",
+    title: "Geometrins Valv – Åk 8",
+    sub: "Cirklar, volym, enheter, procent och koordinater.",
+    accent: "#0d9488", accentDark: "#0f766e", accentSoft: "#ccfbf1",
+    intro: "Valvet öppnas bara för den som behärskar <strong>cirklar, volym, enhetsomvandling, procent och koordinatsystem</strong>. Lös ledtrådarna, skriv in varje tecken och tryck på <strong>Lås upp</strong>.",
+    win: "Snyggt räknat! Valvet är öppet – du klarade Åk 8-rummet.",
+    clues: [
+      { topic: "Procent", q: "En mobil kostar 2000 kr men priset sänks med 15 %. Vad blir det nya priset i kr? Skriv tusentalssiffran.", hint: "Förändringsfaktorn är 0,85. 2000 · 0,85 = 1700 kr. Vilken siffra står på tusentalsplatsen?", a: "1" },
+      { topic: "Cirklar", q: "En cirkel har radien 10 cm. Beräkna omkretsen med π ≈ 3,14 och avrunda till närmaste heltal. Skriv tiotalssiffran i svaret.", hint: "Omkrets = 2 · π · r = 2 · 3,14 · 10 = 62,8 ≈ 63 cm. Vilken siffra står på tiotalsplatsen?", a: "6" },
+      { topic: "Enhetsomvandling", q: "Hur många deciliter går det på 0,8 liter?", hint: "1 liter = 10 deciliter, så 0,8 liter = 0,8 · 10 dl.", a: "8" },
+      { topic: "Volym", q: "En kubformad låda har sidan 3 dm. Hur många liter rymmer den? (1 dm³ = 1 liter.) Skriv tiotalssiffran.", hint: "Volym = 3 · 3 · 3 = 27 dm³ = 27 liter. Vilken siffra står på tiotalsplatsen?", a: "2" },
+      { topic: "Koordinatsystem", q: "En rät linje går genom punkterna (0, 0) och (3, 12). Vilket y-värde har linjen när x = 1?", hint: "Linjen ökar 12 i höjd när x ökar 3, alltså 4 per steg. Vid x = 1 är y = 4.", a: "4" },
+      { topic: "Geometri", q: "Tänk på en kub. Skriv den bokstav i alfabetet vars plats är lika med antalet hörn i kuben (A = 1, B = 2 …).", hint: "En kub har 8 hörn. Vilken bokstav har plats 8?", a: "H" },
+    ]
+  },
+  3: {
+    label: "Åk 9",
+    title: "Algebraburen – Åk 9",
+    sub: "Likformighet, Pythagoras, räta linjen, förändringsfaktor, faktorisering och primtal.",
+    accent: "#7c3aed", accentDark: "#6d28d9", accentSoft: "#ede9fe",
+    intro: "Burens lås kräver kunskap om <strong>likformighet, Pythagoras sats, räta linjens ekvation, förändringsfaktor, faktorisering och primtal</strong>. Lös varje ledtråd, fyll i tecknen och tryck på <strong>Lås upp</strong>.",
+    win: "Imponerande! Du forcerade Algebraburen – Åk 9-rummet är klart.",
+    clues: [
+      { topic: "Pythagoras sats", q: "En rätvinklig triangel har kateterna 6 cm och 8 cm. Hur lång är hypotenusan i cm? Skriv tiotalssiffran.", hint: "c² = 6² + 8² = 36 + 64 = 100, så c = 10 cm. Vilken siffra står på tiotalsplatsen?", a: "1" },
+      { topic: "Likformighet", q: "Två trianglar är likformiga. En sida i den lilla är 4 cm och motsvarande sida i den stora är 12 cm. Vad är förstoringsskalan (skalfaktorn)?", hint: "Skalfaktor = stora sidan ÷ lilla sidan = 12 ÷ 4.", a: "3" },
+      { topic: "Räta linjens ekvation", q: "För linjen y = 3x − 7: vilket värde har x när y = 8?", hint: "8 = 3x − 7  →  3x = 15  →  x = ?", a: "5" },
+      { topic: "Förändringsfaktor", q: "Ett pris ökar med 20 %. Vilken förändringsfaktor motsvarar det? Skriv siffran på tiondelsplatsen (första decimalen).", hint: "+20 % ger förändringsfaktorn 1,20. Vilken siffra står direkt efter kommatecknet?", a: "2" },
+      { topic: "Faktorisering", q: "Uttrycket 7x + 28 kan skrivas som 7(x + a). Vad är a?", hint: "Bryt ut 7: 7x + 28 = 7·x + 7·a, alltså 7a = 28.", a: "4" },
+      { topic: "Primtal", q: "Ta det tredje primtalet. Skriv den bokstav i alfabetet som står på den platsen (A = 1, B = 2 …).", hint: "Primtalen i ordning: 2, 3, 5 … Det tredje är 5. Vilken bokstav har plats 5?", a: "E" },
+    ]
+  }
+};
 
-<div id="popup">Bra jobbat! Ropa "Allakazam!"</div>
+// --- Pick room from query (?1 / ?2 / ?3, or ?room=2) ---
+function pickRoomId() {
+  const raw = window.location.search.replace(/^\?/, '').trim();
+  let id = parseInt(raw, 10);
+  if (![1,2,3].includes(id)) {
+    const p = new URLSearchParams(window.location.search);
+    id = parseInt(p.get('room'), 10);
+  }
+  return [1,2,3].includes(id) ? id : 1;
+}
 
-<canvas id="canvas"></canvas>
+const roomId = pickRoomId();
+const room = ROOMS[roomId];
+const ANSWERS = room.clues.map(c => c.a.toUpperCase());
 
-  <script>
-    // Grundläggande canvas-setup
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// Apply theme
+document.documentElement.style.setProperty('--accent', room.accent);
+document.documentElement.style.setProperty('--accent-dark', room.accentDark);
+document.documentElement.style.setProperty('--accent-soft', room.accentSoft);
 
-    function validatePassword() {
-      console.log('Knappen trycktes'); // Lägg till denna rad för att kontrollera knapptrycket
-      const correctAnswers = ['4', 'F', '1', '8', '3', 'C'];
-      let allCorrect = true;
+document.title = room.title + " – Escape Room";
+document.getElementById('roomTitle').textContent = room.title;
+document.getElementById('roomSub').textContent = room.sub;
+document.getElementById('introText').innerHTML = room.intro;
 
-      for (let i = 1; i <= correctAnswers.length; i++) {
-        const inputField = document.getElementById(`char${i}`);
-        const isCorrect = inputField.value.toUpperCase() === correctAnswers[i - 1];
-        if (isCorrect) {
-          inputField.classList.add('correct');
-        } else {
-          inputField.classList.remove('correct');
-          allCorrect = false;
-        }
-      }
+// Highlight active tab
+document.querySelectorAll('#roomTabs a').forEach(a => {
+  if (parseInt(a.dataset.room, 10) === roomId) a.classList.add('active');
+});
 
-      if (allCorrect) {
-        document.getElementById('popup').style.display = 'block';
-        setTimeout(() => {
-          document.getElementById('popup').style.display = 'none';
-        }, 5000); // Gör popupen synlig i 5 sekunder
-        explode();
-      }
+// Build cards
+const cardsEl = document.getElementById('cards');
+room.clues.forEach((clue, i) => {
+  const n = i + 1;
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.index = i;
+  card.innerHTML = `
+    <div class="card-head">
+      <div class="badge">${n}</div>
+      <div class="topic">${clue.topic}</div>
+    </div>
+    <p class="question">${clue.q}</p>
+    <button class="hint-btn" type="button">💡 Visa ledtråd</button>
+    <div class="hint-text">${clue.hint}</div>
+    <div class="answer-row">
+      <input type="text" maxlength="1" autocomplete="off" id="char${n}" aria-label="Tecken ${n}">
+      <span class="slot-label">tecken ${n}</span>
+    </div>
+  `;
+  cardsEl.appendChild(card);
+
+  const hintBtn = card.querySelector('.hint-btn');
+  const hintText = card.querySelector('.hint-text');
+  hintBtn.addEventListener('click', () => {
+    const show = hintText.classList.toggle('show');
+    hintBtn.textContent = show ? '🙈 Dölj ledtråd' : '💡 Visa ledtråd';
+  });
+});
+
+const inputs = room.clues.map((_, i) => document.getElementById('char' + (i + 1)));
+
+// Input UX: uppercase, auto-advance, backspace navigation
+inputs.forEach((inp, idx) => {
+  inp.addEventListener('input', () => {
+    inp.value = inp.value.toUpperCase();
+    inp.closest('.card').classList.remove('wrong');
+    if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+    updateProgress();
+  });
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx - 1].focus();
+    if (e.key === 'ArrowLeft' && idx > 0) inputs[idx - 1].focus();
+    if (e.key === 'ArrowRight' && idx < inputs.length - 1) inputs[idx + 1].focus();
+    if (e.key === 'Enter') validate();
+  });
+});
+
+const feedbackEl = document.getElementById('feedback');
+const progressText = document.getElementById('progressText');
+const progressBar = document.getElementById('progressBar');
+
+function isSlotCorrect(i) {
+  return inputs[i].value.toUpperCase() === ANSWERS[i];
+}
+
+function updateProgress(markCards) {
+  let solved = 0;
+  inputs.forEach((inp, i) => {
+    const card = inp.closest('.card');
+    if (isSlotCorrect(i)) {
+      solved++;
+      if (markCards) card.classList.add('solved');
+    } else if (markCards) {
+      card.classList.remove('solved');
     }
+  });
+  progressText.textContent = `${solved} / ${inputs.length} lösta`;
+  progressBar.style.width = (solved / inputs.length * 100) + '%';
+  return solved;
+}
 
-    function explode() {
-      const particles = [];
-      const colors = ['#ff0000', '#ff8c00', '#ffff00', '#008000', '#0000ff', '#4b0082', '#ee82ee']; // Regnbågens färger
-
-      class Particle {
-        constructor(x, y) {
-          this.x = x;
-          this.y = y;
-          this.radius = Math.random() * 5 + 1;
-          this.color = colors[Math.floor(Math.random() * colors.length)];
-          this.velocity = {
-            x: (Math.random() - 0.5) * 15,
-            y: (Math.random() - 0.5) * 15
-          };
-        }
-
-        draw() {
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-          ctx.fillStyle = this.color;
-          ctx.fill();
-        }
-
-        update() {
-          this.x += this.velocity.x;
-          this.y += this.velocity.y;
-          this.draw();
-        }
-      }
-
-      function init() {
-        for (let i = 0; i < 100; i++) {
-          particles.push(new Particle(canvas.width / 2, canvas.height / 2));
-        }
-      }
-
-      function animate() {
-        requestAnimationFrame(animate);
-        ctx.fillStyle = 'rgba(240, 240, 240, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        particles.forEach((particle, index) => {
-          if (particle.radius > 0.2) particle.radius -= 0.1;
-          particle.update();
-
-          // Ta bort partiklar som är för små
-          if (particle.radius <= 0.2) {
-            particles.splice(index, 1);
-          }
-        });
-      }
-
-      init();
-      animate();
+function validate() {
+  let allCorrect = true;
+  inputs.forEach((inp, i) => {
+    const card = inp.closest('.card');
+    if (isSlotCorrect(i)) {
+      card.classList.add('solved');
+      card.classList.remove('wrong');
+    } else {
+      card.classList.remove('solved');
+      if (inp.value) card.classList.add('wrong');
+      allCorrect = false;
     }
-  </script>
+  });
+  const solved = updateProgress(false);
+  if (allCorrect) {
+    feedbackEl.textContent = '';
+    showWin();
+  } else {
+    feedbackEl.className = 'feedback bad';
+    feedbackEl.textContent = solved === 0
+      ? 'Inget rätt ännu – läs ledtrådarna en gång till.'
+      : `${solved} av ${inputs.length} rätt. Fortsätt – de röda rutorna stämmer inte.`;
+  }
+}
 
+function showWin() {
+  document.getElementById('winTitle').textContent = '🎉 Du knäckte koden!';
+  document.getElementById('winMsg').textContent = room.win;
+  document.getElementById('winCode').textContent = ANSWERS.join(' ');
+  document.getElementById('overlay').classList.add('show');
+  confetti();
+}
 
+document.getElementById('submitBtn').addEventListener('click', validate);
+document.getElementById('winClose').addEventListener('click', () => {
+  document.getElementById('overlay').classList.remove('show');
+});
+document.getElementById('overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'overlay') e.currentTarget.classList.remove('show');
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+  inputs.forEach(inp => { inp.value = ''; const c = inp.closest('.card'); c.classList.remove('solved','wrong'); });
+  feedbackEl.textContent = '';
+  updateProgress(false);
+  inputs[0].focus();
+});
+
+updateProgress(false);
+
+// --- Confetti / explosion effect ---
+const canvas = document.getElementById('fx');
+const ctx = canvas.getContext('2d');
+function sizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+sizeCanvas();
+window.addEventListener('resize', sizeCanvas);
+
+function confetti() {
+  const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
+  const particles = [];
+  const cx = canvas.width / 2, cy = canvas.height / 3;
+  for (let i = 0; i < 160; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 9 + 3;
+    particles.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 4,
+      r: Math.random() * 6 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 1
+    });
+  }
+  let running = true;
+  function frame() {
+    if (!running) return;
+    requestAnimationFrame(frame);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = 0;
+    particles.forEach(p => {
+      if (p.life <= 0) return;
+      alive++;
+      p.vy += 0.18;            // gravity
+      p.vx *= 0.99;
+      p.x += p.vx; p.y += p.vy;
+      p.life -= 0.012;
+      ctx.globalAlpha = Math.max(p.life, 0);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    if (alive === 0) { running = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
+  }
+  frame();
+}
+</script>
 </body>
 </html>

@@ -9,634 +9,518 @@
     --accent: #2563eb;
     --accent-dark: #1d4ed8;
     --accent-soft: #dbeafe;
+    --ink: #1e293b;
+    --muted: #64748b;
   }
   * { box-sizing: border-box; }
-  html, body { height: 100%; }
+  html, body { margin: 0; padding: 0; }
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    min-height: 100%;
-    color: #1e293b;
+    color: var(--ink);
     background:
-      radial-gradient(1200px 600px at 80% -10%, var(--accent-soft), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, var(--accent-soft), transparent 55%),
+      radial-gradient(900px 480px at 85% -10%, var(--accent-soft), transparent 60%),
+      radial-gradient(700px 420px at -10% 115%, var(--accent-soft), transparent 55%),
       #f1f5f9;
-  }
-  canvas#fx {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 60;
-  }
-  .wrap {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 28px 18px 60px;
-    position: relative;
-    z-index: 1;
-  }
-  header.topbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .brand .lock {
-    font-size: 2rem;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
-  }
-  .brand h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    line-height: 1.1;
-  }
-  .brand .sub {
-    margin: 2px 0 0;
-    font-size: .9rem;
-    color: #64748b;
-  }
-  .home-link {
-    text-decoration: none;
-    color: #475569;
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    padding: 7px 14px;
-    font-size: .85rem;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05);
-    transition: .15s;
-  }
-  .home-link:hover { background: #f8fafc; transform: translateY(-1px); }
-
-  .room-tabs {
-    display: flex;
-    gap: 8px;
-    margin: 16px 0 20px;
-    flex-wrap: wrap;
-  }
-  .room-tabs a {
-    text-decoration: none;
-    font-weight: 600;
-    font-size: .9rem;
-    padding: 8px 16px;
-    border-radius: 999px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    color: #475569;
-    transition: .15s;
-  }
-  .room-tabs a:hover { transform: translateY(-1px); border-color: #cbd5e1; }
-  .room-tabs a.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 12px -2px var(--accent);
-  }
-
-  .intro {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-left: 5px solid var(--accent);
-    border-radius: 14px;
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    box-shadow: 0 6px 18px -10px rgba(15,23,42,.25);
-  }
-  .intro p { margin: 0; color: #475569; font-size: .98rem; }
-  .intro strong { color: #1e293b; }
-
-  .progress {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    font-size: .9rem;
-    color: #64748b;
-  }
-  .progress .bar {
-    flex: 1;
-    height: 10px;
-    background: #e2e8f0;
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .progress .bar > span {
-    display: block;
-    height: 100%;
-    width: 0;
-    background: linear-gradient(90deg, var(--accent), var(--accent-dark));
-    transition: width .35s ease;
-  }
-
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-  }
-  .card {
-    background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 18px 18px 16px;
-    box-shadow: 0 8px 24px -16px rgba(15,23,42,.4);
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    transition: box-shadow .2s, transform .2s, border-color .2s;
+    overflow: hidden;
   }
-  .card:hover { box-shadow: 0 14px 30px -16px rgba(15,23,42,.45); transform: translateY(-2px); }
-  .card.solved {
-    border-color: #86efac;
-    background: linear-gradient(180deg, #f0fdf4, #fff 60%);
-  }
-  .card.wrong {
-    border-color: #fca5a5;
-    animation: shake .35s;
-  }
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    75% { transform: translateX(6px); }
-  }
-  .card-head {
+  canvas#fx { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+
+  .topbar {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 10px 16px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: rgba(255,255,255,.65);
+    backdrop-filter: blur(4px);
   }
+  .title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .title-wrap .lock { font-size: 1.5rem; }
+  .title-wrap h1 { margin: 0; font-size: 1.05rem; line-height: 1.15; white-space: nowrap; }
+  .title-wrap .hint-line { margin: 1px 0 0; font-size: .74rem; color: var(--muted); white-space: nowrap; }
+  @media (max-width: 760px) { .title-wrap .hint-line { display: none; } }
+
+  .seedbox {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-soft); color: var(--accent-dark);
+    border-radius: 999px; padding: 4px 10px 4px 12px;
+    font-size: .82rem; font-weight: 700; white-space: nowrap;
+  }
+  .seedbox code { font-family: 'Courier New', monospace; letter-spacing: .12em; font-size: .95rem; }
+  .seedbox button {
+    border: none; background: rgba(255,255,255,.6); color: var(--accent-dark);
+    border-radius: 999px; width: 22px; height: 22px; cursor: pointer; font-size: .85rem;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .seedbox button:hover { background: #fff; }
+
+  .room-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .room-tabs a {
+    text-decoration: none; font-weight: 600; font-size: .82rem;
+    padding: 6px 12px; border-radius: 999px; border: 1px solid #e2e8f0;
+    background: #fff; color: var(--muted); transition: .15s; white-space: nowrap;
+  }
+  .room-tabs a:hover { border-color: #cbd5e1; }
+  .room-tabs a.active {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+    box-shadow: 0 3px 10px -3px var(--accent);
+  }
+  .home-link {
+    text-decoration: none; color: var(--muted); background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 999px; padding: 6px 12px;
+    font-size: .8rem; white-space: nowrap;
+  }
+  .home-link:hover { background: #f8fafc; }
+
+  /* Game grid – 3x2 on wide screens, fills viewport, no page scroll */
+  .game {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    padding: 12px 16px;
+  }
+  .card {
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
+    padding: 11px 14px; display: flex; flex-direction: column; gap: 7px;
+    overflow: hidden; box-shadow: 0 6px 18px -14px rgba(15,23,42,.4);
+    transition: border-color .2s, box-shadow .2s, transform .15s;
+  }
+  .card.solved { border-color: #86efac; background: linear-gradient(180deg, #f0fdf4, #fff 55%); }
+  .card.wrong { border-color: #fca5a5; animation: shake .35s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+  .card .head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
   .badge {
-    flex: none;
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .95rem;
+    flex: none; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-dark);
+    font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center;
   }
   .card.solved .badge { background: #bbf7d0; color: #166534; }
-  .topic {
-    font-size: .72rem;
-    text-transform: uppercase;
-    letter-spacing: .07em;
-    font-weight: 700;
-    color: #94a3b8;
-  }
+  .topic { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #94a3b8; }
   .card.solved .topic { color: #4ade80; }
-  .question {
-    margin: 0;
-    font-size: 1rem;
-    line-height: 1.45;
+  .q { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; font-size: .92rem; line-height: 1.4; }
+  .q b { color: var(--ink); }
+  .ans { flex: 0 0 auto; display: flex; align-items: center; gap: 9px; }
+  .ans input {
+    width: 44px; height: 44px; text-align: center; font-size: 1.4rem; font-weight: 700;
+    border: 2px solid #cbd5e1; border-radius: 11px; background: #f8fafc; text-transform: uppercase;
+    transition: .15s; padding: 0;
   }
-  .answer-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: auto;
-  }
-  .answer-row input {
-    width: 56px;
-    height: 56px;
-    text-align: center;
-    font-size: 1.6rem;
-    font-weight: 700;
-    border: 2px solid #cbd5e1;
-    border-radius: 12px;
-    background: #f8fafc;
-    text-transform: uppercase;
-    transition: .15s;
-  }
-  .answer-row input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: #fff;
-    box-shadow: 0 0 0 4px var(--accent-soft);
-  }
-  .card.solved .answer-row input {
-    border-color: #22c55e;
-    background: #dcfce7;
-    color: #166534;
-  }
-  .card.wrong .answer-row input {
-    border-color: #ef4444;
-    background: #fef2f2;
-  }
-  .slot-label { font-size: .8rem; color: #94a3b8; }
-  .card.solved .slot-label::after { content: " ✓"; color: #22c55e; font-weight: 700; }
+  .ans input:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
+  .card.solved .ans input { border-color: #22c55e; background: #dcfce7; color: #166534; }
+  .card.wrong .ans input { border-color: #ef4444; background: #fef2f2; }
+  .slot-label { font-size: .78rem; color: #94a3b8; }
+  .card.solved .slot-label { color: #22c55e; font-weight: 700; }
+  .card.solved .slot-label::after { content: " ✓"; }
 
-  .hint-btn {
-    align-self: flex-start;
-    background: none;
-    border: none;
-    color: var(--accent);
-    font-size: .85rem;
-    cursor: pointer;
-    padding: 2px 0;
-    font-weight: 600;
-  }
-  .hint-btn:hover { text-decoration: underline; }
-  .hint-text {
-    display: none;
-    background: var(--accent-soft);
-    border-radius: 10px;
-    padding: 8px 12px;
-    font-size: .88rem;
-    color: #334155;
-  }
-  .hint-text.show { display: block; }
-
-  .actions {
-    margin-top: 26px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
+  .footer {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 9px 16px 12px; border-top: 1px solid #e2e8f0; background: rgba(255,255,255,.65); backdrop-filter: blur(4px);
   }
   button.primary {
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 13px 28px;
-    font-size: 1.05rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 8px 20px -8px var(--accent);
-    transition: .15s;
+    background: var(--accent); color: #fff; border: none; border-radius: 11px;
+    padding: 11px 24px; font-size: 1rem; font-weight: 700; cursor: pointer;
+    box-shadow: 0 6px 16px -6px var(--accent); transition: .15s;
   }
-  button.primary:hover { background: var(--accent-dark); transform: translateY(-2px); }
+  button.primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
   button.ghost {
-    background: #fff;
-    color: #475569;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-size: .95rem;
-    cursor: pointer;
-    transition: .15s;
+    background: #fff; color: var(--muted); border: 1px solid #e2e8f0; border-radius: 11px;
+    padding: 10px 14px; font-size: .88rem; cursor: pointer;
   }
   button.ghost:hover { background: #f8fafc; }
-  .feedback {
-    font-size: .95rem;
-    font-weight: 600;
-  }
-  .feedback.ok { color: #16a34a; }
+  .progress { flex: 1 1 160px; display: flex; align-items: center; gap: 8px; min-width: 140px; font-size: .82rem; color: var(--muted); }
+  .progress .bar { flex: 1; height: 9px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+  .progress .bar > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); transition: width .35s; }
+  .feedback { font-size: .85rem; font-weight: 600; flex: 0 1 auto; }
   .feedback.bad { color: #dc2626; }
 
-  /* Success overlay */
+  /* Win overlay */
   .overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(15,23,42,.55);
-    backdrop-filter: blur(3px);
-    z-index: 70;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    display: none; position: fixed; inset: 0; z-index: 70; padding: 20px;
+    background: rgba(15,23,42,.55); backdrop-filter: blur(3px);
+    align-items: center; justify-content: center;
   }
   .overlay.show { display: flex; }
-  .overlay .panel {
-    background: #fff;
-    border-radius: 20px;
-    padding: 34px 40px;
-    text-align: center;
-    max-width: 460px;
-    box-shadow: 0 25px 60px -20px rgba(0,0,0,.5);
-    animation: pop .3s ease;
+  .panel {
+    background: #fff; border-radius: 20px; padding: 28px 34px; text-align: center;
+    max-width: 460px; box-shadow: 0 25px 60px -20px rgba(0,0,0,.5); animation: pop .3s ease;
   }
-  @keyframes pop { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .overlay .panel .big { font-size: 3rem; margin-bottom: 6px; }
-  .overlay .panel h2 { margin: 0 0 8px; font-size: 1.5rem; }
-  .overlay .panel p { margin: 0 0 18px; color: #475569; }
-  .overlay .panel .code {
-    display: inline-block;
-    font-family: 'Courier New', monospace;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: .35em;
-    background: var(--accent-soft);
-    color: var(--accent-dark);
-    padding: 8px 16px 8px 22px;
-    border-radius: 10px;
-    margin-bottom: 18px;
+  @keyframes pop { from { transform: scale(.85); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+  .panel .big { font-size: 2.6rem; }
+  .panel h2 { margin: 4px 0 6px; font-size: 1.4rem; }
+  .panel p { margin: 0 0 14px; color: var(--muted); }
+  .panel .code-line {
+    font-family: 'Courier New', monospace; font-size: 1.3rem; font-weight: 700;
+    letter-spacing: .3em; background: #f1f5f9; color: #334155; padding: 6px 14px 6px 20px; border-radius: 10px; display: inline-block; margin-bottom: 10px;
   }
-  .overlay .panel button {
-    background: var(--accent);
-    color: #fff; border: none;
-    border-radius: 10px; padding: 10px 22px;
-    font-weight: 700; cursor: pointer;
+  .panel .magic {
+    display: block; font-size: 1.5rem; font-weight: 800; color: var(--accent-dark);
+    background: var(--accent-soft); border-radius: 12px; padding: 10px 16px; margin: 6px 0 14px; letter-spacing: .04em;
   }
+  .panel .meta { font-size: .82rem; color: #94a3b8; margin-bottom: 14px; }
+  .panel button { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-weight: 700; cursor: pointer; }
 
-  @media (max-width: 520px) {
-    .brand h1 { font-size: 1.25rem; }
-    .answer-row input { width: 48px; height: 48px; font-size: 1.35rem; }
+  /* Teacher / facit view */
+  .facit { flex: 1 1 auto; overflow: auto; padding: 16px; }
+  .facit .box { max-width: 760px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px 24px; box-shadow: 0 8px 24px -16px rgba(15,23,42,.4); }
+  .facit h2 { margin: 0 0 4px; }
+  .facit .lead { color: var(--muted); margin: 0 0 16px; }
+  .facit ol { margin: 0; padding-left: 22px; }
+  .facit ol li { margin-bottom: 10px; line-height: 1.4; }
+  .facit .tag { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #94a3b8; }
+  .facit .sv { font-weight: 800; color: #166534; }
+  .facit .summary { margin-top: 18px; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+  .facit .summary .code-line { font-family: 'Courier New', monospace; font-weight: 700; letter-spacing: .25em; background: #f1f5f9; padding: 4px 12px; border-radius: 8px; }
+  .facit .summary .magic { font-weight: 800; color: var(--accent-dark); }
+
+  /* Small screens: allow normal scrolling */
+  @media (max-width: 900px) {
+    .game { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+  }
+  @media (max-width: 620px), (max-height: 540px) {
+    body { height: auto; min-height: 100vh; overflow: auto; }
+    .game { display: flex; flex-direction: column; }
+    .card { min-height: 150px; }
+    .q { overflow: visible; }
   }
 </style>
 </head>
 <body>
 <canvas id="fx"></canvas>
-<div class="wrap">
-  <header class="topbar">
-    <div class="brand">
-      <span class="lock">🔐</span>
-      <div>
-        <h1 id="roomTitle">Lösenord</h1>
-        <p class="sub" id="roomSub">Knäck koden!</p>
-      </div>
-    </div>
-    <a class="home-link" href="./index.html">← Alla simuleringar</a>
-  </header>
 
+<header class="topbar">
+  <div class="title-wrap">
+    <span class="lock">🔐</span>
+    <div>
+      <h1 id="roomTitle">Lösenord</h1>
+      <p class="hint-line">Lös alla sex – skriv ett tecken i varje ruta – tryck <b>Lås upp</b>.</p>
+    </div>
+  </div>
+  <span class="seedbox" id="seedbox" title="Din unika spelkod – styr siffrorna i uppgifterna">
+    🎟️ Spelkod: <code id="seedText">----</code>
+    <button id="newSeedBtn" title="Slumpa en ny spelkod">🔄</button>
+  </span>
   <nav class="room-tabs" id="roomTabs">
     <a href="?1" data-room="1">🧩 Åk 7</a>
     <a href="?2" data-room="2">📐 Åk 8</a>
     <a href="?3" data-room="3">🧮 Åk 9</a>
   </nav>
+  <a class="home-link" href="./index.html">← Alla simuleringar</a>
+</header>
 
-  <div class="intro">
-    <p id="introText"></p>
-  </div>
+<main class="game" id="game"></main>
 
-  <div class="progress">
-    <span id="progressText">0 / 6 lösta</span>
-    <span class="bar"><span id="progressBar"></span></span>
-  </div>
-
-  <div class="cards" id="cards"></div>
-
-  <div class="actions">
-    <button class="primary" id="submitBtn">🔓 Lås upp</button>
-    <button class="ghost" id="resetBtn">↺ Börja om</button>
-    <span class="feedback" id="feedback"></span>
-  </div>
-</div>
+<footer class="footer" id="footer">
+  <button class="primary" id="submitBtn">🔓 Lås upp</button>
+  <button class="ghost" id="resetBtn" title="Töm alla rutor">↺ Töm</button>
+  <div class="progress"><span id="progressText">0 / 6</span><span class="bar"><span id="progressBar"></span></span></div>
+  <span class="feedback" id="feedback"></span>
+</footer>
 
 <div class="overlay" id="overlay">
   <div class="panel">
     <div class="big">🎉</div>
-    <h2 id="winTitle">Du knäckte koden!</h2>
+    <h2>Du knäckte koden!</h2>
     <p id="winMsg"></p>
-    <div class="code" id="winCode"></div>
-    <div><button id="winClose">Stäng</button></div>
+    <div class="code-line" id="winCode"></div>
+    <span class="magic" id="winMagic"></span>
+    <div class="meta" id="winMeta"></div>
+    <button id="winClose">Stäng</button>
   </div>
 </div>
 
 <script>
-const ROOMS = {
-  1: {
-    label: "Åk 7",
-    title: "Trollkarlens Lösenord",
-    sub: "Sex ledtrådar – sex tecken i koden.",
-    accent: "#2563eb", accentDark: "#1d4ed8", accentSoft: "#dbeafe",
-    intro: "Trollkarlen har låst in sina hemligheter. Lös varje ledtråd, skriv in tecknet i rutan och tryck på <strong>Lås upp</strong>. Fastnar du? Klicka på <strong>Visa ledtråd</strong>.",
-    win: 'Bra jobbat! Ropa "Allakazam!"',
-    clues: [
-      { topic: "Ekvationer", q: "Värdet på x i ekvationen 2x + 6 = 14.", hint: "Subtrahera 6 från båda sidor och dela sedan med 2.", a: "4" },
-      { topic: "Mönster", q: "Bokstaven på plats 6 i alfabetet (A = 1, B = 2 …).", hint: "A, B, C, D, E … vilken bokstav kommer sedan?", a: "F" },
-      { topic: "Geometri", q: "Första siffran i produkten av antalet sidor i en triangel och antalet hörn i en rektangel.", hint: "3 sidor · 4 hörn = ? Vilken är den första siffran i svaret?", a: "1" },
-      { topic: "Vardagsmatte", q: "Du sparar 200 kr varje dag. Hur många dagar tar det att spara ihop 1600 kr?", hint: "1600 ÷ 200.", a: "8" },
-      { topic: "Medelvärde", q: "Du slår en tärning tre gånger och summan blir 9. Vad är medelvärdet av kasten?", hint: "Medelvärde = summan delat på antalet kast.", a: "3" },
-      { topic: "Ekvationer", q: "Skriv bokstaven vars plats i alfabetet är lika med x i ekvationen 2(x + 1) = 8.", hint: "Lös ekvationen: x + 1 = 4, alltså x = 3. Vilken bokstav har plats 3?", a: "C" },
-    ]
-  },
-  2: {
-    label: "Åk 8",
-    title: "Geometrins Valv – Åk 8",
-    sub: "Cirklar, volym, enheter, procent och koordinater.",
-    accent: "#0d9488", accentDark: "#0f766e", accentSoft: "#ccfbf1",
-    intro: "Valvet öppnas bara för den som behärskar <strong>cirklar, volym, enhetsomvandling, procent och koordinatsystem</strong>. Lös ledtrådarna, skriv in varje tecken och tryck på <strong>Lås upp</strong>.",
-    win: "Snyggt räknat! Valvet är öppet – du klarade Åk 8-rummet.",
-    clues: [
-      { topic: "Procent", q: "En mobil kostar 2000 kr men priset sänks med 15 %. Vad blir det nya priset i kr? Skriv tusentalssiffran.", hint: "Förändringsfaktorn är 0,85. 2000 · 0,85 = 1700 kr. Vilken siffra står på tusentalsplatsen?", a: "1" },
-      { topic: "Cirklar", q: "En cirkel har radien 10 cm. Beräkna omkretsen med π ≈ 3,14 och avrunda till närmaste heltal. Skriv tiotalssiffran i svaret.", hint: "Omkrets = 2 · π · r = 2 · 3,14 · 10 = 62,8 ≈ 63 cm. Vilken siffra står på tiotalsplatsen?", a: "6" },
-      { topic: "Enhetsomvandling", q: "Hur många deciliter går det på 0,8 liter?", hint: "1 liter = 10 deciliter, så 0,8 liter = 0,8 · 10 dl.", a: "8" },
-      { topic: "Volym", q: "En kubformad låda har sidan 3 dm. Hur många liter rymmer den? (1 dm³ = 1 liter.) Skriv tiotalssiffran.", hint: "Volym = 3 · 3 · 3 = 27 dm³ = 27 liter. Vilken siffra står på tiotalsplatsen?", a: "2" },
-      { topic: "Koordinatsystem", q: "En rät linje går genom punkterna (0, 0) och (3, 12). Vilket y-värde har linjen när x = 1?", hint: "Linjen ökar 12 i höjd när x ökar 3, alltså 4 per steg. Vid x = 1 är y = 4.", a: "4" },
-      { topic: "Geometri", q: "Tänk på en kub. Skriv den bokstav i alfabetet vars plats är lika med antalet hörn i kuben (A = 1, B = 2 …).", hint: "En kub har 8 hörn. Vilken bokstav har plats 8?", a: "H" },
-    ]
-  },
-  3: {
-    label: "Åk 9",
-    title: "Algebraburen – Åk 9",
-    sub: "Likformighet, Pythagoras, räta linjen, förändringsfaktor, faktorisering och primtal.",
-    accent: "#7c3aed", accentDark: "#6d28d9", accentSoft: "#ede9fe",
-    intro: "Burens lås kräver kunskap om <strong>likformighet, Pythagoras sats, räta linjens ekvation, förändringsfaktor, faktorisering och primtal</strong>. Lös varje ledtråd, fyll i tecknen och tryck på <strong>Lås upp</strong>.",
-    win: "Imponerande! Du forcerade Algebraburen – Åk 9-rummet är klart.",
-    clues: [
-      { topic: "Pythagoras sats", q: "En rätvinklig triangel har kateterna 6 cm och 8 cm. Hur lång är hypotenusan i cm? Skriv tiotalssiffran.", hint: "c² = 6² + 8² = 36 + 64 = 100, så c = 10 cm. Vilken siffra står på tiotalsplatsen?", a: "1" },
-      { topic: "Likformighet", q: "Två trianglar är likformiga. En sida i den lilla är 4 cm och motsvarande sida i den stora är 12 cm. Vad är förstoringsskalan (skalfaktorn)?", hint: "Skalfaktor = stora sidan ÷ lilla sidan = 12 ÷ 4.", a: "3" },
-      { topic: "Räta linjens ekvation", q: "För linjen y = 3x − 7: vilket värde har x när y = 8?", hint: "8 = 3x − 7  →  3x = 15  →  x = ?", a: "5" },
-      { topic: "Förändringsfaktor", q: "Ett pris ökar med 20 %. Vilken förändringsfaktor motsvarar det? Skriv siffran på tiondelsplatsen (första decimalen).", hint: "+20 % ger förändringsfaktorn 1,20. Vilken siffra står direkt efter kommatecknet?", a: "2" },
-      { topic: "Faktorisering", q: "Uttrycket 7x + 28 kan skrivas som 7(x + a). Vad är a?", hint: "Bryt ut 7: 7x + 28 = 7·x + 7·a, alltså 7a = 28.", a: "4" },
-      { topic: "Primtal", q: "Ta det tredje primtalet. Skriv den bokstav i alfabetet som står på den platsen (A = 1, B = 2 …).", hint: "Primtalen i ordning: 2, 3, 5 … Det tredje är 5. Vilken bokstav har plats 5?", a: "E" },
-    ]
-  }
+/* ---------- seeded randomness ---------- */
+function hashStr(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+let RNG = Math.random;
+function rint(min, max) { return Math.floor(RNG() * (max - min + 1)) + min; }
+function pick(arr) { return arr[Math.floor(RNG() * arr.length)]; }
+const ALPHA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function letterAt(n) { return ALPHA[n - 1]; }
+
+/* ---------- magic word ---------- */
+const MAGIC_PRE = ["GYLLENE","SKUGG","STJÄRN","DRAK","FROST","STORM","MÅN","SOL","KRISTALL","JÄRN","SILVER","NORD","ELD","NATT","DAGG","SKY","HAV","BERG","ÅSK","DIMM","GLÖD","RIM","GNIST","FLAMM","VIND","REGN","SNÖ","IS","GULD","RUN"];
+const MAGIC_SUF = ["DRAKEN","KOMETEN","PORTALEN","NYCKELN","KRONAN","ORAKLET","FLAMMAN","STORMEN","KÄLLAN","GÅTAN","SKÖLDEN","FYREN","KOMPASSEN","LABYRINTEN","FALKEN","VARGEN","RUNAN","KAMMAREN","VALVET","TORNET","BRON","SPEGELN","GRINDEN","STIGEN","KLINGAN","BÅGEN","STJÄRNAN","BÄGAREN","KRISTALLEN","GRYNINGEN"];
+function magicWordFrom(roomId, code) {
+  const h = hashStr('magic|' + roomId + '|' + code);
+  return MAGIC_PRE[h % MAGIC_PRE.length] + MAGIC_SUF[Math.floor(h / MAGIC_PRE.length) % MAGIC_SUF.length];
+}
+
+/* ---------- rooms ---------- */
+const ROOM_META = {
+  1: { label: "Åk 7", title: "🧩 Trollkarlens Lösenord (Åk 7)", accent: "#2563eb", dark: "#1d4ed8", soft: "#dbeafe",
+       win: 'Bra jobbat! Säg det magiska ordet till din lärare.' },
+  2: { label: "Åk 8", title: "📐 Geometrins Valv (Åk 8)", accent: "#0d9488", dark: "#0f766e", soft: "#ccfbf1",
+       win: 'Snyggt räknat! Säg det magiska ordet till din lärare.' },
+  3: { label: "Åk 9", title: "🧮 Algebraburen (Åk 9)", accent: "#7c3aed", dark: "#6d28d9", soft: "#ede9fe",
+       win: 'Imponerande! Säg det magiska ordet till din lärare.' }
 };
 
-// --- Pick room from query (?1 / ?2 / ?3, or ?room=2) ---
+function buildRoom1() {
+  const cl = [];
+  { const a = pick([2,3,4]), x = rint(2,8), b = pick([1,3,5,7]);
+    cl.push({ topic:'Ekvationer', q:`Lös ekvationen <b>${a}x + ${b} = ${a*x+b}</b>. Vad är <b>x</b>?`, a:String(x) }); }
+  { const p = rint(3,12);
+    cl.push({ topic:'Alfabetet', q:`Vilken bokstav har <b>plats ${p}</b> i alfabetet? (A&nbsp;=&nbsp;1, B&nbsp;=&nbsp;2 …)`, a:letterAt(p) }); }
+  { const w = rint(3,6), h = rint(4,9), A = w*h;
+    cl.push({ topic:'Geometri', q:`En rektangel är <b>${w} cm</b> bred och <b>${h} cm</b> hög. Hur stor är arean (cm²)? Skriv <b>tiotalssiffran</b>.`, a:String(Math.floor(A/10)%10) }); }
+  { const per = pick([25,50,100,200]), d = rint(3,9);
+    cl.push({ topic:'Vardagsmatte', q:`Du sparar <b>${per} kr</b> varje dag. Hur många dagar tar det att spara ihop <b>${per*d} kr</b>?`, a:String(d) }); }
+  { const m = rint(2,6);
+    cl.push({ topic:'Medelvärde', q:`Tre tärningskast har tillsammans summan <b>${3*m}</b>. Vad är <b>medelvärdet</b> av kasten?`, a:String(m) }); }
+  { const a = pick([2,3]), x = rint(2,9), b = pick([1,2]), inner = x+b;
+    cl.push({ topic:'Ekvationer', q:`I ekvationen <b>${a}(x + ${b}) = ${a*inner}</b>: lös ut x och skriv <b>bokstaven på den platsen</b> i alfabetet.`, a:letterAt(x) }); }
+  return cl;
+}
+
+function buildRoom2() {
+  const cl = [];
+  { const combos = [[20,10],[30,10],[40,10],[50,10],[60,10],[70,10],[80,10],[90,10],[20,15],[40,15],[60,15],[20,25],[10,30],[20,30],[20,35],[10,40],[20,40],[30,20],[40,20],[10,50],[10,70],[10,90],[10,60],[10,80],[10,20]];
+    const c = pick(combos);
+    cl.push({ topic:'Procent', q:`I en klass på <b>${c[0]} elever</b> är <b>${c[1]} %</b> glasögonbärare. Hur många elever är det?`, a:String(c[0]*c[1]/100) }); }
+  { const r = rint(2,5), A = 3*r*r;
+    cl.push({ topic:'Cirklar', q:`En cirkel har radien <b>${r} cm</b>. Beräkna arean med <b>π ≈ 3</b>. Skriv <b>tiotalssiffran</b> i svaret.`, a:String(Math.floor(A/10)%10) }); }
+  { const variants = [['liter','deciliter'],['centimeter','millimeter'],['meter','decimeter'],['deciliter','centiliter'],['kilometer','hektometer']];
+    const v = pick(variants), a = rint(2,9);
+    cl.push({ topic:'Enhetsomvandling', q:`Hur många <b>${v[1]}</b> är <b>0,${a} ${v[0]}</b>?`, a:String(a) }); }
+  { const s = rint(2,9), V = s*s*s;
+    cl.push({ topic:'Volym', q:`En kubformad behållare har sidan <b>${s} dm</b>. Hur många <b>liter</b> rymmer den? (1&nbsp;dm³&nbsp;=&nbsp;1&nbsp;liter.) Skriv <b>entalssiffran</b>.`, a:String(V%10) }); }
+  { const k = rint(2,9), a = rint(2,4);
+    cl.push({ topic:'Koordinatsystem', q:`En rät linje går genom <b>(0, 0)</b> och <b>(${a}, ${a*k})</b>. Vilket <b>y</b>-värde har linjen när <b>x = 1</b>?`, a:String(k) }); }
+  { const opts = [['antalet hörn i en kub',8],['antalet kanter i en kub',12],['antalet begränsningsytor i ett rätblock',6],['antalet hörn i en femhörning',5],['antalet hörn i en sexhörning',6],['antalet hörn i en kvadrat',4],['antalet hörn i en triangel',3]];
+    const o = pick(opts);
+    cl.push({ topic:'Rymdgeometri', q:`Bestäm <b>${o[0]}</b>. Skriv <b>bokstaven på den platsen</b> i alfabetet.`, a:letterAt(o[1]) }); }
+  return cl;
+}
+
+function buildRoom3() {
+  const cl = [];
+  { const triples = [[3,4,5],[5,12,13],[8,15,17],[20,21,29],[9,40,41],[12,16,20],[16,30,34],[10,24,26]];
+    const t = pick(triples);
+    cl.push({ topic:'Pythagoras sats', q:`En rätvinklig triangel har kateterna <b>${t[0]} cm</b> och <b>${t[1]} cm</b>. Skriv <b>entalssiffran</b> i hypotenusans längd.`, a:String(t[2]%10) }); }
+  { const k = rint(2,9), s = rint(2,5);
+    cl.push({ topic:'Likformighet', q:`Två trianglar är likformiga. En sida i den lilla är <b>${s} cm</b>; motsvarande sida i den stora är <b>${s*k} cm</b>. Vad är <b>skalfaktorn</b>?`, a:String(k) }); }
+  { const k = pick([2,3,4]), m = pick([-7,-5,-3,-1,1,3,5,7]), x = rint(2,9), y = k*x+m;
+    const msign = m < 0 ? '− ' + (-m) : '+ ' + m;
+    cl.push({ topic:'Räta linjens ekvation', q:`Linjen <b>y = ${k}x ${msign}</b>. Vilket <b>x</b>-värde ger <b>y = ${String(y).replace('-','−')}</b>?`, a:String(x) }); }
+  { const dir = pick(['höjs','sänks']), p = pick([10,20,25,30,40,50,60,70,75,80,90]);
+    const tiondel = dir === 'höjs' ? Math.floor((100+p)/10) % 10 : Math.floor((100-p)/10) % 10;
+    cl.push({ topic:'Förändringsfaktor', q:`Ett pris <b>${dir}</b> med <b>${p} %</b>. Skriv siffran på <b>tiondelsplatsen</b> i förändringsfaktorn.`, a:String(tiondel) }); }
+  { const g = rint(2,9), c = rint(2,9);
+    cl.push({ topic:'Faktorisering', q:`Uttrycket <b>${g}x + ${g*c}</b> kan skrivas som <b>${g}(x + a)</b>. Vad är <b>a</b>?`, a:String(c) }); }
+  { const n = rint(1,9), primes = [2,3,5,7,11,13,17,19,23];
+    const ord = ['första','andra','tredje','fjärde','femte','sjätte','sjunde','åttonde','nionde'][n-1];
+    cl.push({ topic:'Primtal', q:`Ta det <b>${ord}</b> primtalet. Skriv <b>bokstaven på den platsen</b> i alfabetet.`, a:letterAt(primes[n-1]) }); }
+  return cl;
+}
+const BUILDERS = { 1: buildRoom1, 2: buildRoom2, 3: buildRoom3 };
+
+/* ---------- read url: ?N  &s=SEED  &facit ---------- */
 function pickRoomId() {
-  const raw = window.location.search.replace(/^\?/, '').trim();
+  const raw = window.location.search.replace(/^\?/, '').split('&')[0].trim();
   let id = parseInt(raw, 10);
-  if (![1,2,3].includes(id)) {
-    const p = new URLSearchParams(window.location.search);
-    id = parseInt(p.get('room'), 10);
-  }
+  if (![1,2,3].includes(id)) id = parseInt(new URLSearchParams(window.location.search).get('room'), 10);
   return [1,2,3].includes(id) ? id : 1;
+}
+function randomSeed() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
 }
 
 const roomId = pickRoomId();
-const room = ROOMS[roomId];
-const ANSWERS = room.clues.map(c => c.a.toUpperCase());
+const params = new URLSearchParams(window.location.search);
+let seed = (params.get('s') || params.get('seed') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+const isFacit = params.has('facit');
+if (!seed) {
+  seed = randomSeed();
+  // keep the seed in the URL so a reload is stable and the link is shareable
+  const newUrl = window.location.pathname + '?' + roomId + '&s=' + seed + (isFacit ? '&facit' : '') + window.location.hash;
+  history.replaceState(null, '', newUrl);
+}
 
-// Apply theme
-document.documentElement.style.setProperty('--accent', room.accent);
-document.documentElement.style.setProperty('--accent-dark', room.accentDark);
-document.documentElement.style.setProperty('--accent-soft', room.accentSoft);
+const meta = ROOM_META[roomId];
+document.documentElement.style.setProperty('--accent', meta.accent);
+document.documentElement.style.setProperty('--accent-dark', meta.dark);
+document.documentElement.style.setProperty('--accent-soft', meta.soft);
+document.title = meta.title.replace(/^[^ ]+ /, '') + ' – Escape Room';
+document.getElementById('roomTitle').textContent = meta.title;
+document.getElementById('seedText').textContent = seed;
 
-document.title = room.title + " – Escape Room";
-document.getElementById('roomTitle').textContent = room.title;
-document.getElementById('roomSub').textContent = room.sub;
-document.getElementById('introText').innerHTML = room.intro;
-
-// Highlight active tab
+// tabs (carry the seed so a teacher-assigned code follows the student between rooms)
 document.querySelectorAll('#roomTabs a').forEach(a => {
-  if (parseInt(a.dataset.room, 10) === roomId) a.classList.add('active');
+  const r = parseInt(a.dataset.room, 10);
+  a.href = '?' + r + '&s=' + seed + (isFacit ? '&facit' : '');
+  if (r === roomId) a.classList.add('active');
+});
+document.getElementById('newSeedBtn').addEventListener('click', () => {
+  window.location.href = window.location.pathname + '?' + roomId + '&s=' + randomSeed() + (isFacit ? '&facit' : '');
 });
 
-// Build cards
-const cardsEl = document.getElementById('cards');
-room.clues.forEach((clue, i) => {
-  const n = i + 1;
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.dataset.index = i;
-  card.innerHTML = `
-    <div class="card-head">
-      <div class="badge">${n}</div>
-      <div class="topic">${clue.topic}</div>
-    </div>
-    <p class="question">${clue.q}</p>
-    <button class="hint-btn" type="button">💡 Visa ledtråd</button>
-    <div class="hint-text">${clue.hint}</div>
-    <div class="answer-row">
-      <input type="text" maxlength="1" autocomplete="off" id="char${n}" aria-label="Tecken ${n}">
-      <span class="slot-label">tecken ${n}</span>
-    </div>
-  `;
-  cardsEl.appendChild(card);
+// build the questions with the seeded RNG
+RNG = mulberry32(hashStr(roomId + '|' + seed));
+const CLUES = BUILDERS[roomId]();
+const ANSWERS = CLUES.map(c => c.a.toUpperCase());
+const CODE = ANSWERS.join('');
+const MAGIC = magicWordFrom(roomId, CODE);
 
-  const hintBtn = card.querySelector('.hint-btn');
-  const hintText = card.querySelector('.hint-text');
-  hintBtn.addEventListener('click', () => {
-    const show = hintText.classList.toggle('show');
-    hintBtn.textContent = show ? '🙈 Dölj ledtråd' : '💡 Visa ledtråd';
+/* ---------- facit (teacher) view ---------- */
+if (isFacit) {
+  document.getElementById('footer').style.display = 'none';
+  const game = document.getElementById('game');
+  game.className = 'facit';
+  game.innerHTML = `
+    <div class="box">
+      <h2>Lärarvy – ${meta.label}</h2>
+      <p class="lead">Spelkod <b>${seed}</b>. Eleven med denna spelkod ser exakt dessa uppgifter och svar.</p>
+      <ol>${CLUES.map(c => `<li><span class="tag">${c.topic}</span><br>${c.q}<br>Svar: <span class="sv">${c.a.toUpperCase()}</span></li>`).join('')}</ol>
+      <div class="summary">
+        Kod att skriva in: <span class="code-line">${ANSWERS.join(' ')}</span><br><br>
+        🔮 Magiskt ord eleven ska säga: <span class="magic">${MAGIC}</span>
+      </div>
+    </div>`;
+} else {
+  /* ---------- play view ---------- */
+  const game = document.getElementById('game');
+  CLUES.forEach((clue, i) => {
+    const n = i + 1;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="head"><div class="badge">${n}</div><span class="topic">${clue.topic}</span></div>
+      <p class="q">${clue.q}</p>
+      <div class="ans"><input type="text" maxlength="1" autocomplete="off" id="char${n}" aria-label="Tecken ${n}"><span class="slot-label">tecken ${n}</span></div>`;
+    game.appendChild(card);
   });
-});
 
-const inputs = room.clues.map((_, i) => document.getElementById('char' + (i + 1)));
+  const inputs = CLUES.map((_, i) => document.getElementById('char' + (i + 1)));
+  const feedbackEl = document.getElementById('feedback');
+  const progressText = document.getElementById('progressText');
+  const progressBar = document.getElementById('progressBar');
 
-// Input UX: uppercase, auto-advance, backspace navigation
-inputs.forEach((inp, idx) => {
-  inp.addEventListener('input', () => {
-    inp.value = inp.value.toUpperCase();
-    inp.closest('.card').classList.remove('wrong');
-    if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
-    updateProgress();
-  });
-  inp.addEventListener('keydown', (e) => {
-    if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx - 1].focus();
-    if (e.key === 'ArrowLeft' && idx > 0) inputs[idx - 1].focus();
-    if (e.key === 'ArrowRight' && idx < inputs.length - 1) inputs[idx + 1].focus();
-    if (e.key === 'Enter') validate();
-  });
-});
-
-const feedbackEl = document.getElementById('feedback');
-const progressText = document.getElementById('progressText');
-const progressBar = document.getElementById('progressBar');
-
-function isSlotCorrect(i) {
-  return inputs[i].value.toUpperCase() === ANSWERS[i];
-}
-
-function updateProgress(markCards) {
-  let solved = 0;
-  inputs.forEach((inp, i) => {
-    const card = inp.closest('.card');
-    if (isSlotCorrect(i)) {
-      solved++;
-      if (markCards) card.classList.add('solved');
-    } else if (markCards) {
-      card.classList.remove('solved');
-    }
-  });
-  progressText.textContent = `${solved} / ${inputs.length} lösta`;
-  progressBar.style.width = (solved / inputs.length * 100) + '%';
-  return solved;
-}
-
-function validate() {
-  let allCorrect = true;
-  inputs.forEach((inp, i) => {
-    const card = inp.closest('.card');
-    if (isSlotCorrect(i)) {
-      card.classList.add('solved');
-      card.classList.remove('wrong');
-    } else {
-      card.classList.remove('solved');
-      if (inp.value) card.classList.add('wrong');
-      allCorrect = false;
-    }
-  });
-  const solved = updateProgress(false);
-  if (allCorrect) {
-    feedbackEl.textContent = '';
-    showWin();
-  } else {
-    feedbackEl.className = 'feedback bad';
-    feedbackEl.textContent = solved === 0
-      ? 'Inget rätt ännu – läs ledtrådarna en gång till.'
-      : `${solved} av ${inputs.length} rätt. Fortsätt – de röda rutorna stämmer inte.`;
+  function sanitize(v) { return v.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 1); }
+  function correctAt(i) { return inputs[i].value.toUpperCase() === ANSWERS[i]; }
+  function refresh(mark) {
+    let solved = 0;
+    inputs.forEach((inp, i) => {
+      const card = inp.closest('.card');
+      const ok = correctAt(i);
+      if (ok) solved++;
+      if (mark) { card.classList.toggle('solved', ok); if (ok) card.classList.remove('wrong'); }
+    });
+    progressText.textContent = solved + ' / ' + inputs.length;
+    progressBar.style.width = (solved / inputs.length * 100) + '%';
+    return solved;
   }
+
+  inputs.forEach((inp, idx) => {
+    inp.addEventListener('input', () => {
+      inp.value = sanitize(inp.value);
+      inp.closest('.card').classList.remove('wrong');
+      if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+      refresh(false);
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !inp.value && idx > 0) { inputs[idx - 1].focus(); }
+      else if (e.key === 'ArrowLeft' && idx > 0) inputs[idx - 1].focus();
+      else if (e.key === 'ArrowRight' && idx < inputs.length - 1) inputs[idx + 1].focus();
+      else if (e.key === 'Enter') validate();
+    });
+  });
+
+  function validate() {
+    let all = true;
+    inputs.forEach((inp, i) => {
+      const card = inp.closest('.card');
+      if (correctAt(i)) { card.classList.add('solved'); card.classList.remove('wrong'); }
+      else { card.classList.remove('solved'); if (inp.value) card.classList.add('wrong'); all = false; }
+    });
+    const solved = refresh(false);
+    if (all) {
+      feedbackEl.textContent = '';
+      win();
+    } else {
+      feedbackEl.className = 'feedback bad';
+      feedbackEl.textContent = solved === 0
+        ? 'Inget rätt ännu.'
+        : solved + ' av ' + inputs.length + ' rätt – de röda stämmer inte.';
+    }
+  }
+
+  function win() {
+    document.getElementById('winMsg').textContent = meta.win;
+    document.getElementById('winCode').textContent = ANSWERS.join(' ');
+    document.getElementById('winMagic').textContent = '🔮 ' + MAGIC;
+    document.getElementById('winMeta').textContent = 'Spelkod ' + seed + ' · ' + meta.label;
+    document.getElementById('overlay').classList.add('show');
+    confetti();
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', validate);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    inputs.forEach(inp => { inp.value = ''; const c = inp.closest('.card'); c.classList.remove('solved', 'wrong'); });
+    feedbackEl.textContent = '';
+    refresh(false);
+    inputs[0].focus();
+  });
+  document.getElementById('winClose').addEventListener('click', () => document.getElementById('overlay').classList.remove('show'));
+  document.getElementById('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') e.currentTarget.classList.remove('show'); });
+  refresh(false);
+  if (inputs[0]) inputs[0].focus();
 }
 
-function showWin() {
-  document.getElementById('winTitle').textContent = '🎉 Du knäckte koden!';
-  document.getElementById('winMsg').textContent = room.win;
-  document.getElementById('winCode').textContent = ANSWERS.join(' ');
-  document.getElementById('overlay').classList.add('show');
-  confetti();
-}
-
-document.getElementById('submitBtn').addEventListener('click', validate);
-document.getElementById('winClose').addEventListener('click', () => {
-  document.getElementById('overlay').classList.remove('show');
-});
-document.getElementById('overlay').addEventListener('click', (e) => {
-  if (e.target.id === 'overlay') e.currentTarget.classList.remove('show');
-});
-document.getElementById('resetBtn').addEventListener('click', () => {
-  inputs.forEach(inp => { inp.value = ''; const c = inp.closest('.card'); c.classList.remove('solved','wrong'); });
-  feedbackEl.textContent = '';
-  updateProgress(false);
-  inputs[0].focus();
-});
-
-updateProgress(false);
-
-// --- Confetti / explosion effect ---
+/* ---------- confetti ---------- */
 const canvas = document.getElementById('fx');
 const ctx = canvas.getContext('2d');
 function sizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 sizeCanvas();
 window.addEventListener('resize', sizeCanvas);
-
 function confetti() {
   const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
-  const particles = [];
+  const ps = [];
   const cx = canvas.width / 2, cy = canvas.height / 3;
-  for (let i = 0; i < 160; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const speed = Math.random() * 9 + 3;
-    particles.push({
-      x: cx, y: cy,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 4,
-      r: Math.random() * 6 + 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      life: 1
-    });
+  for (let i = 0; i < 170; i++) {
+    const ang = Math.random() * Math.PI * 2, sp = Math.random() * 9 + 3;
+    ps.push({ x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp - 4, r: Math.random() * 6 + 2, c: colors[(Math.random() * colors.length) | 0], life: 1 });
   }
   let running = true;
-  function frame() {
+  (function frame() {
     if (!running) return;
     requestAnimationFrame(frame);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     let alive = 0;
-    particles.forEach(p => {
-      if (p.life <= 0) return;
+    for (const p of ps) {
+      if (p.life <= 0) continue;
       alive++;
-      p.vy += 0.18;            // gravity
-      p.vx *= 0.99;
-      p.x += p.vx; p.y += p.vy;
-      p.life -= 0.012;
-      ctx.globalAlpha = Math.max(p.life, 0);
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fill();
-    });
+      p.vy += 0.18; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.life -= 0.012;
+      ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.c;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+    }
     ctx.globalAlpha = 1;
-    if (alive === 0) { running = false; ctx.clearRect(0,0,canvas.width,canvas.height); }
-  }
-  frame();
+    if (!alive) { running = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  })();
 }
 </script>
 </body>

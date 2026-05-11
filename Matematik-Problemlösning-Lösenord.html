@@ -43,8 +43,8 @@
   }
   .title-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .title-wrap .lock { font-size: 1.5rem; }
-  .title-wrap h1 { margin: 0; font-size: 1.05rem; line-height: 1.15; white-space: nowrap; }
-  .title-wrap .hint-line { margin: 1px 0 0; font-size: .74rem; color: var(--muted); white-space: nowrap; }
+  .title-wrap h1 { margin: 0; font-size: clamp(1.05rem, .9rem + .35vw, 1.35rem); line-height: 1.15; white-space: nowrap; }
+  .title-wrap .hint-line { margin: 1px 0 0; font-size: clamp(.74rem, .65rem + .15vw, .9rem); color: var(--muted); white-space: nowrap; }
   @media (max-width: 760px) { .title-wrap .hint-line { display: none; } }
 
   .seedbox {
@@ -83,42 +83,50 @@
   .game {
     flex: 1 1 auto;
     min-height: 0;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 10px;
-    padding: 12px 16px;
+    grid-template-rows: repeat(2, minmax(150px, 330px));
+    align-content: center;
+    gap: clamp(10px, 1vw, 16px);
+    padding: clamp(12px, 1.4vw, 22px) clamp(14px, 1.6vw, 26px);
   }
   .card {
-    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 14px;
-    padding: 11px 14px; display: flex; flex-direction: column; gap: 7px;
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 16px;
+    padding: clamp(11px, 1.1vw, 22px) clamp(14px, 1.3vw, 26px);
+    display: flex; flex-direction: column; gap: clamp(7px, 0.8vw, 14px);
     overflow: hidden; box-shadow: 0 6px 18px -14px rgba(15,23,42,.4);
     transition: border-color .2s, box-shadow .2s, transform .15s;
   }
   .card.solved { border-color: #86efac; background: linear-gradient(180deg, #f0fdf4, #fff 55%); }
   .card.wrong { border-color: #fca5a5; animation: shake .35s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-  .card .head { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+  .card .head { flex: 0 0 auto; display: flex; align-items: center; gap: 9px; }
   .badge {
-    flex: none; width: 24px; height: 24px; border-radius: 50%;
+    flex: none;
+    width: clamp(24px, 1.7vw, 34px); height: clamp(24px, 1.7vw, 34px); border-radius: 50%;
     background: var(--accent-soft); color: var(--accent-dark);
-    font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: clamp(.85rem, .6rem + .4vw, 1.15rem);
+    display: flex; align-items: center; justify-content: center;
   }
   .card.solved .badge { background: #bbf7d0; color: #166534; }
-  .topic { font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #94a3b8; }
+  .topic { font-size: clamp(.64rem, .52rem + .22vw, .88rem); text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: #94a3b8; }
   .card.solved .topic { color: #4ade80; }
-  .q { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; font-size: .92rem; line-height: 1.4; }
+  .q { flex: 1 1 auto; min-height: 0; overflow: auto; margin: 0; font-size: clamp(1.05rem, .65rem + .95vw, 1.55rem); line-height: 1.5; }
   .q b { color: var(--ink); }
-  .ans { flex: 0 0 auto; display: flex; align-items: center; gap: 9px; }
+  .ans { flex: 0 0 auto; display: flex; align-items: center; gap: clamp(9px, 1vw, 14px); }
   .ans input {
-    width: 44px; height: 44px; text-align: center; font-size: 1.4rem; font-weight: 700;
-    border: 2px solid #cbd5e1; border-radius: 11px; background: #f8fafc; text-transform: uppercase;
+    width: clamp(44px, 3.2vw, 62px); height: clamp(44px, 3.2vw, 62px);
+    text-align: center; font-size: clamp(1.4rem, 1rem + 1vw, 2.1rem); font-weight: 700;
+    border: 2px solid #cbd5e1; border-radius: 12px; background: #f8fafc; text-transform: uppercase;
     transition: .15s; padding: 0;
   }
   .ans input:focus { outline: none; border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px var(--accent-soft); }
   .card.solved .ans input { border-color: #22c55e; background: #dcfce7; color: #166534; }
   .card.wrong .ans input { border-color: #ef4444; background: #fef2f2; }
-  .slot-label { font-size: .78rem; color: #94a3b8; }
+  .slot-label { font-size: clamp(.78rem, .62rem + .28vw, 1rem); color: #94a3b8; }
   .card.solved .slot-label { color: #22c55e; font-weight: 700; }
   .card.solved .slot-label::after { content: " ✓"; }
 
@@ -184,13 +192,14 @@
 
   /* Small screens: allow normal scrolling */
   @media (max-width: 900px) {
-    .game { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+    .game { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, minmax(150px, 300px)); }
+    .q { font-size: clamp(1.05rem, .9rem + 1.2vw, 1.4rem); }
   }
   @media (max-width: 620px), (max-height: 540px) {
     body { height: auto; min-height: 100vh; overflow: auto; }
     .game { display: flex; flex-direction: column; }
-    .card { min-height: 150px; }
-    .q { overflow: visible; }
+    .card { min-height: 140px; }
+    .q { overflow: visible; font-size: 1.08rem; }
   }
 </style>
 </head>
@@ -282,7 +291,7 @@ function buildRoom1() {
   { const a = pick([2,3,4]), x = rint(2,8), b = pick([1,3,5,7]);
     cl.push({ topic:'Ekvationer', q:`Lös ekvationen <b>${a}x + ${b} = ${a*x+b}</b>. Vad är <b>x</b>?`, a:String(x) }); }
   { const p = rint(3,12);
-    cl.push({ topic:'Alfabetet', q:`Vilken bokstav har <b>plats ${p}</b> i alfabetet? (A&nbsp;=&nbsp;1, B&nbsp;=&nbsp;2 …)`, a:letterAt(p) }); }
+    cl.push({ topic:'Alfabetet', q:`Vilken bokstav har <b>plats ${p}</b> i alfabetet?`, a:letterAt(p) }); }
   { const w = rint(3,6), h = rint(4,9), A = w*h;
     cl.push({ topic:'Geometri', q:`En rektangel är <b>${w} cm</b> bred och <b>${h} cm</b> hög. Hur stor är arean (cm²)? Skriv <b>tiotalssiffran</b>.`, a:String(Math.floor(A/10)%10) }); }
   { const per = pick([25,50,100,200]), d = rint(3,9);
@@ -301,9 +310,9 @@ function buildRoom2() {
     cl.push({ topic:'Procent', q:`I en klass på <b>${c[0]} elever</b> är <b>${c[1]} %</b> glasögonbärare. Hur många elever är det?`, a:String(c[0]*c[1]/100) }); }
   { const r = rint(2,5), A = 3*r*r;
     cl.push({ topic:'Cirklar', q:`En cirkel har radien <b>${r} cm</b>. Beräkna arean med <b>π ≈ 3</b>. Skriv <b>tiotalssiffran</b> i svaret.`, a:String(Math.floor(A/10)%10) }); }
-  { const variants = [['liter','deciliter'],['centimeter','millimeter'],['meter','decimeter'],['deciliter','centiliter'],['kilometer','hektometer']];
-    const v = pick(variants), a = rint(2,9);
-    cl.push({ topic:'Enhetsomvandling', q:`Hur många <b>${v[1]}</b> är <b>0,${a} ${v[0]}</b>?`, a:String(a) }); }
+  { const variants = [['liter','deciliter'],['meter','decimeter'],['decimeter','centimeter'],['centimeter','millimeter']];
+    const v = pick(variants), a = rint(3,9), b = rint(1,9), res = 10*a - b;
+    cl.push({ topic:'Enhetsomvandling', q:`Hur många <b>${v[1]}</b> är <b>${a} ${v[0]}</b> minus <b>${b} ${v[1]}</b>? Skriv <b>tiotalssiffran</b> i svaret.`, a:String(Math.floor(res/10)%10) }); }
   { const s = rint(2,9), V = s*s*s;
     cl.push({ topic:'Volym', q:`En kubformad behållare har sidan <b>${s} dm</b>. Hur många <b>liter</b> rymmer den? (1&nbsp;dm³&nbsp;=&nbsp;1&nbsp;liter.) Skriv <b>entalssiffran</b>.`, a:String(V%10) }); }
   { const k = rint(2,9), a = rint(2,4);

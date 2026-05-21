@@ -500,13 +500,22 @@
         const canvas = document.getElementById('lineCanvas');
         const ctx = canvas.getContext('2d');
 
-        const X_MIN = -1, X_MAX = 10, Y_MIN = -10, Y_MAX = 10;
-        const PAD = 0.5;
+        const X_MIN = -1, X_MAX = 10, Y_FLOOR = -10, Y_CEIL = 10;
+        const PAD = 0.6;
         const scale = 30;
         canvas.width = ((X_MAX - X_MIN) + 2 * PAD) * scale;
-        canvas.height = ((Y_MAX - Y_MIN) + 2 * PAD) * scale;
         const originX = (-X_MIN + PAD) * scale;
-        const originY = (Y_MAX + PAD) * scale;
+        // y-fönstret anpassas per linje (sätts i setViewForLine)
+        let curYLo = Y_FLOOR, curYHi = Y_CEIL, originY = 0;
+
+        function setViewForLine(k, m) {
+            let yA = k * X_MIN + m, yB = k * X_MAX + m;
+            let minY = Math.min(yA, yB), maxY = Math.max(yA, yB);
+            curYLo = minY >= -0.001 ? 0 : Y_FLOOR;
+            curYHi = maxY <= 0.001 ? 0 : Y_CEIL;
+            canvas.height = ((curYHi - curYLo) + 2 * PAD) * scale;
+            originY = (curYHi + PAD) * scale;
+        }
 
         const KEY = 'linje_';
         let unlockedLevel = parseInt(localStorage.getItem(KEY+'unlockedLevel')) || 1;
@@ -603,7 +612,7 @@
                 ctx.stroke();
                 if (i !== 0) { ctx.fillStyle = "#444"; ctx.fillText(i, px - (i > 0 ? 3 : 6), originY + 15); }
             }
-            for (let j = Y_MIN; j <= Y_MAX; j++) {
+            for (let j = curYLo; j <= curYHi; j++) {
                 let py = originY - j * scale;
                 ctx.beginPath();
                 ctx.strokeStyle = j === 0 ? "#222" : "#E0E0E0";
@@ -637,10 +646,17 @@
             ctx.fillStyle = color; ctx.fill();
             ctx.strokeStyle = "#222"; ctx.lineWidth = 1.5; ctx.stroke();
             if (label) {
+                ctx.font = "bold 14px Arial";
+                const boxW = ctx.measureText(label).width + 12, boxH = 20;
+                let bx = px + 12, by = py - 26;
+                if (bx + boxW > canvas.width) bx = px - 12 - boxW;
+                if (bx < 0) bx = 2;
+                if (by < 0) by = py + 8;
+                if (by + boxH > canvas.height) by = py - boxH - 8;
                 ctx.fillStyle = "rgba(255,255,255,0.9)";
-                ctx.fillRect(px + 10, py - 26, ctx.measureText(label).width + 14, 22);
-                ctx.fillStyle = "#222"; ctx.font = "bold 15px Arial";
-                ctx.fillText(label, px + 16, py - 10);
+                ctx.fillRect(bx, by, boxW, boxH);
+                ctx.fillStyle = "#222";
+                ctx.fillText(label, bx + 6, by + 15);
             }
         }
 
@@ -672,7 +688,7 @@
             for (let x = X_MIN; x <= X_MAX; x += 0.5) {
                 let y = k * x + m;
                 if (Math.abs(y * 2 - Math.round(y * 2)) > 1e-6) continue; // y måste vara hel/halv
-                if (y < Y_MIN || y > Y_MAX) continue;
+                if (y < curYLo || y > curYHi) continue;
                 let d = (x - cx) ** 2 + (y - cy) ** 2;
                 if (d < bestD) { bestD = d; best = { x, y: Math.round(y * 2) / 2 }; }
             }
@@ -816,6 +832,7 @@
             updatePointInfo();
             canvas.classList.add('interactive');
             currentQ = generateQuestion();
+            setViewForLine(currentQ.k, currentQ.m);
             updateUI();
             renderCanvas();
         }

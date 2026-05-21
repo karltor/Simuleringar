@@ -344,6 +344,75 @@
             max-height: none;
             aspect-ratio: auto;
         }
+
+        canvas#lineCanvas.interactive { cursor: crosshair; }
+
+        .point-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+        }
+        .mini-btn {
+            background: #ecf0f1;
+            border: 1px solid #DDD;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+        }
+        .mini-btn:hover { background: #e0e0e0; }
+
+        /* ---- Mobilanpassning ---- */
+        @media (max-width: 820px), (orientation: portrait) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                overflow-y: auto;
+                overflow-x: hidden;
+                align-items: flex-start;
+            }
+            .app-container {
+                flex-direction: column;
+                width: 100vw;
+                height: auto;
+                min-height: 100vh;
+                max-width: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            .canvas-section {
+                flex: none;
+                border-right: none;
+                border-bottom: 2px solid #EEE;
+                padding: 12px;
+            }
+            canvas#lineCanvas {
+                width: 86vw;
+                max-width: 440px;
+            }
+            .task-section {
+                flex: none;
+                padding: 18px;
+                gap: 16px;
+                overflow: visible;
+                justify-content: flex-start;
+            }
+            .top-content, .middle-content { gap: 14px; }
+            h2 { font-size: 1.45rem; }
+            .question-text { font-size: 1rem; }
+            .equation-group { font-size: 1.4rem; padding: 12px; }
+            input[type="text"] { width: 64px; }
+            .numpad { max-width: 320px; margin: 0 auto; }
+            .numpad button { padding: 14px 0; }
+            .bottom-content { min-height: 0; }
+            .stat-card .stat-value { font-size: 1.25rem; }
+        }
     </style>
 </head>
 <body>
@@ -393,6 +462,11 @@
                         <span class="slider"></span>
                     </label>
                     <span>Tillåt lutning med decimaltal (k)</span>
+                </div>
+
+                <div class="point-hint">
+                    <span id="pointInfo">📍 Klicka i rutnätet för att sätta ut två egna hjälppunkter</span>
+                    <button class="mini-btn" id="clearPointsBtn" onclick="clearPoints()" style="display:none;">Rensa</button>
                 </div>
 
                 <div class="numpad" id="numpad">
@@ -569,18 +643,53 @@
             drawGrid();
             if (currentQ.k === undefined) return;
             drawLine(currentQ.k, currentQ.m);
-            // markera skärningen med y-axeln (0, m)
-            drawDot(0, currentQ.m, '#E67E22', `(0, ${currentQ.m})`);
-            // markera en andra gitterpunkt för att kunna läsa av lutningen
-            let x2 = currentQ.kq;
-            let y2 = currentQ.m + currentQ.kp;
-            if (Math.abs(x2) <= RANGE && Math.abs(y2) <= RANGE && !(x2 === 0)) {
-                drawDot(x2, y2, '#27AE60', `(${x2}, ${y2})`);
+            // användarens egna hjälppunkter
+            userPoints.forEach(p => drawDot(p.x, p.y, '#27AE60', `(${p.x}, ${p.y})`));
+        }
+
+        let userPoints = [];
+
+        function canvasToLogical(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const px = (clientX - rect.left) * (canvas.width / rect.width);
+            const py = (clientY - rect.top) * (canvas.height / rect.height);
+            return {
+                x: Math.round((px - originX) / scale),
+                y: Math.round((originY - py) / scale)
+            };
+        }
+
+        function placePoint(clientX, clientY) {
+            if (isTransitioning) return;
+            const { x, y } = canvasToLogical(clientX, clientY);
+            if (Math.abs(x) > RANGE || Math.abs(y) > RANGE) return;
+            if (userPoints.some(p => p.x === x && p.y === y)) return;
+            if (userPoints.length >= 2) userPoints.shift();
+            userPoints.push({ x, y });
+            updatePointInfo();
+            renderCanvas();
+        }
+
+        canvas.addEventListener('mousedown', e => placePoint(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => {
+            if (e.touches.length) { e.preventDefault(); placePoint(e.touches[0].clientX, e.touches[0].clientY); }
+        }, { passive: false });
+
+        function clearPoints() {
+            userPoints = [];
+            updatePointInfo();
+            renderCanvas();
+        }
+
+        function updatePointInfo() {
+            const info = document.getElementById('pointInfo');
+            const clearBtn = document.getElementById('clearPointsBtn');
+            if (userPoints.length === 0) {
+                info.innerText = '📍 Klicka i rutnätet för att sätta ut två egna hjälppunkter';
+                clearBtn.style.display = 'none';
             } else {
-                let xn = -currentQ.kq, yn = currentQ.m - currentQ.kp;
-                if (Math.abs(xn) <= RANGE && Math.abs(yn) <= RANGE) {
-                    drawDot(xn, yn, '#27AE60', `(${xn}, ${yn})`);
-                }
+                info.innerText = `📍 ${userPoints.length}/2 punkter utsatta`;
+                clearBtn.style.display = 'inline-block';
             }
         }
 
@@ -682,6 +791,9 @@
         function loadNewQuestion() {
             isTransitioning = false;
             mistakesOnCurrent = 0;
+            userPoints = [];
+            updatePointInfo();
+            canvas.classList.add('interactive');
             currentQ = generateQuestion();
             updateUI();
             renderCanvas();

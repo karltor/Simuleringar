@@ -62,7 +62,8 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: 1 / 1;
+            width: auto;
+            height: auto;
         }
 
         .task-section {
@@ -393,8 +394,8 @@
                 padding: 12px;
             }
             canvas#lineCanvas {
-                width: 86vw;
-                max-width: 440px;
+                max-height: 62vh;
+                max-width: 90vw;
             }
             .task-section {
                 flex: none;
@@ -498,12 +499,14 @@
     <script>
         const canvas = document.getElementById('lineCanvas');
         const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
-        const RANGE = 5;
-        const scale = (width / 2) / (RANGE + 0.5);
-        const originX = width / 2;
-        const originY = height / 2;
+
+        const X_MIN = -1, X_MAX = 10, Y_MIN = -10, Y_MAX = 10;
+        const PAD = 0.5;
+        const scale = 30;
+        canvas.width = ((X_MAX - X_MIN) + 2 * PAD) * scale;
+        canvas.height = ((Y_MAX - Y_MIN) + 2 * PAD) * scale;
+        const originX = (-X_MIN + PAD) * scale;
+        const originY = (Y_MAX + PAD) * scale;
 
         const KEY = 'linje_';
         let unlockedLevel = parseInt(localStorage.getItem(KEY+'unlockedLevel')) || 1;
@@ -577,9 +580,7 @@
         function generateQuestion() {
             let level = currentLevel === 4 ? randomInt(1, 3) : currentLevel;
             let slope = makeSlope(level);
-            let mMax = level === 1 ? 3 : (level === 2 ? 4 : 5);
-            let m = randomInt(-mMax, mMax);
-            if (level === 1 && m < 0) m = -m; // nivå 1: positivt m
+            let m = level === 1 ? randomInt(1, 6) : randomInt(-8, 8);
 
             let q = {
                 k: slope.value, kp: slope.p, kq: slope.q, m: m,
@@ -591,31 +592,35 @@
         }
 
         function drawGrid() {
-            ctx.clearRect(0, 0, width, height);
-            for (let i = -RANGE; i <= RANGE; i++) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "bold 12px Arial";
+            for (let i = X_MIN; i <= X_MAX; i++) {
+                let px = originX + i * scale;
                 ctx.beginPath();
                 ctx.strokeStyle = i === 0 ? "#222" : "#E0E0E0";
                 ctx.lineWidth = i === 0 ? 2.5 : 1.5;
-                let px = originX + i * scale, py = originY - i * scale;
-                ctx.moveTo(px, 0); ctx.lineTo(px, height);
-                ctx.moveTo(0, py); ctx.lineTo(width, py);
+                ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height);
                 ctx.stroke();
-                ctx.fillStyle = "#444"; ctx.font = "bold 14px Arial";
-                if (i !== 0) {
-                    ctx.fillText(i, px - (i > 0 ? 4 : 7), originY + 18);
-                    ctx.fillText(i, originX + 10, py + 5);
-                }
+                if (i !== 0) { ctx.fillStyle = "#444"; ctx.fillText(i, px - (i > 0 ? 3 : 6), originY + 15); }
             }
-            ctx.fillStyle = "#222"; ctx.font = "bold 18px Arial";
-            ctx.fillText("x", width - 18, originY - 12);
-            ctx.fillText("y", originX + 12, 22);
+            for (let j = Y_MIN; j <= Y_MAX; j++) {
+                let py = originY - j * scale;
+                ctx.beginPath();
+                ctx.strokeStyle = j === 0 ? "#222" : "#E0E0E0";
+                ctx.lineWidth = j === 0 ? 2.5 : 1.5;
+                ctx.moveTo(0, py); ctx.lineTo(canvas.width, py);
+                ctx.stroke();
+                if (j !== 0) { ctx.fillStyle = "#444"; ctx.fillText(j, originX + 7, py + 4); }
+            }
+            ctx.fillStyle = "#222"; ctx.font = "bold 16px Arial";
+            ctx.fillText("x", canvas.width - 16, originY - 10);
+            ctx.fillText("y", originX + 9, 18);
         }
 
         function toPx(x, y) { return { px: originX + x * scale, py: originY - y * scale }; }
 
         function drawLine(k, m) {
-            // rita linjen y = kx + m över hela bredden
-            let x1 = -RANGE - 1, x2 = RANGE + 1;
+            let x1 = X_MIN - 1, x2 = X_MAX + 1;
             let a = toPx(x1, k * x1 + m), b = toPx(x2, k * x2 + m);
             ctx.beginPath();
             ctx.strokeStyle = "#4A90E2";
@@ -639,12 +644,16 @@
             }
         }
 
+        function fmtNum(n) {
+            return Number.isInteger(n) ? `${n}` : `${n}`.replace('.', ',');
+        }
+
         function renderCanvas() {
             drawGrid();
             if (currentQ.k === undefined) return;
             drawLine(currentQ.k, currentQ.m);
             // användarens egna hjälppunkter
-            userPoints.forEach(p => drawDot(p.x, p.y, '#27AE60', `(${p.x}, ${p.y})`));
+            userPoints.forEach(p => drawDot(p.x, p.y, '#27AE60', `(${fmtNum(p.x)}, ${fmtNum(p.y)})`));
         }
 
         let userPoints = [];
@@ -653,19 +662,31 @@
             const rect = canvas.getBoundingClientRect();
             const px = (clientX - rect.left) * (canvas.width / rect.width);
             const py = (clientY - rect.top) * (canvas.height / rect.height);
-            return {
-                x: Math.round((px - originX) / scale),
-                y: Math.round((originY - py) / scale)
-            };
+            return { x: (px - originX) / scale, y: (originY - py) / scale };
+        }
+
+        // snäpp till närmaste hel-/halvtalspunkt SOM LIGGER PÅ linjen
+        function snapToLine(cx, cy) {
+            const k = currentQ.k, m = currentQ.m;
+            let best = null, bestD = Infinity;
+            for (let x = X_MIN; x <= X_MAX; x += 0.5) {
+                let y = k * x + m;
+                if (Math.abs(y * 2 - Math.round(y * 2)) > 1e-6) continue; // y måste vara hel/halv
+                if (y < Y_MIN || y > Y_MAX) continue;
+                let d = (x - cx) ** 2 + (y - cy) ** 2;
+                if (d < bestD) { bestD = d; best = { x, y: Math.round(y * 2) / 2 }; }
+            }
+            return best;
         }
 
         function placePoint(clientX, clientY) {
             if (isTransitioning) return;
-            const { x, y } = canvasToLogical(clientX, clientY);
-            if (Math.abs(x) > RANGE || Math.abs(y) > RANGE) return;
-            if (userPoints.some(p => p.x === x && p.y === y)) return;
+            const c = canvasToLogical(clientX, clientY);
+            const snapped = snapToLine(c.x, c.y);
+            if (!snapped) return;
+            if (userPoints.some(p => p.x === snapped.x && p.y === snapped.y)) return;
             if (userPoints.length >= 2) userPoints.shift();
-            userPoints.push({ x, y });
+            userPoints.push(snapped);
             updatePointInfo();
             renderCanvas();
         }

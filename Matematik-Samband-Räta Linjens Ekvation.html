@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptiv Träning: Räta Linjens Ekvation</title>
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --bg: #F4F7F9;
+            --panel-bg: #FFFFFF;
+            --text: #333333;
+            --error: #E74C3C;
+            --error-bg: #FDEDEC;
+            --success: #2ECC71;
+            --success-bg: #EAFAF1;
+            --gold: #F1C40F;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            width: 95vw;
+            height: 92vh;
+            max-width: 1200px;
+            background: var(--panel-bg);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .canvas-section {
+            flex: 1.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #FAFAFA;
+            border-right: 2px solid #EEE;
+            padding: 2vh;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: 1 / 1;
+        }
+
+        .task-section {
+            flex: 1;
+            padding: 3vh 3vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        .top-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2vh;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .level-select {
+            font-size: 1rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-weight: bold;
+            background: none;
+            border: 2px solid transparent;
+            outline: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+        .level-select:hover {
+            background-color: #EBF5FF;
+            border-color: var(--primary);
+        }
+
+        .xp-bar-container {
+            width: 100px;
+            height: 8px;
+            background-color: #EEE;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .xp-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .endless-stats {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--gold);
+            background: #FEF9E7;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #FAD7A1;
+            display: none;
+        }
+
+        h2 {
+            font-size: 1.7rem;
+            color: var(--primary);
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            line-height: 1.3;
+        }
+
+        /* Statistik / dopamin */
+        .stats-row {
+            display: flex;
+            gap: 8px;
+        }
+        .stat-card {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #ECECEC;
+            border-radius: 10px;
+            padding: 0.8vh 4px;
+            text-align: center;
+        }
+        .stat-card .stat-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary);
+            line-height: 1.1;
+        }
+        .stat-card.streak .stat-value { color: #E67E22; }
+        .stat-card .stat-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+        }
+        .stat-card.pulse { animation: pop 0.4s ease; }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .middle-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2vh;
+            align-items: center;
+        }
+
+        .equation-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1.6rem;
+            background: #f8f9fa;
+            padding: 1.2vh 1.5vw;
+            border-radius: 10px;
+            width: fit-content;
+        }
+        .equation-group .var { font-style: italic; }
+
+        input[type="text"] {
+            width: 70px;
+            padding: 1vh 0;
+            font-size: 1.3rem;
+            border: 3px solid #CCC;
+            border-radius: 8px;
+            text-align: center;
+            outline: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            background: white;
+        }
+
+        input[type="text"].active-input, input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+            background-color: #EBF5FF;
+        }
+
+        /* Toggle */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: #555;
+            user-select: none;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 26px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .switch input:checked + .slider { background-color: var(--primary); }
+        .switch input:checked + .slider:before { transform: translateX(22px); }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            width: 100%;
+            max-width: 240px;
+        }
+        .numpad button {
+            padding: 1.3vh 0;
+            font-size: 1.25rem;
+            font-weight: bold;
+            background-color: #FFF;
+            border: 2px solid #DDD;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.1s, transform 0.1s;
+            color: #333;
+        }
+        .numpad button:hover { background-color: #F0F0F0; }
+        .numpad button:active { transform: scale(0.95); background-color: #E0E0E0; }
+        .numpad button.action-btn { background-color: #ecf0f1; font-size: 1.05rem; }
+
+        .bottom-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1vh;
+            min-height: 80px;
+        }
+
+        .btn-area {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn {
+            padding: 1.4vh 20px;
+            font-size: 1.15rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+        }
+        .btn:hover { background-color: #357ABD; }
+
+        .feedback-box {
+            padding: 1.1vh;
+            border-radius: 8px;
+            font-size: 1rem;
+            display: none;
+            line-height: 1.3;
+        }
+        .feedback-box.error {
+            display: block;
+            background-color: var(--error-bg);
+            border-left: 5px solid var(--error);
+            color: #A93226;
+        }
+        .feedback-box.success {
+            display: block;
+            background-color: var(--success-bg);
+            border-left: 5px solid var(--success);
+            color: #1E8449;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .shake-animation { animation: shake 0.4s ease-in-out; }
+
+        .timer-text {
+            font-size: 1.1rem;
+            color: #555;
+            font-weight: bold;
+            text-align: center;
+            width: 100%;
+            padding: 1.4vh;
+        }
+
+        /* Confetti */
+        #confettiCanvas {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+            max-width: none;
+            max-height: none;
+            aspect-ratio: auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confettiCanvas"></canvas>
+
+    <div class="app-container">
+        <div class="canvas-section">
+            <canvas id="lineCanvas" width="540" height="540"></canvas>
+        </div>
+
+        <div class="task-section">
+            <div class="top-content">
+                <div class="header-bar">
+                    <select id="levelSelect" class="level-select" onchange="changeLevel(this.value)"></select>
+                    <div class="xp-bar-container" id="xpContainer"><div class="xp-bar" id="xpBar"></div></div>
+                    <div class="endless-stats" id="endlessStats">🏆 <span id="endlessScoreText">0</span> lösta</div>
+                </div>
+                <h2 id="taskTitle">Laddar...</h2>
+                <div class="question-text" id="questionText"></div>
+                <div class="stats-row">
+                    <div class="stat-card streak" id="cardStreak">
+                        <div class="stat-value" id="statStreak">0</div>
+                        <div class="stat-label">🔥 i rad</div>
+                    </div>
+                    <div class="stat-card" id="cardBest">
+                        <div class="stat-value" id="statBest">0</div>
+                        <div class="stat-label">⭐ rekord</div>
+                    </div>
+                    <div class="stat-card" id="cardAcc">
+                        <div class="stat-value" id="statAcc">–</div>
+                        <div class="stat-label">🎯 träff%</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="middle-content">
+                <div class="equation-group">
+                    <span class="var">y</span><span>=</span>
+                    <input type="text" id="k_val" placeholder="k" readonly onclick="setActiveInput('k_val')">
+                    <span class="var">x</span><span>+</span>
+                    <input type="text" id="m_val" placeholder="m" readonly onclick="setActiveInput('m_val')">
+                </div>
+
+                <div class="toggle-row">
+                    <label class="switch">
+                        <input type="checkbox" id="decimalToggle" onchange="toggleDecimal()">
+                        <span class="slider"></span>
+                    </label>
+                    <span>Tillåt lutning med decimaltal (k)</span>
+                </div>
+
+                <div class="numpad" id="numpad">
+                    <button onclick="numpadPress('1')">1</button>
+                    <button onclick="numpadPress('2')">2</button>
+                    <button onclick="numpadPress('3')">3</button>
+                    <button onclick="numpadPress('4')">4</button>
+                    <button onclick="numpadPress('5')">5</button>
+                    <button onclick="numpadPress('6')">6</button>
+                    <button onclick="numpadPress('7')">7</button>
+                    <button onclick="numpadPress('8')">8</button>
+                    <button onclick="numpadPress('9')">9</button>
+                    <button class="action-btn" onclick="numpadPress('-')">±</button>
+                    <button onclick="numpadPress('0')">0</button>
+                    <button class="action-btn" onclick="numpadPress('back')">⌫</button>
+                    <button class="action-btn" id="decimalKey" onclick="numpadPress('.')" style="grid-column: 2;">,</button>
+                </div>
+            </div>
+
+            <div class="bottom-content">
+                <div class="btn-area" id="buttonArea">
+                    <button class="btn" id="submitBtn" onclick="checkAnswer()">Svara (Enter)</button>
+                </div>
+                <div id="feedbackBox" class="feedback-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('lineCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const RANGE = 5;
+        const scale = (width / 2) / (RANGE + 0.5);
+        const originX = width / 2;
+        const originY = height / 2;
+
+        const KEY = 'linje_';
+        let unlockedLevel = parseInt(localStorage.getItem(KEY+'unlockedLevel')) || 1;
+        if (unlockedLevel > 4) unlockedLevel = 4;
+        let currentLevel = parseInt(localStorage.getItem(KEY+'currentLevel')) || 1;
+        if (currentLevel > unlockedLevel) currentLevel = unlockedLevel;
+
+        let allowDecimal = localStorage.getItem(KEY+'allowDecimal') === 'true';
+        let xp = 0;
+        let endlessScore = parseInt(localStorage.getItem(KEY+'endlessScore')) || 0;
+        let streak = parseInt(localStorage.getItem(KEY+'streak')) || 0;
+        let bestStreak = parseInt(localStorage.getItem(KEY+'bestStreak')) || 0;
+        let totalAttempts = parseInt(localStorage.getItem(KEY+'totalAttempts')) || 0;
+        let totalCorrect = parseInt(localStorage.getItem(KEY+'totalCorrect')) || 0;
+
+        let mistakesOnCurrent = 0;
+        let currentQ = {};
+        let activeInputId = 'k_val';
+        let countdownTimer;
+        let isTransitioning = false;
+
+        const praise = ["Snyggt! 🎉", "Perfekt! 🌟", "Klockrent! 🚀", "Du fixar det! 💪", "Mästerligt! 🏆", "Spot on! 🎯"];
+
+        document.getElementById('decimalToggle').checked = allowDecimal;
+
+        function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1) + min); }
+        function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+
+        function updateLevelDropdown() {
+            const select = document.getElementById('levelSelect');
+            select.innerHTML = '';
+            for (let i = 1; i <= unlockedLevel; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = i === 4 ? "Mängdträning ♾️" : `Nivå ${i}`;
+                if (i === currentLevel) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function changeLevel(levelStr) {
+            currentLevel = parseInt(levelStr);
+            localStorage.setItem(KEY+'currentLevel', currentLevel);
+            xp = 0;
+            loadNewQuestion();
+        }
+
+        function toggleDecimal() {
+            allowDecimal = document.getElementById('decimalToggle').checked;
+            localStorage.setItem(KEY+'allowDecimal', allowDecimal);
+            loadNewQuestion();
+        }
+
+        // k representeras som ett bråk p/q (q=1 för heltal)
+        function makeSlope(level) {
+            let useDecimal = allowDecimal && Math.random() < 0.55;
+            let q = 1, p;
+            if (useDecimal) {
+                q = [2, 2, 4][randomInt(0, 2)];
+                // täljaren får inte vara delbar med q (annars blir det heltal)
+                do { p = randomInt(-2 * q, 2 * q); } while (p === 0 || p % q === 0);
+                let g = gcd(p, q); p /= g; q /= g;
+            } else {
+                let maxK = level === 1 ? 3 : 4;
+                let minK = level === 1 ? 1 : -maxK;
+                do { p = randomInt(minK, maxK); } while (p === 0);
+            }
+            return { p, q, value: p / q };
+        }
+
+        function generateQuestion() {
+            let level = currentLevel === 4 ? randomInt(1, 3) : currentLevel;
+            let slope = makeSlope(level);
+            let mMax = level === 1 ? 3 : (level === 2 ? 4 : 5);
+            let m = randomInt(-mMax, mMax);
+            if (level === 1 && m < 0) m = -m; // nivå 1: positivt m
+
+            let q = {
+                k: slope.value, kp: slope.p, kq: slope.q, m: m,
+                title: "Vad är linjens ekvation?",
+                text: "Läs av <strong>k</strong> (lutningen) och <strong>m</strong> (skärningen med y-axeln) i diagrammet."
+            };
+            if (currentLevel === 4) q.title = "♾️ " + q.title;
+            return q;
+        }
+
+        function drawGrid() {
+            ctx.clearRect(0, 0, width, height);
+            for (let i = -RANGE; i <= RANGE; i++) {
+                ctx.beginPath();
+                ctx.strokeStyle = i === 0 ? "#222" : "#E0E0E0";
+                ctx.lineWidth = i === 0 ? 2.5 : 1.5;
+                let px = originX + i * scale, py = originY - i * scale;
+                ctx.moveTo(px, 0); ctx.lineTo(px, height);
+                ctx.moveTo(0, py); ctx.lineTo(width, py);
+                ctx.stroke();
+                ctx.fillStyle = "#444"; ctx.font = "bold 14px Arial";
+                if (i !== 0) {
+                    ctx.fillText(i, px - (i > 0 ? 4 : 7), originY + 18);
+                    ctx.fillText(i, originX + 10, py + 5);
+                }
+            }
+            ctx.fillStyle = "#222"; ctx.font = "bold 18px Arial";
+            ctx.fillText("x", width - 18, originY - 12);
+            ctx.fillText("y", originX + 12, 22);
+        }
+
+        function toPx(x, y) { return { px: originX + x * scale, py: originY - y * scale }; }
+
+        function drawLine(k, m) {
+            // rita linjen y = kx + m över hela bredden
+            let x1 = -RANGE - 1, x2 = RANGE + 1;
+            let a = toPx(x1, k * x1 + m), b = toPx(x2, k * x2 + m);
+            ctx.beginPath();
+            ctx.strokeStyle = "#4A90E2";
+            ctx.lineWidth = 3.5;
+            ctx.moveTo(a.px, a.py);
+            ctx.lineTo(b.px, b.py);
+            ctx.stroke();
+        }
+
+        function drawDot(x, y, color, label) {
+            let { px, py } = toPx(x, y);
+            ctx.beginPath();
+            ctx.arc(px, py, 7, 0, 2 * Math.PI);
+            ctx.fillStyle = color; ctx.fill();
+            ctx.strokeStyle = "#222"; ctx.lineWidth = 1.5; ctx.stroke();
+            if (label) {
+                ctx.fillStyle = "rgba(255,255,255,0.9)";
+                ctx.fillRect(px + 10, py - 26, ctx.measureText(label).width + 14, 22);
+                ctx.fillStyle = "#222"; ctx.font = "bold 15px Arial";
+                ctx.fillText(label, px + 16, py - 10);
+            }
+        }
+
+        function renderCanvas() {
+            drawGrid();
+            if (currentQ.k === undefined) return;
+            drawLine(currentQ.k, currentQ.m);
+            // markera skärningen med y-axeln (0, m)
+            drawDot(0, currentQ.m, '#E67E22', `(0, ${currentQ.m})`);
+            // markera en andra gitterpunkt för att kunna läsa av lutningen
+            let x2 = currentQ.kq;
+            let y2 = currentQ.m + currentQ.kp;
+            if (Math.abs(x2) <= RANGE && Math.abs(y2) <= RANGE && !(x2 === 0)) {
+                drawDot(x2, y2, '#27AE60', `(${x2}, ${y2})`);
+            } else {
+                let xn = -currentQ.kq, yn = currentQ.m - currentQ.kp;
+                if (Math.abs(xn) <= RANGE && Math.abs(yn) <= RANGE) {
+                    drawDot(xn, yn, '#27AE60', `(${xn}, ${yn})`);
+                }
+            }
+        }
+
+        function setActiveInput(id) {
+            activeInputId = id;
+            document.querySelectorAll('.equation-group input').forEach(el => el.classList.remove('active-input'));
+            const el = document.getElementById(id);
+            if (el) el.classList.add('active-input');
+        }
+
+        function numpadPress(val) {
+            if (isTransitioning) return;
+            const input = document.getElementById(activeInputId);
+            if (!input) return;
+
+            if (val === 'back') {
+                input.value = input.value.slice(0, -1);
+            } else if (val === '-') {
+                if (input.value.startsWith('-')) input.value = input.value.slice(1);
+                else input.value = '-' + input.value;
+            } else if (val === '.') {
+                if (!allowDecimal) return;
+                if (!input.value.includes('.') && input.value !== '' && input.value !== '-') input.value += '.';
+            } else {
+                if (input.value.replace('-', '').replace('.', '').length >= 4) return;
+                input.value += val;
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (isTransitioning) return;
+            if (!document.getElementById('k_val')) return;
+            if (e.key === 'Enter') { checkAnswer(); return; }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                setActiveInput(activeInputId === 'k_val' ? 'm_val' : 'k_val');
+                return;
+            }
+            if (e.key === 'Backspace') { numpadPress('back'); return; }
+            if (e.key === '-') { numpadPress('-'); return; }
+            if (e.key === '.' || e.key === ',') { numpadPress('.'); return; }
+            if (/^[0-9]$/.test(e.key)) { numpadPress(e.key); return; }
+        });
+
+        function parseValue(str) {
+            str = (str || '').trim().replace(',', '.');
+            if (str === '' || str === '-' || str === '.') return NaN;
+            if (str.includes('/')) {
+                let [a, b] = str.split('/');
+                return parseFloat(a) / parseFloat(b);
+            }
+            return parseFloat(str);
+        }
+
+        function updateStats(pulseStreak) {
+            document.getElementById('statStreak').innerText = streak;
+            document.getElementById('statBest').innerText = bestStreak;
+            document.getElementById('statAcc').innerText = totalAttempts > 0
+                ? Math.round(100 * totalCorrect / totalAttempts) + '%' : '–';
+            if (pulseStreak) {
+                const card = document.getElementById('cardStreak');
+                card.classList.remove('pulse'); void card.offsetWidth; card.classList.add('pulse');
+            }
+        }
+
+        function refreshHeader() {
+            updateLevelDropdown();
+            if (currentLevel === 4) {
+                document.getElementById('xpContainer').style.display = 'none';
+                document.getElementById('endlessStats').style.display = 'block';
+                document.getElementById('endlessScoreText').innerText = endlessScore;
+            } else {
+                document.getElementById('xpContainer').style.display = 'block';
+                document.getElementById('endlessStats').style.display = 'none';
+                document.getElementById('xpBar').style.width = `${(xp / 3) * 100}%`;
+            }
+        }
+
+        function updateUI() {
+            clearInterval(countdownTimer);
+            refreshHeader();
+            document.getElementById('taskTitle').innerText = currentQ.title;
+            document.getElementById('questionText').innerHTML = currentQ.text;
+            document.getElementById('k_val').value = '';
+            document.getElementById('m_val').value = '';
+            document.getElementById('decimalKey').style.display = allowDecimal ? 'block' : 'none';
+
+            const feedback = document.getElementById('feedbackBox');
+            feedback.style.display = "none";
+            feedback.className = "feedback-box";
+
+            document.getElementById('buttonArea').innerHTML =
+                `<button class="btn" id="submitBtn" onclick="checkAnswer()">Svara (Enter)</button>`;
+
+            setActiveInput('k_val');
+            updateStats(false);
+        }
+
+        function loadNewQuestion() {
+            isTransitioning = false;
+            mistakesOnCurrent = 0;
+            currentQ = generateQuestion();
+            updateUI();
+            renderCanvas();
+        }
+
+        function triggerErrorShake() {
+            const fb = document.getElementById('feedbackBox');
+            fb.classList.remove('shake-animation'); void fb.offsetWidth; fb.classList.add('shake-animation');
+            const eq = document.querySelector('.equation-group');
+            eq.classList.remove('shake-animation'); void eq.offsetWidth; eq.classList.add('shake-animation');
+        }
+
+        function showFeedback(message, type) {
+            const fb = document.getElementById('feedbackBox');
+            fb.innerHTML = message;
+            fb.className = `feedback-box ${type}`;
+        }
+
+        function formatK(p, q) { return q === 1 ? `${p}` : `${p}/${q}`; }
+
+        function checkAnswer() {
+            if (isTransitioning) return;
+            const kIn = parseValue(document.getElementById('k_val').value);
+            const mIn = parseValue(document.getElementById('m_val').value);
+
+            if (isNaN(kIn) || isNaN(mIn)) {
+                triggerErrorShake(); showFeedback("Fyll i både k och m.", "error"); return;
+            }
+
+            const kOk = Math.abs(kIn - currentQ.k) < 1e-6;
+            const mOk = Math.abs(mIn - currentQ.m) < 1e-6;
+
+            totalAttempts++;
+            localStorage.setItem(KEY+'totalAttempts', totalAttempts);
+
+            if (kOk && mOk) {
+                totalCorrect++;
+                localStorage.setItem(KEY+'totalCorrect', totalCorrect);
+                streak++;
+                if (streak > bestStreak) { bestStreak = streak; localStorage.setItem(KEY+'bestStreak', bestStreak); }
+                localStorage.setItem(KEY+'streak', streak);
+                isTransitioning = true;
+
+                let msg = praise[randomInt(0, praise.length - 1)];
+                if (streak > 0 && streak % 5 === 0) msg = `🔥 ${streak} i rad! Du är på gång!`;
+                showFeedback(msg, "success");
+                launchConfetti(streak % 5 === 0 ? 140 : 60);
+                updateStats(true);
+
+                if (currentLevel === 4) {
+                    endlessScore++;
+                    localStorage.setItem(KEY+'endlessScore', endlessScore);
+                    document.getElementById('endlessScoreText').innerText = endlessScore;
+                } else {
+                    if (mistakesOnCurrent === 0) xp++;
+                    if (xp >= 3) {
+                        currentLevel++; xp = 0;
+                        if (currentLevel > unlockedLevel) {
+                            unlockedLevel = Math.min(currentLevel, 4);
+                            localStorage.setItem(KEY+'unlockedLevel', unlockedLevel);
+                        }
+                        localStorage.setItem(KEY+'currentLevel', currentLevel);
+                        setTimeout(() => showFeedback(currentLevel === 4
+                            ? "Grymt! Du har låst upp Mängdträning! ♾️"
+                            : "Level Up! Nu höjer vi ribban. 🚀", "success"), 500);
+                    }
+                    document.getElementById('xpBar').style.width = `${(xp / 3) * 100}%`;
+                }
+
+                let timeLeft = 2;
+                const btnArea = document.getElementById('buttonArea');
+                btnArea.innerHTML = `<div class="timer-text">Nästa om ${timeLeft}...</div>`;
+                countdownTimer = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft <= 0) { clearInterval(countdownTimer); loadNewQuestion(); }
+                    else btnArea.innerHTML = `<div class="timer-text">Nästa om ${timeLeft}...</div>`;
+                }, 1000);
+            } else {
+                streak = 0;
+                localStorage.setItem(KEY+'streak', streak);
+                mistakesOnCurrent++;
+                updateStats(false);
+
+                let hint;
+                if (!kOk && !mOk) hint = "Både k och m är fel. Hitta först var linjen korsar y-axeln (det är m).";
+                else if (!kOk) hint = "m stämmer! Men k är fel. Räkna hur många steg linjen går <em>upp</em> när du går <em>1 steg höger</em>.";
+                else hint = "k stämmer! Men m är fel. m är y-värdet där linjen korsar y-axeln.";
+
+                if (mistakesOnCurrent >= 3) {
+                    hint += ` <strong>Facit: k = ${formatK(currentQ.kp, currentQ.kq)}, m = ${currentQ.m}.</strong>`;
+                    if (currentLevel > 1 && currentLevel < 4) {
+                        isTransitioning = true;
+                        currentLevel--; xp = 0;
+                        localStorage.setItem(KEY+'currentLevel', currentLevel);
+                        showFeedback(hint + " Vi backar ett steg så du får öva mer.", "error");
+                        triggerErrorShake();
+                        setTimeout(() => loadNewQuestion(), 3500);
+                        return;
+                    }
+                }
+                showFeedback(hint, "error");
+                triggerErrorShake();
+            }
+        }
+
+        /* ---- Konfetti ---- */
+        const confettiCanvas = document.getElementById('confettiCanvas');
+        const cctx = confettiCanvas.getContext('2d');
+        let confettiPieces = [];
+        function resizeConfetti() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeConfetti);
+        resizeConfetti();
+
+        function launchConfetti(count) {
+            const colors = ['#4A90E2', '#2ECC71', '#F1C40F', '#E67E22', '#E74C3C', '#9B59B6'];
+            for (let i = 0; i < count; i++) {
+                confettiPieces.push({
+                    x: window.innerWidth / 2 + (Math.random() - 0.5) * 200,
+                    y: window.innerHeight / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: Math.random() * -12 - 4,
+                    size: Math.random() * 8 + 4,
+                    color: colors[randomInt(0, colors.length - 1)],
+                    rot: Math.random() * Math.PI,
+                    vrot: (Math.random() - 0.5) * 0.3,
+                    life: 100
+                });
+            }
+            if (!confettiRunning) { confettiRunning = true; requestAnimationFrame(animateConfetti); }
+        }
+        let confettiRunning = false;
+        function animateConfetti() {
+            cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            confettiPieces.forEach(p => {
+                p.vy += 0.3; p.x += p.vx; p.y += p.vy; p.rot += p.vrot; p.life--;
+                cctx.save();
+                cctx.translate(p.x, p.y); cctx.rotate(p.rot);
+                cctx.fillStyle = p.color;
+                cctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                cctx.restore();
+            });
+            confettiPieces = confettiPieces.filter(p => p.life > 0 && p.y < confettiCanvas.height + 20);
+            if (confettiPieces.length > 0) requestAnimationFrame(animateConfetti);
+            else { confettiRunning = false; cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height); }
+        }
+
+        loadNewQuestion();
+    </script>
+</body>
+</html>

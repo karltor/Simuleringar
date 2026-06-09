@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Raketbyggaren</title>
+  <link rel="stylesheet" href="css/fysik-astronomi-raketbyggaren.css">
+</head>
+<body>
+
+  <!-- ============ SCEN: BYGG (VAB) ============ -->
+  <div id="scen-bygg" class="scen aktiv">
+    <header class="topp">
+      <h1>🚀 Raketbyggaren</h1>
+      <div class="topp-hoger">
+        <button id="btn-forskning" class="chip" title="Forskning – lås upp nya delar">🔬 <span id="poang-visning">0</span></button>
+        <button id="btn-hjalp" class="chip" title="Hjälp">?</button>
+      </div>
+    </header>
+
+    <div class="bygg-grid">
+      <aside id="palett" class="panel">
+        <h3>Delar</h3>
+        <div id="palett-lista"></div>
+      </aside>
+
+      <section class="panel mitt">
+        <canvas id="byggCanvas"></canvas>
+        <div id="stack-lista"></div>
+      </section>
+
+      <aside class="panel hoger">
+        <h3>Raketdata</h3>
+        <div id="statistik" class="stats-grid"></div>
+        <div class="formel">Δv = v<sub>e</sub> · ln( m₀ / m₁ )</div>
+        <div id="steg-lista"></div>
+        <button id="btn-starta" class="primar">🚀 Starta!</button>
+        <div id="bygg-varning"></div>
+        <button id="btn-tom" class="sekundar">🗑 Töm rampen</button>
+      </aside>
+    </div>
+
+    <footer id="tips-rad"></footer>
+  </div>
+
+  <!-- ============ SCEN: FLYG ============ -->
+  <div id="scen-flyg" class="scen">
+    <canvas id="flygCanvas"></canvas>
+
+    <div class="hud hud-vanster">
+      <div class="hud-rad"><span>Höjd</span><b id="hud-hojd">0 m</b></div>
+      <div class="hud-rad"><span>Fart</span><b id="hud-fart">0 m/s</b></div>
+      <div class="hud-rad apo"><span>Apoapsis</span><b id="hud-apo">—</b></div>
+      <div class="hud-rad peri"><span>Periapsis</span><b id="hud-peri">—</b></div>
+    </div>
+
+    <div class="hud hud-hoger">
+      <div class="hud-rad"><span>T+</span><b id="hud-tid">0 s</b></div>
+      <div class="warp-rad" id="warp-knappar">
+        <button data-warp="1" class="aktiv-warp">×1</button>
+        <button data-warp="10">×10</button>
+        <button data-warp="100">×100</button>
+        <button data-warp="1000">×1000</button>
+      </div>
+      <button id="btn-avsluta" class="sekundar">🏁 Avsluta</button>
+    </div>
+
+    <div class="hud hud-zoom">
+      <button id="btn-zoom-in">＋</button>
+      <button id="btn-zoom-ut">－</button>
+      <button id="btn-zoom-auto" class="auto-pa">AUTO</button>
+    </div>
+
+    <div id="toast-yta"></div>
+
+    <div class="hud hud-botten">
+      <div class="bransle-kolumn">
+        <div class="bransle-rubrik"><span id="hud-steg">Steg 1</span> ⛽</div>
+        <div class="bransle-bar"><div id="hud-bransle"></div></div>
+      </div>
+      <button id="btn-vrid-v" class="rund">◀</button>
+      <div class="gas-kolumn">
+        <input type="range" id="gas-slider" min="0" max="100" value="0">
+        <div class="gas-knappar">
+          <button id="btn-gas-noll">Stäng av</button>
+          <button id="btn-gas-max">Full gas</button>
+        </div>
+      </div>
+      <button id="btn-vrid-h" class="rund">▶</button>
+      <button id="btn-stega" class="primar stega">⏏ STEG</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: FORSKNING ============ -->
+  <div id="modal-forskning" class="modal-bak">
+    <div class="modal">
+      <button class="stang" id="btn-stang-forskning">✕</button>
+      <h2>🔬 Forskning <span class="poang-chip"><span id="forskning-poang">0</span> poäng</span></h2>
+      <div id="forskning-lista"></div>
+      <h3 class="mal-rubrik">🏆 Mål</h3>
+      <div id="mal-lista"></div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: RESULTAT ============ -->
+  <div id="modal-resultat" class="modal-bak">
+    <div class="modal smal">
+      <h2 id="resultat-rubrik">Flygning klar</h2>
+      <div id="resultat-stats" class="stats-grid"></div>
+      <div id="resultat-milstolpar"></div>
+      <div id="resultat-poang" class="poang-stor"></div>
+      <button id="btn-till-bygget" class="primar">🏗 Till bygget</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: HJÄLP ============ -->
+  <div id="modal-hjalp" class="modal-bak">
+    <div class="modal smal">
+      <button class="stang" id="btn-stang-hjalp">✕</button>
+      <h2>Så funkar det</h2>
+      <div class="hjalp-rad">🏗 Stapla delar. <b>Δv</b> visar hur långt raketen når.</div>
+      <div class="hjalp-rad">🚀 <b>◀ ▶</b> lutar, <b>↑ ↓</b> gas, <b>mellanslag</b> = nästa steg.</div>
+      <div class="hjalp-rad">🌍 Luta åt höger efter ~2 km. Bana = <b>periapsis över 12 km</b>.</div>
+      <div class="hjalp-rad">🔬 Höjd och mål ger poäng → lås upp nya delar.</div>
+      <div class="hjalp-rad formel-mini">Δv = v<sub>e</sub> · ln( m₀ / m₁ )&nbsp;&nbsp;•&nbsp;&nbsp;m₀ = med bränsle, m₁ = utan</div>
+    </div>
+  </div>
+
+  <script src="js/fysik-astronomi-raketbyggaren/delar.js"></script>
+  <script src="js/fysik-astronomi-raketbyggaren/fysik.js"></script>
+  <script src="js/fysik-astronomi-raketbyggaren/bygg.js"></script>
+  <script src="js/fysik-astronomi-raketbyggaren/flyg.js"></script>
+  <script src="js/fysik-astronomi-raketbyggaren/rita.js"></script>
+  <script src="js/fysik-astronomi-raketbyggaren/main.js"></script>
+</body>
+</html>

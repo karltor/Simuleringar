@@ -1,88 +1,106 @@
-// Raketbyggaren – fysikkonstanter och omloppsmatematik.
-// Nedskalad planet (radie 120 km) så att omloppsbanor nås på några minuter
-// men ytgravitationen är jordlik (9,82 m/s²).
+// 2D-inertialkoordinater, roterande mark, variabel massa och velocity-Verlet.
+// Motorns impuls integreras med exakt massförhållande inom varje tidssteg.
 window.RB = window.RB || {};
-
-RB.K = {
-  G0: 9.82,                 // ytgravitation, används även i TWR
-  PLANET_R: 120000,         // planetens radie (m)
-  MU: 9.82 * 120000 * 120000, // gravitationsparameter μ = g·R²
-  ATM_HOJD: 12000,          // atmosfärens topp = "rymdgränsen"
-  RHO0: 1.2,                // luftdensitet vid marken (kg/m³)
-  SKALHOJD: 2600,           // ρ = ρ0·e^(−h/SKALHOJD)
-  AREA: 1.5,                // referensarea för luftmotstånd (m²)
-  CD: 0.9,                  // dragkoefficient utan noskon
-  CD_NOS: 0.35,             // med noskon
-  FALLSKARM_CDA: 600,       // CdA fullt utvecklad fallskärm
-  MANE_AVSTAND: 600000,     // månens banradie (m)
-  MANE_R: 20000,            // månens radie
-  MANE_MU: 1.6 * 20000 * 20000,
-  MANE_STARTVINKEL: 0.8
-};
-RB.K.MANE_PERIOD = 2 * Math.PI * Math.sqrt(Math.pow(RB.K.MANE_AVSTAND, 3) / RB.K.MU);
-
-RB.fysik = {
-  manePos: function (t) {
-    var v = RB.K.MANE_STARTVINKEL + 2 * Math.PI * t / RB.K.MANE_PERIOD;
-    return { x: RB.K.MANE_AVSTAND * Math.cos(v), y: RB.K.MANE_AVSTAND * Math.sin(v) };
-  },
-
-  // Total gravitationsacceleration från planet + måne (månen "på räls")
-  gravitation: function (px, py, t) {
-    var r2 = px * px + py * py;
-    var r = Math.sqrt(r2);
-    var gp = -RB.K.MU / (r2 * r);
-    var ax = gp * px, ay = gp * py;
-    var m = RB.fysik.manePos(t);
-    var dx = px - m.x, dy = py - m.y;
-    var d2 = dx * dx + dy * dy;
-    var d = Math.sqrt(d2);
-    var gm = -RB.K.MANE_MU / (d2 * d);
-    return { x: ax + gm * dx, y: ay + gm * dy };
-  },
-
-  densitet: function (hojd) {
-    if (hojd >= RB.K.ATM_HOJD || hojd < 0) return 0;
-    return RB.K.RHO0 * Math.exp(-hojd / RB.K.SKALHOJD);
-  },
-
-  // Banelement ur läge & hastighet (relativt planetens centrum).
-  // Ger apoapsis/periapsis som höjd över ytan samt ellipsens geometri.
-  banelement: function (px, py, vx, vy) {
-    var mu = RB.K.MU;
-    var r = Math.sqrt(px * px + py * py);
-    var v2 = vx * vx + vy * vy;
-    var E = v2 / 2 - mu / r;
-    var h = px * vy - py * vx;
-    var rv = px * vx + py * vy;
-    // excentricitetsvektor pekar mot periapsis
-    var ex = ((v2 - mu / r) * px - rv * vx) / mu;
-    var ey = ((v2 - mu / r) * py - rv * vy) / mu;
-    var e = Math.sqrt(ex * ex + ey * ey);
-    var a = -mu / (2 * E); // negativ vid hyperbel
-    var hyperbolisk = E >= 0;
-    var rP = hyperbolisk ? a * (1 - e) : a * (1 - e);
-    var rA = hyperbolisk ? Infinity : a * (1 + e);
-    return {
-      a: a, e: e, ex: ex, ey: ey, h: h,
-      hyperbolisk: hyperbolisk,
-      rA: rA, rP: rP,
-      apo: hyperbolisk ? Infinity : rA - RB.K.PLANET_R,
-      peri: rP - RB.K.PLANET_R,
-      period: hyperbolisk ? Infinity : 2 * Math.PI * Math.sqrt(a * a * a / mu)
-    };
-  },
-
-  formatMeter: function (m) {
-    if (!isFinite(m)) return '∞';
-    if (Math.abs(m) >= 100000) return (m / 1000).toFixed(0) + ' km';
-    if (Math.abs(m) >= 10000) return (m / 1000).toFixed(1) + ' km';
-    if (Math.abs(m) >= 1000) return (m / 1000).toFixed(2) + ' km';
-    return Math.round(m) + ' m';
-  },
-
-  formatKg: function (kg) {
-    if (kg >= 10000) return (kg / 1000).toFixed(1) + ' t';
-    return Math.round(kg) + ' kg';
+RB.fysik = (function () {
+  var K = RB.K, TURN = Math.PI / 6;
+  function delar(config) {
+    var motor = RB.motor(config.motor);
+    var antal = config.steg === 2 ? [Math.ceil(config.bransle * .6), Math.floor(config.bransle * .4)] : [config.bransle];
+    return antal.map(function (n) { return { block: n, torr: motor.massa + n * K.TANK, bransle: n * K.BRANSLE, fullt: n * K.BRANSLE }; });
   }
-};
+  function massa(f) {
+    return K.KAPSEL + f.delar.reduce(function (sum, del, i) { return sum + (i < f.aktiv ? 0 : del.torr + del.bransle); }, 0);
+  }
+  function grav(x, y) { var r = Math.hypot(x, y), a = -K.MU / (r * r * r); return { x: a * x, y: a * y }; }
+  function wrap(v) { return Math.atan2(Math.sin(v), Math.cos(v)); }
+  function bana(x, y, vx, vy) {
+    var r = Math.hypot(x, y), v2 = vx * vx + vy * vy, rv = x * vx + y * vy;
+    var energi = v2 / 2 - K.MU / r, moment = x * vy - y * vx;
+    var ex = ((v2 - K.MU / r) * x - rv * vx) / K.MU;
+    var ey = ((v2 - K.MU / r) * y - rv * vy) / K.MU;
+    var e = Math.hypot(ex, ey), p = moment * moment / K.MU;
+    var peri = p / (1 + e) - K.R;
+    var apo = energi < 0 ? -K.MU / (2 * energi) * (1 + e) - K.R : Infinity;
+    return { energi: energi, moment: moment, e: e, p: p, riktning: Math.atan2(ey, ex), peri: peri, apo: apo,
+      bunden: energi < 0, saker: energi < 0 && peri >= K.SAKER_BANA };
+  }
+  function uppdatera(f, dt) {
+    var r = Math.hypot(f.x, f.y);
+    f.h = Math.max(0, r - K.R - 2);
+    var markVX = K.OMEGA * f.y, markVY = -K.OMEGA * f.x;
+    f.fart = Math.hypot(f.vx - markVX, f.vy - markVY);
+    f.radialfart = (f.x * f.vx + f.y * f.vy) / r;
+    f.sidofart = (f.y * (f.vx - markVX) - f.x * (f.vy - markVY)) / r;
+    f.maxHojd = Math.max(f.maxHojd, f.h); f.maxFart = Math.max(f.maxFart, f.fart);
+    f.maxSidofart = Math.max(f.maxSidofart, Math.abs(f.sidofart));
+    f.bana = bana(f.x, f.y, f.vx, f.vy);
+    var motorBrinner = f.gas && f.delar[f.aktiv].bransle > 0;
+    if (f.bana.saker && !motorBrinner) {
+      f.banTid += dt;
+      if (f.banTid >= 5) f.iBana = true;
+      if (f.iBana) f.varv += Math.abs(f.bana.moment) / (r * r) * dt;
+    } else { f.banTid = 0; f.varv = 0; }
+  }
+  function skapa(config) {
+    config = RB.konfig(config);
+    var r = K.R + 2;
+    var f = { config: config, motor: RB.motor(config.motor), delar: delar(config), aktiv: 0,
+      x: 0, y: r, vx: K.OMEGA * r, vy: 0, angle: 0, target: 0, gas: true,
+      t: 0, h: 0, fart: 0, radialfart: 0, sidofart: 0, maxHojd: 0, maxFart: 0, maxSidofart: 0,
+      lyft: false, slappt: false, iBana: false, banTid: 0, varv: 0, slut: null, rest: 0,
+      spar: [{ x: 0, y: r }], sparTid: 0, nyaMarken: [], poang: 0 };
+    uppdatera(f, 0); return f;
+  }
+  function data(config) {
+    var f = skapa(config), vikt = massa(f);
+    var fuel = f.delar.reduce(function (sum, del) { return sum + del.bransle; }, 0);
+    return { vikt: vikt, bransle: fuel, torr: vikt - fuel };
+  }
+  function slapp(f) {
+    if (f.slut || f.aktiv >= f.delar.length - 1) return false;
+    f.aktiv++; f.slappt = true; return true;
+  }
+  function sikta(f, vinkel) { f.target = wrap(vinkel); }
+  function steg(f, dt) {
+    if (f.slut) return;
+    var turn = wrap(f.target - f.angle);
+    f.angle = wrap(f.angle + Math.max(-TURN * dt, Math.min(TURN * dt, turn)));
+    var del = f.delar[f.aktiv], fore = massa(f);
+    var brukat = f.gas ? Math.min(del.bransle, f.motor.kraft / f.motor.ve * dt) : 0;
+    del.bransle = Math.max(0, del.bransle - brukat);
+    var dv = brukat > 0 ? f.motor.ve * Math.log(fore / (fore - brukat)) : 0;
+    var ax = Math.sin(f.angle) * dv / 2, ay = Math.cos(f.angle) * dv / 2;
+    var g = grav(f.x, f.y);
+    f.vx += g.x * dt / 2 + ax; f.vy += g.y * dt / 2 + ay;
+    f.x += f.vx * dt; f.y += f.vy * dt;
+    g = grav(f.x, f.y);
+    f.vx += g.x * dt / 2 + ax; f.vy += g.y * dt / 2 + ay;
+    f.t += dt;
+    var r = Math.hypot(f.x, f.y);
+    if (r <= K.R + 2) {
+      if (f.lyft) {
+        var relativa = Math.hypot(f.vx - K.OMEGA * f.y, f.vy + K.OMEGA * f.x);
+        f.slut = relativa < 3 ? 'landning' : 'krasch'; f.gas = false;
+        f.x *= (K.R + 2) / r; f.y *= (K.R + 2) / r;
+      } else {
+        // Startplattans normalkraft håller raketen kvar tills den verkligen lyfter.
+        f.x = (K.R + 2) * Math.sin(K.OMEGA * f.t); f.y = (K.R + 2) * Math.cos(K.OMEGA * f.t);
+        f.vx = K.OMEGA * f.y; f.vy = -K.OMEGA * f.x;
+      }
+    }
+    if (r - K.R > 4) f.lyft = true;
+    uppdatera(f, dt);
+    f.sparTid += dt;
+    if (f.sparTid >= 1) {
+      f.sparTid = 0; f.spar.push({ x: f.x, y: f.y }); if (f.spar.length > 1500) f.spar.shift();
+    }
+    // Ingen höjd, topp eller bränsleförbrukning avslutar en fri flygning.
+  }
+  function tick(f, sekunder) {
+    if (f.slut) return;
+    f.rest += Math.max(0, sekunder);
+    while (f.rest + 1e-12 >= K.DT && !f.slut) { steg(f, K.DT); f.rest -= K.DT; }
+    if (f.slut) f.rest = 0;
+  }
+  return { skapa: skapa, tick: tick, slapp: slapp, sikta: sikta, massa: massa, data: data, bana: bana, grav: grav, uppdatera: uppdatera, wrap: wrap };
+})();

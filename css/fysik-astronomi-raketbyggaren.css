@@ -1,259 +1,96 @@
-:root {
-  color-scheme: light;
-  --bak: #f6f4ee; --papper: #fff; --text: #1c3042; --muted: #52606a;
-  --kant: #d6dcd9; --orange: #b9411c; --orange-ljus: #fff0e7;
-  --teal: #12665a; --teal-ljus: #eaf5ee; --skugga: 0 3px 0 #172b4005;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-body { margin: 0; background: var(--bak); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 15px; line-height: 1.4; }
-button, input { font: inherit; }
-button, label { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-button { cursor: pointer; }
-button:disabled { cursor: default; }
-button, a, input { outline-offset: 4px; }
-:focus-visible { outline: 3px solid #146ca4; }
-h1, h2, p { margin: 0; }
-h2 { font-weight: 800; letter-spacing: -.6px; }
-svg.ikon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-.symboler { width: 0; height: 0; position: absolute; }
-.app { max-width: 1320px; margin: auto; padding: 0 32px; }
-.topp { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 24px 0 22px; }
-.logotyp { display: flex; gap: 12px; align-items: center; color: inherit; text-decoration: none; }
-.logo-ikon { background: var(--orange); color: white; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; }
-.logo-ikon svg { width: 29px; height: 29px; }
-h1 { font-size: 24px; line-height: 1.2; letter-spacing: -.8px; }
-.logo-punkt { color: var(--orange); }
-.undertitel { color: var(--muted); font-size: 12px; letter-spacing: .2px; }
-.topp-knappar { display: flex; gap: 18px; align-items: center; }
-.rekord-chip { display: flex; gap: 8px; align-items: center; font-size: 13px; }
-.rekord-chip svg { width: 18px; color: var(--orange); }
-.rekord-chip strong { font-variant-numeric: tabular-nums; }
-.knapp { display: inline-flex; justify-content: center; align-items: center; gap: 10px; min-height: 48px; padding: 10px 18px; border: 1px solid #acb8b9; background: white; color: var(--text); border-radius: 10px; font-weight: 700; line-height: 1.25; }
-.knapp:hover:not(:disabled) { background: #edf1ef; border-color: #687b7e; }
-.knapp:active:not(:disabled) { transform: translateY(1px); }
-.knapp.primar { color: white; background: var(--orange); border-color: var(--orange); }
-.knapp.primar:hover { background: #993515; border-color: #993515; }
-.knapp.liten { font-size: 13px; padding: 10px 14px; }
-.fragetecken { border: 1.5px solid currentColor; border-radius: 50%; width: 19px; height: 19px; display: grid; place-items: center; font-size: 12px; }
+:root { color-scheme: light; --bak: #f6f4ee; --papper: #fff; --text: #1c3042; --muted: #52606a; --kant: #d6dcd9; --orange: #b9411c; --ljus: #fff0e7; --teal: #12665a; }
+* { box-sizing: border-box; } [hidden] { display: none !important; }
+body { margin: 0; background: var(--bak); color: var(--text); font: 15px/1.4 'Segoe UI', system-ui, sans-serif; }
+button, input, select { font: inherit; } button, label, select { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; } button:disabled { cursor: default; } button, input, select { outline-offset: 3px; }
+:focus-visible { outline: 3px solid #146ca4; } h1, h2, p { margin: 0; } h2 { font-weight: 800; letter-spacing: -.5px; }
+.symboler { width: 0; height: 0; position: absolute; } .ikon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.app { max-width: 1360px; padding: 0 28px; margin: auto; }
+.topp { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--kant); }
+.logotyp { display: flex; gap: 12px; align-items: center; } .logo-ikon { background: var(--orange); color: white; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; } .logo-ikon .ikon { width: 28px; height: 28px; }
+h1 { font-size: 23px; letter-spacing: -.8px; } h1 > span { color: var(--orange); }
+.topp-knappar { display: flex; align-items: center; gap: 9px; }
+.knapp { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 10px 16px; border: 1px solid #acb8b9; border-radius: 10px; color: var(--text); background: white; font-size: 14px; font-weight: 700; line-height: 1.2; }
+.knapp:hover:not(:disabled) { background: #eef2ef; border-color: #687b7e; } .knapp:active:not(:disabled) { transform: translateY(1px); }
+.knapp.primar { background: var(--orange); border-color: var(--orange); color: white; } .knapp.primar:hover { background: #993515; }
+.knapp:disabled { color: #84918e; background: #f0f2ed; border-color: #d5dbd7; }
+.knapp.liten { font-size: 12px; padding: 10px 13px; } .hjalp-knapp { width: 48px; padding: 0; font-size: 18px; }
+.mynt, .saldo { color: var(--orange); font-variant-numeric: tabular-nums; } .mynt { font-size: 14px; }
 .overrubrik { font-size: 10px; letter-spacing: 1.7px; font-weight: 800; color: var(--orange); }
-.uppdrag { display: flex; justify-content: space-between; align-items: center; gap: 30px; border-top: 1px solid var(--kant); padding: 21px 0 24px; }
-.uppdrag h2 { font-size: clamp(24px, 2.4vw, 32px); margin: 4px 0 5px; }
-.uppdrag-info > p:last-child { color: var(--muted); font-size: 14px; max-width: 650px; }
-.uppdragsvag { border: 0; border-radius: 12px; background: transparent; padding: 10px 0 10px 16px; color: var(--muted); display: flex; flex-direction: column; align-items: flex-end; gap: 10px; min-width: 236px; }
-.uppdragsvag:hover { background: #ebece6; }
-.uppdragsvag > span:last-child { font-size: 12px; }
-.uppdrag-prickar { display: flex; gap: 8px; }
-.uppdrag-prickar span { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #afbab8; border-radius: 50%; color: #53616a; font-size: 11px; font-weight: 800; background: #f1f2ed; }
-.uppdrag-prickar .aktuell { background: var(--orange); border-color: var(--orange); color: white; box-shadow: 0 0 0 4px #f2ded2; }
-.uppdrag-prickar .klar { background: var(--teal); border-color: var(--teal); color: white; }
-.arbetsyta { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 18px; align-items: stretch; }
-.panel { background: var(--papper); border: 1px solid var(--kant); border-radius: 16px; box-shadow: var(--skugga); }
-.bygg { padding: 20px; }
-.panel-rubrik { display: flex; align-items: center; gap: 10px; }
-.panel-rubrik h2 { font-size: 17px; letter-spacing: -.3px; }
-.siffra { width: 25px; height: 25px; display: grid; place-items: center; background: #f0f2ee; border: 1px solid var(--kant); color: var(--muted); border-radius: 8px; font-size: 12px; font-weight: 800; flex-shrink: 0; }
-.grundraket { font-size: 12px; color: var(--muted); margin: 8px 0 20px; line-height: 1.6; }
-fieldset { min-width: 0; padding: 0; margin: 0 0 20px; border: 0; }
-legend { padding: 0; margin-bottom: 9px; font-size: 13px; font-weight: 800; width: 100%; display: flex; justify-content: space-between; align-items: baseline; }
-.liten-text { font-size: 11px; color: var(--muted); font-weight: 400; }
+.rubrikrad { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 15px 0 18px; }
+.rubrikrad > div:first-child { display: flex; align-items: baseline; gap: 15px; } .rubrikrad h2 { font-size: 27px; }
+.rekord { display: flex; align-items: baseline; gap: 8px; font-size: 12px; } .rekord > span { color: var(--muted); } .rekord b { font-variant-numeric: tabular-nums; }
+.arbetsyta { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; height: calc(100dvh - 220px); min-height: 470px; max-height: 650px; }
+.panel { background: white; border: 1px solid var(--kant); border-radius: 16px; }
+.bygg { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
+.bygg h2 { font-size: 18px; } fieldset { margin: 0; padding: 0; border: 0; min-width: 0; } legend { font-size: 13px; font-weight: 800; padding: 0; margin-bottom: 10px; }
 .motor-val { display: flex; flex-direction: column; gap: 6px; }
-.motor-laser { margin-top: 9px; line-height: 1.6; }
-.motor-kort { position: relative; display: flex; gap: 10px; align-items: center; border: 1px solid var(--kant); border-radius: 10px; padding: 10px 12px; min-height: 53px; cursor: pointer; background: white; }
-.motor-kort:has(input:checked) { border: 2px solid var(--orange); padding: 9px 11px; background: var(--orange-ljus); }
+.motor-kort { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px; border: 1px solid var(--kant); border-radius: 10px; min-height: 58px; }
+.motor-kort:has(input:checked) { background: var(--ljus); border: 2px solid var(--orange); padding: 9px; }
 .motor-kort:has(input:focus-visible) { outline: 3px solid #146ca4; outline-offset: 3px; }
 .motor-kort input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.motor-kort .motor-ikon { display: grid; place-items: center; width: 29px; flex-shrink: 0; color: var(--orange); }
-.motor-kort .motor-info { flex: 1; min-width: 0; }
-.motor-kort b { display: block; font-size: 13px; }
-.motor-kort .motor-text { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
-.val-markering { width: 17px; height: 17px; border: 1px solid #a5b1b3; border-radius: 50%; flex-shrink: 0; }
-input:checked ~ .val-markering { border: 5px solid var(--orange); background: white; }
-.motor-kort.last { background: #f7f8f5; cursor: default; }
-.motor-kort.last .motor-ikon { color: #697778; }
-.motor-kort.last .motor-text { color: var(--muted); }
-.bransle-val { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #f8f8f4; border: 1px solid var(--kant); padding: 6px; border-radius: 11px; }
-.steg-knapp { min-width: 49px; width: 49px; font-size: 27px; padding: 0; }
-.steg-knapp:disabled { color: #8e999a; background: #f0f1ec; border-color: #d5dbd7; }
-.bransle-tal { display: flex; gap: 7px; align-items: baseline; }
-.bransle-tal output { font-size: 29px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.bransle-tal span { font-size: 12px; color: var(--muted); }
-.bransle-block { display: flex; gap: 5px; margin-top: 8px; }
-.bransle-block span { flex: 1; height: 7px; border-radius: 2px; background: #e9ece8; border: 1px solid #d2d8d3; }
-.bransle-block .fyllt { background: #d56638; border-color: #d56638; }
-.jamfor-val { display: flex; gap: 8px; margin-top: 10px; }
-.jamfor-val button { flex: 1; font-size: 11px !important; padding: 8px !important; }
-#jamfor-status { margin-top: 7px; }
-.steg-val { display: flex; gap: 8px; }
-.steg-val label { flex: 1; cursor: pointer; position: relative; }
-.steg-val input { position: absolute; opacity: 0; }
-.steg-val span { display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1px solid #aebbb8; border-radius: 8px; font-size: 13px; font-weight: 700; }
-.steg-val input:checked + span { color: var(--orange); border: 2px solid var(--orange); background: var(--orange-ljus); }
-.steg-val input:focus-visible + span { outline: 3px solid #146ca4; outline-offset: 3px; }
-#steg-tips { margin-top: 7px; }
-.vikt-kort { border-top: 1px solid var(--kant); padding-top: 14px; }
-.vikt-rad { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-.vikt-rad strong { font-size: 16px; font-variant-numeric: tabular-nums; }
-.vikt-bar { height: 7px; display: flex; border-radius: 4px; overflow: hidden; gap: 2px; margin: 9px 0 7px; }
-#vikt-raket { background: #465e6b; } #vikt-bransle { background: #d56638; }
-.vikt-legend { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--muted); }
-.vikt-legend b { font-weight: 500; } .prick { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
-.raket-prick { background: #465e6b; } .bransle-prick { background: #d56638; }
-.lyft-tips { font-size: 11px; line-height: 1.5; color: var(--teal); margin-top: 11px; }
-.lyft-tips.tung { color: #923c1e; }
-.ramp { overflow: hidden; display: flex; flex-direction: column; }
-.ramp-topp { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 22px; }
-.autopilot { display: inline-flex; gap: 6px; align-items: center; font-size: 10px; color: var(--muted); }
-.status-prick { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
-.scen { position: relative; min-height: 332px; flex: 1; background: #eef5f3; isolation: isolate; }
-#raketCanvas { width: 100%; height: 100%; display: block; position: absolute; inset: 0; }
-.scen-etikett { position: absolute; top: 19px; left: 22px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
-.scen-etikett .overrubrik { color: #4c676e; font-size: 9px; }
-#scen-meddelande { font-size: 15px; color: #1c3e50; font-weight: 700; }
-.mal-chip { position: absolute; bottom: 18px; left: 22px; display: inline-flex; gap: 7px; align-items: center; padding: 7px 11px; background: white; border: 1px solid #b6c9c8; border-radius: 8px; font-size: 11px; font-weight: 700; }
-.mal-chip svg { width: 15px; height: 15px; color: var(--orange); }
-.flyg-data { position: absolute; top: 18px; right: 20px; background: white; border: 1px solid #b6c9c8; border-radius: 10px; width: 160px; padding: 12px 14px; }
-.flyg-data > span { color: var(--muted); font-size: 10px; }
-.flyg-data > strong { display: block; font-size: 23px; margin: 3px 0 10px; font-variant-numeric: tabular-nums; }
-.flyg-bransle-rad { display: flex; justify-content: space-between; gap: 4px; font-size: 9px; }
-.flyg-bransle-rad b { font-weight: 700; }
-.flyg-bransle-bar { height: 6px; background: #e8ece8; border-radius: 3px; margin-top: 5px; overflow: hidden; }
-#flyg-bransle { display: block; height: 100%; background: #d56638; }
-.nedrakning { position: absolute; inset: 0; display: grid; place-items: center; background: #f1f6f0a6; font-size: 88px; font-weight: 900; color: var(--orange); }
-.start-rad, .flyg-kontroller { min-height: 83px; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 16px 22px; border-top: 1px solid var(--kant); }
-.start-rad p, .flyg-kontroller p { max-width: 315px; font-size: 12px; color: var(--muted); }
-.start-rad .primar { min-width: 195px; flex-shrink: 0; }
-.kontroll-knappar { display: flex; gap: 8px; flex-shrink: 0; }
-.flyg-kontroller .knapp { font-size: 12px; padding: 10px 13px; }
-.steg-meddelande { position: absolute; bottom: 62px; left: 20px; right: 20px; padding: 13px 16px; background: white; border: 2px solid var(--orange); border-radius: 11px; box-shadow: 0 4px 16px #1c30420d; text-align: center; }
-.steg-meddelande b { display: block; font-size: 17px; }
-.steg-meddelande span { font-size: 12px; }
-.logg { padding: 15px 20px; margin-top: 18px; }
-.logg-topp { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.text-knapp { border: 0; background: transparent; padding: 0 8px; min-height: 44px; font-size: 12px; color: var(--muted); }
-.logg-lista { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; margin-top: 12px; }
-.tom-logg { grid-column: 1 / -1; color: var(--muted); font-size: 12px; padding-bottom: 3px; }
-.logg-kort { border-left: 2px solid var(--kant); padding-left: 12px; }
-.logg-kort.ny { border-color: var(--orange); }
-.logg-kort .logg-label { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; color: var(--muted); }
-.logg-kort .logg-meta { color: var(--muted); font-size: 10px; margin-top: 3px; }
-.logg-kort strong { font-size: 18px; font-variant-numeric: tabular-nums; }
-.logg-bar { height: 5px; background: #edf0ec; border-radius: 3px; margin-top: 8px; overflow: hidden; }
-.logg-bar span { display: block; background: #688c89; height: 100%; min-width: 2px; }
-.ny .logg-bar span { background: #d56638; }
-footer { display: flex; justify-content: space-between; gap: 15px; padding: 16px 3px 22px; font-size: 10px; color: var(--muted); }
-.dialog { width: min(480px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: 32px; border: 1px solid #c6d0c8; border-radius: 18px; color: var(--text); box-shadow: 0 20px 80px #1b31432e; overflow-y: auto; background: white; }
-.dialog::backdrop { background: #1c304270; backdrop-filter: blur(3px); }
-.dialog h2 { font-size: 27px; margin: 5px 0 18px; padding-right: 20px; }
-.stang { position: absolute; right: 12px; top: 12px; padding: 0; width: 44px; min-height: 44px; font-size: 27px; border-color: transparent; background: transparent; }
-.dialog.resultat { text-align: center; width: min(510px, calc(100% - 32px)); }
-.resultat h2 { padding: 0; margin-bottom: 6px; }
-.resultat-hojd { margin-bottom: 12px; }
-.resultat-hojd strong { display: block; font-size: clamp(36px, 7vw, 56px); font-weight: 850; letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.resultat-hojd > span { color: var(--muted); font-size: 13px; }
-.resultat-rekord { color: var(--teal); background: var(--teal-ljus); display: inline-block; border-radius: 6px; font-size: 12px; font-weight: 800; padding: 5px 12px; margin-bottom: 12px; }
-.resultat-jamforelse { text-align: left; display: flex; flex-direction: column; gap: 12px; margin: 6px 0 20px; }
-.resultat-jamforelse .logg-kort { border-left: 0; padding-left: 0; }
-.resultat-jamforelse .logg-label { font-size: 12px; align-items: baseline; }
-.resultat-jamforelse strong { font-size: 13px; }
-.upptackt { text-align: left; background: #f6f6f0; border: 1px solid #dce1d6; padding: 15px; border-radius: 10px; }
-.upptackt .overrubrik { color: var(--teal); }
-.upptackt p { font-size: 14px; line-height: 1.6; margin-top: 5px; }
-.resultat-mal { margin: 15px 0; font-size: 13px; font-weight: 700; color: var(--teal); }
-.resultat-mal.ej-klar { color: var(--muted); font-weight: 500; }
-.dialog-knappar { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-.resultat .dialog-knappar .primar { width: 100%; }
-.hjalp-lista { list-style: none; padding: 0; counter-reset: hjalp; }
-.hjalp-lista li { counter-increment: hjalp; position: relative; padding: 0 0 20px 42px; font-size: 14px; }
-.hjalp-lista li::before { content: counter(hjalp); position: absolute; top: 0; left: 0; border: 1px solid #f0c5ad; background: var(--orange-ljus); color: var(--orange); border-radius: 8px; width: 28px; height: 28px; display: grid; place-items: center; font-weight: 800; }
-.hjalp-lista b, .hjalp-lista span { display: block; }
-.hjalp-lista span { margin-top: 4px; color: var(--muted); font-size: 13px; }
-.hjalp-extra { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 14px 0; }
-#dialog-hjalp > .primar { width: 100%; margin: 8px 0; }
-#btn-nollstall { display: flex; margin: auto; }
-.uppdrag-lista { display: flex; flex-direction: column; gap: 8px; }
-.uppdrag-val { width: 100%; min-height: 58px; display: flex; align-items: center; gap: 12px; text-align: left; padding: 10px 12px; border: 1px solid var(--kant); background: white; border-radius: 10px; color: var(--text); }
-.uppdrag-val:disabled { background: #f5f7f3; }
-.uppdrag-val.aktuell { border: 2px solid var(--orange); background: var(--orange-ljus); }
-.uppdrag-val.klar .siffra { color: white; background: var(--teal); border-color: var(--teal); }
-.uppdrag-val b { display: block; font-size: 13px; }
-.uppdrag-val small { display: block; font-size: 11px; color: var(--muted); }
-.dialog.bred { width: min(700px, calc(100% - 32px)); }
-.historik-lista { display: grid; gap: 15px; margin-top: 20px; }
-.historik-lista .logg-kort { padding: 8px 0 8px 14px; }
-.historik-lista .logg-meta { font-size: 12px; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.hoppa { position: absolute; top: -100px; left: 20px; z-index: 99; background: white; padding: 14px; border: 2px solid var(--orange); }
-.hoppa:focus { top: 12px; }
-.flyger .bygg { opacity: .65; }
-@media (max-height: 800px) and (min-width: 1000px) {
-  .topp { padding: 16px 0; } .uppdrag { padding: 14px 0 18px; }
-  .bygg { padding: 17px 20px; } .grundraket { margin-bottom: 14px; }
-  fieldset { margin-bottom: 14px; } .ramp-topp { padding: 17px 22px; }
-  .scen { min-height: 302px; } .logg { margin-top: 14px; padding: 12px 20px; }
-  .logg-lista { margin-top: 9px; } footer { padding: 12px 3px; }
+.motor-kort .ikon { color: var(--orange); } .motor-info { flex: 1; } .motor-info b { font-size: 14px; display: block; } .motor-info small { display: block; color: var(--muted); font-size: 11px; }
+.val-markering { width: 16px; height: 16px; border: 1px solid #a5b1b3; border-radius: 50%; } input:checked ~ .val-markering { border: 5px solid var(--orange); }
+.bransle-val { display: flex; align-items: center; justify-content: space-between; gap: 6px; background: #f7f8f3; border: 1px solid var(--kant); border-radius: 10px; padding: 5px; }
+.steg-knapp { padding: 0; font-size: 26px; width: 46px; min-width: 46px; }
+.bransle-tal { display: flex; align-items: baseline; gap: 5px; } .bransle-tal output { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; } .bransle-tal span { font-size: 11px; color: var(--muted); }
+.bransle-block { display: flex; gap: 4px; margin-top: 8px; } .bransle-block span { flex: 1; height: 6px; background: #e9ece8; border-radius: 2px; } .bransle-block .fyllt { background: #d56638; }
+.steg-val { display: flex; gap: 8px; } .steg-val label { position: relative; flex: 1; cursor: pointer; }
+.steg-val input { position: absolute; opacity: 0; } .steg-val span { display: grid; place-items: center; min-height: 48px; border: 1px solid #aebbb8; border-radius: 8px; font-weight: 700; }
+.steg-val input:checked + span { color: var(--orange); background: var(--ljus); border: 2px solid var(--orange); } .steg-val input:focus-visible + span { outline: 3px solid #146ca4; outline-offset: 3px; }
+.vikt { padding-top: 14px; border-top: 1px solid var(--kant); display: flex; align-items: baseline; justify-content: space-between; font-size: 12px; } .vikt b { font-size: 17px; }
+.verkstad-lank { width: 100%; } .mini-rekord { margin-top: auto; display: flex; gap: 9px; color: var(--muted); align-items: center; font-size: 11px; }
+.ramp { overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+.ramp-topp { display: flex; justify-content: space-between; align-items: center; padding: 9px 16px; gap: 10px; min-height: 65px; }
+.vy-val { display: flex; gap: 4px; } .vy-knapp { min-height: 44px; padding: 9px 17px; background: white; border: 1px solid transparent; border-radius: 8px; font-weight: 700; font-size: 13px; color: var(--muted); }
+.vy-knapp.vald { background: #ecf1ed; border-color: #c5d1c8; color: var(--text); }
+.tid-kontroll { display: flex; gap: 8px; align-items: center; } #flyg-tid { font-size: 13px; font-variant-numeric: tabular-nums; min-width: 36px; }
+#tid-val { min-height: 48px; border: 1px solid #acb8b9; background: white; border-radius: 9px; padding: 9px 7px; font-weight: 700; color: var(--text); width: 70px; }
+.scen { position: relative; flex: 1; min-height: 260px; background: #eef2ef; isolation: isolate; }
+#raketCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.scen-signatur { position: absolute; left: 20px; top: 18px; color: #5d716f; font-size: 12px; letter-spacing: 3px; font-weight: 800; pointer-events: none; } .scen-signatur span { display: block; font-size: 10px; font-weight: 400; letter-spacing: .2px; margin-top: 4px; }
+.flyg-data { position: absolute; top: 12px; left: 16px; right: 16px; display: flex; justify-content: space-between; gap: 12px; padding: 12px 16px; border: 1px solid #c7d2c9; background: #ffffffed; border-radius: 10px; }
+.flyg-data > div { display: flex; flex-direction: column; min-width: 0; } .flyg-data span { color: var(--muted); font-size: 11px; } .flyg-data b { font-size: 20px; font-variant-numeric: tabular-nums; letter-spacing: -.4px; }
+.fuel-data { width: 112px; } .fuel-bar { height: 5px; background: #e8ece8; border-radius: 3px; overflow: hidden; margin-top: 4px; } .fuel-bar i { display: block; height: 100%; background: #d56638; }
+.ban-data { position: absolute; right: 16px; bottom: 14px; background: #ffffffeb; border: 1px solid #c7d2c9; border-radius: 9px; width: 200px; padding: 10px 12px; font-size: 11px; }
+.ban-data > div { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; } .ban-data span { color: var(--muted); } .ban-data > span { display: block; margin-top: 5px; font-size: 11px; color: var(--orange); } .ban-data.saker > span { color: var(--teal); }
+.start-rad { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 20px; min-height: 81px; border-top: 1px solid var(--kant); } .start-rad .primar { min-width: 170px; }
+.start-tag { font-size: 10px; letter-spacing: 1.5px; color: var(--muted); } .start-tag b { color: var(--text); }
+.flyg-kontroller { padding: 12px 16px 9px; border-top: 1px solid var(--kant); }
+.styrning { display: flex; align-items: center; justify-content: center; gap: 8px; } .lut-knapp { font-size: 25px; padding: 8px 13px; } .lut-knapp span { font-size: 12px; } #btn-motor { min-width: 145px; }
+#btn-motor.av { background: #eaf0eb; color: var(--text); border-color: #a8b9b0; } .steg-flyg { font-size: 12px; padding: 9px 12px; }
+.kontroll-meta { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 7px; font-size: 10px; color: var(--muted); } .kontroll-meta b { min-width: 36px; color: var(--text); }
+.toast { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); padding: 12px 20px; background: white; border: 2px solid var(--teal); color: var(--teal); border-radius: 12px; font-size: 14px; font-weight: 800; box-shadow: 0 4px 12px #1c304211; text-align: center; min-width: 210px; z-index: 2; }
+.flyger .bygg { background: #f9faf6; } .flyger .verkstad-lank { display: none; }
+.logg { margin-top: 15px; } .logg-lista { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.logg-kort { display: flex; gap: 10px; align-items: center; padding: 9px 12px; background: white; border: 1px solid var(--kant); border-radius: 9px; font-size: 12px; }
+.logg-kort > span:first-child { color: var(--muted); } .logg-kort b { font-variant-numeric: tabular-nums; } .logg-kort small { color: var(--muted); margin-left: auto; font-size: 10px; }
+footer { display: flex; justify-content: space-between; align-items: center; min-height: 35px; color: var(--muted); font-size: 10px; }
+.text-knapp { min-height: 44px; padding: 8px 0; background: transparent; border: 0; font-size: 12px; color: var(--muted); cursor: pointer; }
+.dialog { width: min(510px, calc(100% - 28px)); max-height: calc(100dvh - 28px); padding: 30px; border: 1px solid #c6d0c8; border-radius: 18px; color: var(--text); background: white; box-shadow: 0 20px 80px #1b31432e; overflow-y: auto; }
+.dialog::backdrop { background: #1c304270; backdrop-filter: blur(2px); } .dialog h2 { font-size: 27px; margin: 4px 0 20px; }
+.stang { position: absolute; right: 10px; top: 10px; width: 44px; min-height: 44px; padding: 0; font-size: 27px; border: 0; background: transparent; }
+.saldo { font-size: 21px; font-weight: 800; margin: -5px 0 20px; }
+.butik-kort { display: flex; align-items: center; gap: 13px; padding: 16px 0; border-top: 1px solid var(--kant); }
+.butik-kort .ikon { width: 27px; height: 27px; color: var(--orange); } .butik-info { flex: 1; } .butik-info b { display: block; font-size: 15px; } .butik-info small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; } .butik-kort .knapp { min-width: 95px; font-size: 12px; }
+.marke-rad { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--kant); } .marke-rad .marke-ikon { display: grid; place-items: center; width: 35px; height: 35px; border: 1px solid var(--kant); border-radius: 50%; color: var(--muted); } .marke-rad.klar .marke-ikon { background: #e7f4ed; color: var(--teal); border-color: #97c5b4; }
+.marke-info { flex: 1; } .marke-info b { display: block; font-size: 13px; } .marke-info span { display: block; font-size: 11px; color: var(--muted); } .marke-rad > b { color: var(--orange); font-size: 12px; }
+.resultat { text-align: center; } .resultat h2 { font-size: 30px; } .resultat-data { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 12px 0 22px; }
+.resultat-data > div { display: flex; flex-direction: column; gap: 5px; } .resultat-data b { font-size: 21px; font-variant-numeric: tabular-nums; } .resultat-data span { color: var(--muted); font-size: 11px; }
+.resultat-marken { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; } .resultat-marken span { background: #e7f4ed; border: 1px solid #abd0be; color: var(--teal); border-radius: 7px; font-size: 12px; padding: 7px 10px; }
+.resultat-poang { font-size: 23px; color: var(--orange); font-weight: 800; padding: 15px 0; } .resultat > .primar { width: 100%; }
+.dialog-knappar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.hjalp-kontroller p { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: 1px solid var(--kant); font-size: 14px; } .hjalp-kontroller span { color: var(--muted); }
+.hjalp-text { color: var(--muted); font-size: 13px; margin: 16px 0; } details { font-size: 12px; color: var(--muted); margin: 20px 0; } details p { margin-top: 10px; line-height: 1.6; } summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+details a { display: inline-block; margin-top: 10px; color: var(--teal); }
+#historik-lista { display: grid; gap: 9px; } .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 1100px) { .app { padding: 0 18px; } .arbetsyta { grid-template-columns: 235px minmax(0, 1fr); gap: 14px; } .bygg { padding: 17px; gap: 18px; } .lut-knapp span { display: none; } .lut-knapp { width: 48px; padding: 0; } .ramp-topp { padding: 9px 12px; } .vy-knapp { padding: 9px 12px; } }
+@media (max-height: 680px) and (min-width: 900px) { .topp { padding: 10px 0; } .rubrikrad { padding: 11px 0; } .rubrikrad h2 { font-size: 23px; } .arbetsyta { height: calc(100dvh - 176px); min-height: 380px; } .scen { min-height: 205px; } .ramp-topp { min-height: 59px; padding: 5px 12px; } .bygg { gap: 15px; } }
+@media (max-width: 760px) { .app { padding: 0 12px; } .topp { padding: 12px 0; gap: 10px; } h1 { font-size: 19px; } .logo-ikon { width: 38px; height: 38px; } .logotyp { gap: 8px; } .topp-knappar { gap: 6px; } .topp-knappar .knapp { padding: 8px 10px; font-size: 11px; } .topp-knappar .hjalp-knapp { width: 44px; padding: 0; } #btn-marken > span { display: none; } .rubrikrad h2 { font-size: 23px; } .rubrikrad > div:first-child { gap: 9px; } .rekord { font-size: 11px; } .rekord > span { display: none; }
+  .arbetsyta { grid-template-columns: 1fr; height: auto; min-height: 0; max-height: none; } .bygg { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; } .bygg h2, .vikt { grid-column: 1/-1; } .bygg fieldset:first-of-type { grid-column: 1; grid-row: 2 / span 2; } .mini-rekord { display: none; } .verkstad-lank { min-height: 48px; font-size: 12px; } .vikt { padding-top: 10px; }
+  .scen { min-height: 355px; } .ramp-topp { gap: 8px; padding: 8px 12px; } .tid-kontroll { gap: 6px; } .vy-knapp { padding: 8px 11px; font-size: 12px; } #flyg-tid { font-size: 11px; } #tid-val { width: 62px; font-size: 12px; } .tid-kontroll .knapp { padding: 9px; font-size: 11px; } .flyg-data { left: 12px; right: 12px; gap: 8px; padding: 10px 12px; } .flyg-data b { font-size: 19px; } .fuel-data { width: 90px; }
+  .styrning { flex-wrap: wrap; } .steg-flyg { flex-basis: 100%; } .lut-knapp { width: 56px; } #btn-motor { min-width: 158px; } .logg-lista { gap: 7px; } .logg-kort { padding: 8px; gap: 5px; } .logg-kort small { display: none; } .logg-kort { font-size: 10px; } .dialog { padding: 28px 22px; } .resultat-data b { font-size: 18px; }
 }
-@media (max-width: 1100px) {
-  .app { padding: 0 22px; } .arbetsyta { grid-template-columns: 290px minmax(0, 1fr); gap: 14px; }
-  .autopilot { font-size: 9px; } .ramp-topp { gap: 8px; padding: 18px; }
-  .start-rad, .flyg-kontroller { padding: 14px 18px; flex-wrap: wrap; gap: 10px; }
-  .start-rad p { flex: 1; min-width: 150px; } .flyg-kontroller p { flex-basis: 100%; max-width: none; }
-  .kontroll-knappar { flex-wrap: wrap; } .scen { min-height: 330px; }
-}
-@media (max-width: 760px) {
-  .app { padding: 0 16px; } .topp { padding: 18px 0; gap: 10px; }
-  h1 { font-size: 21px; } .logo-ikon { width: 42px; height: 42px; border-radius: 12px; }
-  .undertitel { font-size: 10px; } .rekord-chip { display: none; }
-  .topp-knappar .knapp { font-size: 11px; padding: 9px 11px; gap: 6px; }
-  .uppdrag { align-items: flex-start; gap: 12px; padding: 17px 0; }
-  .uppdragsvag { min-width: auto; padding: 7px 0 7px 7px; }
-  .uppdrag-prickar { gap: 4px; } .uppdrag-prickar span { width: 19px; height: 19px; font-size: 9px; }
-  .uppdrag-prickar .aktuell { box-shadow: 0 0 0 2px #f2ded2; }
-  .uppdrag-info > p:last-child { font-size: 12px; } .uppdrag h2 { font-size: 23px; }
-  .arbetsyta { grid-template-columns: 1fr; }
-  .bygg { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
-  .bygg > .panel-rubrik, .grundraket, .vikt-kort { grid-column: 1 / -1; }
-  .grundraket { margin-bottom: 14px; }
-  #motor-falt { grid-column: 1; grid-row: 3 / span 2; }
-  #bransle-falt { grid-column: 2; grid-row: 3; } #steg-falt { grid-column: 2; }
-  .bransle-val { gap: 4px; } .steg-knapp { min-width: 44px; width: 44px; min-height: 48px; }
-  .bransle-tal { gap: 3px; } .bransle-tal output { font-size: 25px; }
-  .bransle-tal span { font-size: 10px; } legend .liten-text { font-size: 9px; }
-  .motor-kort { padding: 9px 8px; gap: 7px; } .motor-kort:has(input:checked) { padding: 8px 7px; }
-  .motor-kort .motor-text { font-size: 10px; } .motor-kort .motor-ikon { width: 20px; }
-  .vikt-rad { font-size: 12px; } .vikt-legend { justify-content: flex-start; gap: 20px; }
-  .scen { min-height: 340px; } .flyg-data { right: 12px; width: 133px; padding: 10px; }
-  .scen-etikett { left: 16px; max-width: 46%; } #scen-meddelande { font-size: 13px; }
-  .ramp-topp { padding: 17px 16px; } .panel-rubrik h2 { font-size: 15px; }
-  .start-rad { align-items: stretch; } .start-rad p { max-width: none; flex-basis: 100%; }
-  .start-rad .primar { width: 100%; } .kontroll-knappar { width: 100%; }
-  .kontroll-knappar .knapp { flex: 1; } #btn-slapp { flex-basis: 100%; }
-  .logg { padding: 14px 16px; } .logg-lista { grid-template-columns: 1fr; gap: 14px; }
-  .logg-kort strong { font-size: 16px; } .logg-topp { gap: 6px; }
-  .logg-topp h2 { font-size: 13px; } .logg-topp .text-knapp { font-size: 10px; padding: 0; }
-  footer { font-size: 9px; } footer span:last-child { display: none; }
-  .dialog { padding: 27px 22px; } .dialog h2 { font-size: 24px; }
-}
-@media (max-width: 420px) {
-  .app { padding: 0 10px; } .logotyp { gap: 8px; } .topp-knappar .fragetecken { display: none; }
-  .uppdrag { flex-direction: column; gap: 5px; } .uppdragsvag { flex-direction: row; align-items: center; padding: 8px 0; gap: 14px; min-height: 44px; }
-  .bygg { column-gap: 10px; padding: 15px 12px; } .motor-kort .motor-ikon { display: none; }
-  .bransle-val { padding: 4px; } .steg-knapp { min-width: 42px; width: 42px; }
-  legend .liten-text { display: none; } .autopilot { font-size: 8px; }
-}
-@media (max-height: 680px) and (min-width: 900px) {
-  .topp { padding: 12px 0; }
-  .uppdrag { padding: 10px 0 14px; }
-  .uppdrag h2 { font-size: 25px; }
-  .uppdrag-info > p:last-child { font-size: 12px; }
-  .arbetsyta { align-items: stretch; }
-  .bygg, .ramp { height: calc(100dvh - 195px); min-height: 380px; }
-  .bygg { overflow-y: auto; }
-  .ramp-topp { padding: 12px 18px; }
-  .scen { min-height: 0; }
-  .scen-etikett { top: 13px; }
-  .flyg-data { top: 12px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
-}
+@media (max-width: 400px) { .topp-knappar #btn-verkstad > span { display: none; } .rubrikrad h2 { font-size: 21px; } .overrubrik { font-size: 9px; } .bygg { padding: 13px; gap: 12px; } .motor-kort .ikon { display: none; } .bransle-val { padding: 4px; } .steg-knapp { width: 42px; min-width: 42px; } .bransle-tal output { font-size: 25px; } .bransle-tal span { font-size: 9px; } .vy-knapp { padding: 8px; } .tid-kontroll { gap: 4px; } .ramp-topp { padding: 8px; } .tid-kontroll .knapp { padding: 8px; } }
+@media (max-width: 370px) { .logo-ikon { display: none; } h1 { font-size: 18px; } .topp-knappar .knapp { padding-left: 8px; padding-right: 8px; } .bransle-val { gap: 4px; } .bransle-tal span { display: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

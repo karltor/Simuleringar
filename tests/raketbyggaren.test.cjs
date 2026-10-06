@@ -1,83 +1,108 @@
-// Kör med: node --test tests/raketbyggaren.test.cjs
+// Fysikregressioner. Kör: node --test tests/raketbyggaren.test.cjs
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
-const context = {};
-context.window = context;
-vm.createContext(context);
-for (const filename of ['delar.js', 'fysik.js']) {
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'fysik-astronomi-raketbyggaren', filename), 'utf8'), context);
-}
-const RB = context.RB;
+const path = require('node:path');
+const context = {}; context.window = context; vm.createContext(context);
+for (const file of ['delar.js', 'fysik.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js/fysik-astronomi-raketbyggaren', file), 'utf8'), context);
+const RB = context.RB, K = RB.K;
 
-test('samma motor når lägre med sex block än med två', () => {
-  const light = RB.fysik.prova({ motor: 'start', bransle: 2, steg: 1 });
-  const heavy = RB.fysik.prova({ motor: 'start', bransle: 6, steg: 1 });
-  assert.ok(light.maxHojd > heavy.maxHojd);
-  assert.ok(heavy.markTid > light.markTid + 10);
-  assert.equal(light.delar[0].bransle, 0);
-  assert.equal(heavy.delar[0].bransle, 0);
+test('Ceres har rätt storlek och låg, höjdberoende gravitation', () => {
+  assert.equal(K.R, 469700);
+  const surface = Math.abs(RB.fysik.grav(0, K.R).y);
+  assert.ok(surface > .28 && surface < .29);
+  const high = Math.abs(RB.fysik.grav(0, K.R * 2).y);
+  assert.ok(Math.abs(high / surface - .25) < 1e-12);
+  assert.ok(Math.sqrt(K.MU / K.R) > 360 && Math.sqrt(K.MU / K.R) < 370);
 });
 
-test('varje uppdrags höjdmål går att nå med tillgängliga delar', () => {
-  for (const [mission, config] of [
-    [0, { motor: 'start', bransle: 1, steg: 1 }],
-    [2, { motor: 'kraft', bransle: 3, steg: 1 }],
-    [3, { motor: 'snal', bransle: 3, steg: 1 }],
-    [4, { motor: 'snal', bransle: 4, steg: 2 }],
-    [5, { motor: 'kraft', bransle: 7, steg: 2 }]
-  ]) {
-    assert.ok(RB.motor(config.motor).upplasning <= mission);
-    assert.ok(RB.fysik.prova(config).maxHojd >= RB.UPPDRAG[mission].mal, `Uppdrag ${mission + 1}`);
+test('två verkliga sekunder ger meter, inte tiotusentals meter', () => {
+  const f = RB.fysik.skapa({ motor: 'start', bransle: 2, steg: 1 });
+  const initialFuel = f.delar[0].bransle;
+  assert.equal(f.fart, 0);
+  RB.fysik.tick(f, 2);
+  assert.ok(Math.abs(f.t - 2) < 1e-9);
+  assert.ok(f.h > 3 && f.h < 10);
+  assert.ok(Math.abs(initialFuel - f.delar[0].bransle - 2200 / 1500 * 2) < 1e-8);
+  assert.equal(f.iBana, false);
+});
+
+test('fri cirkelbana bevarar energi och rörelsemängdsmoment under ett varv', () => {
+  const f = RB.fysik.skapa({ motor: 'start', bransle: 2, steg: 1 });
+  const r = K.R + 10000;
+  Object.assign(f, { x: 0, y: r, vx: Math.sqrt(K.MU / r), vy: 0, gas: false, lyft: true });
+  RB.fysik.uppdatera(f, 0);
+  const E = f.bana.energi, L = f.bana.moment;
+  const period = 2 * Math.PI * Math.sqrt(r ** 3 / K.MU);
+  RB.fysik.tick(f, period + 1);
+  assert.equal(f.slut, null);
+  assert.equal(f.iBana, true);
+  assert.ok(Math.abs((f.bana.energi - E) / E) < 1e-8);
+  assert.ok(Math.abs((f.bana.moment - L) / L) < 1e-8);
+  assert.ok(Math.abs(Math.hypot(f.x, f.y) - r) < 1);
+  assert.ok(Math.abs(f.bana.peri - 10000) < 1);
+});
+
+test('höjd ensam eller flykthastighet räknas aldrig som omloppsbana', () => {
+  for (const speed of [0, Math.sqrt(2 * K.MU / (K.R + 100000)) * 1.1]) {
+    const f = RB.fysik.skapa();
+    Object.assign(f, { x: 0, y: K.R + 100000, vx: speed, vy: 0, gas: false, lyft: true });
+    RB.fysik.uppdatera(f, 0); RB.fysik.tick(f, 20);
+    assert.equal(f.iBana, false);
+    assert.equal(f.bana.saker, false);
   }
+  const radial = RB.fysik.bana(0, K.R + 100000, 0, 0);
+  assert.ok(Math.abs(radial.apo - 100000) < 1e-6);
 });
 
-test('stegbyte väntar utan bränsleförbrukning och släpper bara torr massa', () => {
-  const f = RB.fysik.skapa({ motor: 'snal', bransle: 4, steg: 2 });
-  assert.equal(RB.fysik.slapp(f), false);
-  RB.fysik.tick(f, 1201);
-  assert.equal(f.vantande, true);
-  assert.equal(f.aktiv, 0);
-  const before = { mass: RB.fysik.massa(f), time: f.t, height: f.h, velocity: f.v };
-  RB.fysik.tick(f, 500);
-  assert.equal(f.t, before.time);
-  assert.equal(f.h, before.height);
+test('första raketen kan nå en verklig, måttlig omloppsbana med två manövrer', () => {
+  const f = RB.fysik.skapa({ motor: 'start', bransle: 2, steg: 1 });
+  let phase = 0;
+  // Testpilot, inte en autopilot i spelet: lyft, bygg sidofart, glid, bränn vid toppen.
+  for (let t = 0; t < 1000 && !f.slut && !f.iBana; t++) {
+    if (t === 20) RB.fysik.sikta(f, Math.PI / 2);
+    if (phase === 0 && f.sidofart > 180) { f.gas = false; phase = 1; }
+    if (phase === 1 && f.radialfart < 0) { f.gas = true; phase = 2; }
+    if (phase === 2) RB.fysik.sikta(f, Math.atan2(f.x, f.y) + Math.PI / 2);
+    if (phase === 2 && f.bana.saker) { f.gas = false; phase = 3; }
+    RB.fysik.tick(f, 1);
+  }
+  assert.equal(f.iBana, true);
+  assert.ok(f.bana.peri >= 1000);
+  assert.ok(f.bana.apo < 20000);
+  assert.ok(f.delar[0].bransle > 0);
+});
+
+test('stegbyte tappar faktisk massa, ger ingen gratis fart och pausar inte', () => {
+  const f = RB.fysik.skapa({ motor: 'start', bransle: 4, steg: 2 });
+  RB.fysik.tick(f, 5);
+  const mass = RB.fysik.massa(f), shed = f.delar[0].torr + f.delar[0].bransle, vx = f.vx, vy = f.vy, time = f.t;
   assert.equal(RB.fysik.slapp(f), true);
-  assert.ok(Math.abs(RB.fysik.massa(f) - (before.mass - f.delar[0].torr)) < 1e-8);
-  assert.equal(f.v, before.velocity);
-  assert.equal(f.rest, 0);
+  assert.ok(Math.abs(RB.fysik.massa(f) - (mass - shed)) < 1e-9);
+  assert.equal(f.vx, vx); assert.equal(f.vy, vy);
   assert.equal(RB.fysik.slapp(f), false);
-  RB.fysik.tick(f, 1201);
-  assert.equal(f.slut, true);
-  assert.equal(f.slappt, true);
+  RB.fysik.tick(f, 1); assert.ok(f.t > time + .9);
 });
 
-test('varierande bildfrekvens ändrar inte fysikresultatet', () => {
-  const config = { motor: 'kraft', bransle: 6, steg: 1 };
-  const expected = RB.fysik.prova(config);
-  const f = RB.fysik.skapa(config);
-  const frames = [.008, .023, .016, .051, .1];
-  let i = 0;
-  while (!f.slut) RB.fysik.tick(f, frames[(i++) % frames.length]);
-  assert.ok(Math.abs(expected.maxHojd - f.maxHojd) < 1e-8);
-  assert.equal(expected.t, f.t);
+test('avstängd motor förbrukar inget bränsle och flygningen fortsätter genom toppen', () => {
+  const f = RB.fysik.skapa();
+  Object.assign(f, { x: 0, y: K.R + 1000, vx: 0, vy: 2, gas: false, lyft: true });
+  const fuel = f.delar[0].bransle;
+  RB.fysik.tick(f, 20);
+  assert.equal(f.delar[0].bransle, fuel);
+  assert.ok(f.radialfart < 0);
+  assert.equal(f.slut, null);
 });
 
-test('alla val ger ändliga resultat, positiv massa och aldrig negativt bränsle', () => {
+test('bildfrekvensen ändrar inte fysiken och samtliga byggval ger ändliga värden', () => {
+  const a = RB.fysik.skapa(), b = RB.fysik.skapa();
+  RB.fysik.tick(a, 60);
+  for (let i = 0; i < 3600; i++) RB.fysik.tick(b, 1 / 60);
+  assert.ok(Math.abs(a.x - b.x) < 1e-8 && Math.abs(a.y - b.y) < 1e-8);
   for (const motor of RB.MOTORER) for (const stage of [1, 2]) for (let fuel = stage; fuel <= 8; fuel++) {
-    const config = { motor: motor.id, bransle: fuel, steg: stage };
-    const data = RB.fysik.data(config);
-    assert.equal(data.bransle, fuel * 500);
-    assert.equal(data.vikt, data.torr + data.bransle);
-    const f = RB.fysik.prova(config);
-    assert.ok(Number.isFinite(f.maxHojd));
-    assert.ok(Number.isFinite(f.v));
-    assert.ok(f.maxHojd >= 0 && f.h >= 0);
-    assert.ok(RB.fysik.massa(f) > 0);
+    const f = RB.fysik.skapa({ motor: motor.id, bransle: fuel, steg: stage }); RB.fysik.tick(f, 60);
+    assert.ok([f.x,f.y,f.vx,f.vy,f.h,RB.fysik.massa(f)].every(Number.isFinite));
     assert.ok(f.delar.every(d => d.bransle >= 0));
-    assert.equal(f.slut, true);
-    assert.ok(f.t <= 1201);
   }
 });

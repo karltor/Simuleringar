@@ -1,156 +1,60 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f4ee">
-  <meta name="description" content="Bygg, provflyg och förbättra din raket. Sex små uppdrag tar dig från molnen till rymden.">
-  <title>Raketbyggaren · Ditt eget rymdprogram</title>
+  <meta name="description" content="Bygg en raket och flyg från Ceres till omloppsbana.">
+  <title>Raketbyggaren · Ceres</title>
   <link rel="stylesheet" href="css/fysik-astronomi-raketbyggaren.css">
 </head>
 <body>
-  <a class="hoppa" href="#bygg-rubrik">Hoppa till raketen</a>
   <svg class="symboler" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <symbol id="ikon-raket" viewBox="0 0 24 24"><path d="M14 3c3-1 6-1 7 0 1 1 1 4 0 7l-8 8-7-7 8-8Z"/><path d="m7 10-4 1-1 5 6-1m6 2-1 5 5-1 1-5M4 19l-2 3m5-2-2 2"/><circle cx="16" cy="8" r="2"/></symbol>
     <symbol id="ikon-motor" viewBox="0 0 24 24"><path d="M8 3h8l1 8 4 5H3l4-5 1-8Z"/><path d="M9 19v3m3-4v4m3-3v3M8 7h8"/></symbol>
-    <symbol id="ikon-las" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="ikon-steg" viewBox="0 0 24 24"><path d="M8 3h8v6H8zM6 15h12v6H6zM12 10v4m-3-3 3 3 3-3"/></symbol>
     <symbol id="ikon-stjarna" viewBox="0 0 24 24"><path d="m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6Z"/></symbol>
-    <symbol id="ikon-pil" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
-    <symbol id="ikon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="ikon-bana" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><ellipse cx="12" cy="12" rx="11" ry="7" transform="rotate(-35 12 12)"/></symbol>
   </svg>
   <div class="app">
     <header class="topp">
-      <a class="logotyp" href="Fysik-Astronomi-Raketbyggaren.html" aria-label="Raketbyggaren, startsida">
-        <span class="logo-ikon"><svg class="ikon"><use href="#ikon-raket"/></svg></span>
-        <span><h1>Raketbyggaren<span class="logo-punkt">.</span></h1><span class="undertitel">Ditt eget rymdprogram</span></span>
-      </a>
-      <div class="topp-knappar">
-        <span class="rekord-chip"><svg class="ikon"><use href="#ikon-stjarna"/></svg> Rekord <strong id="rekord">—</strong></span>
-        <button id="btn-hjalp" class="knapp liten">Så funkar det <span class="fragetecken" aria-hidden="true">?</span></button>
-      </div>
+      <div class="logotyp"><span class="logo-ikon"><svg class="ikon"><use href="#ikon-raket"/></svg></span><h1>Raketbyggaren<span>.</span></h1></div>
+      <div class="topp-knappar"><button id="btn-marken" class="knapp" aria-label="Visa märken"><span>Märken</span><b id="marken-antal">0/8</b></button><button id="btn-verkstad" class="knapp" aria-label="Öppna verkstaden"><span>Verkstad</span><b class="mynt">★ <span id="poang">0</span></b></button><button id="btn-hjalp" class="knapp hjalp-knapp" aria-label="Visa kontroller och hjälp">?</button></div>
     </header>
-
     <main>
-      <section class="uppdrag" aria-labelledby="uppdrag-rubrik">
-        <div class="uppdrag-info">
-          <p class="overrubrik" id="uppdrag-nummer">UPPDRAG 01 / 06</p>
-          <h2 id="uppdrag-rubrik">Sikta på molnen</h2>
-          <p id="uppdrag-text">Nå 1 000 meter. Din första raket är redan redo!</p>
-        </div>
-        <button id="btn-uppdrag" class="uppdragsvag" aria-label="Visa dina sex uppdrag">
-          <span id="uppdrag-prickar" class="uppdrag-prickar" aria-hidden="true"></span>
-          <span id="uppdrag-framsteg">0 av 6 klara <span aria-hidden="true">↗</span></span>
-        </button>
-      </section>
-
+      <div class="rubrikrad"><div><span class="overrubrik">CERES</span><h2>Mot omloppsbana.</h2></div><div class="rekord"><span>Höjdrekord</span><b id="rekord">—</b></div></div>
       <div class="arbetsyta">
-        <section class="bygg panel" aria-labelledby="bygg-rubrik">
-          <div class="panel-rubrik"><span class="siffra">1</span><h2 id="bygg-rubrik" tabindex="-1">Gör raketen redo</h2></div>
-          <p class="grundraket">Kapsel, nos och fenor ingår. Du väljer resten.</p>
-          <fieldset id="motor-falt">
-            <legend>Motor</legend>
-            <div id="motor-val" class="motor-val"></div>
-            <p id="motor-laser" class="liten-text motor-laser">Klara uppdrag 2 för att låsa upp nästa motor.</p>
-          </fieldset>
-          <fieldset id="bransle-falt">
-            <legend>Bränsle <span class="liten-text">1 block = 500 kg</span></legend>
-            <div class="bransle-val">
-              <button id="btn-minus" class="knapp steg-knapp" aria-label="Ta bort ett bränsleblock">−</button>
-              <div class="bransle-tal"><output id="bransle-antal" aria-live="polite">1</output><span id="bransle-enhet">block</span></div>
-              <button id="btn-plus" class="knapp steg-knapp" aria-label="Lägg till ett bränsleblock">+</button>
-            </div>
-            <div id="bransle-block" class="bransle-block" aria-hidden="true"></div>
-            <div id="jamfor-val" class="jamfor-val" hidden>
-              <button id="btn-tva" class="knapp liten">Testa 2 block</button>
-              <button id="btn-sex" class="knapp liten">Testa 6 block</button>
-            </div>
-            <p id="jamfor-status" class="liten-text" hidden></p>
-          </fieldset>
-          <fieldset id="steg-falt" hidden>
-            <legend>Raketsteg</legend>
-            <div class="steg-val">
-              <label><input type="radio" name="steg" value="1" checked><span>En del</span></label>
-              <label><input type="radio" name="steg" value="2"><span>Två delar</span></label>
-            </div>
-            <p id="steg-tips" class="liten-text">Släpp den första delen när den är tom.</p>
-          </fieldset>
-          <div class="vikt-kort">
-            <div class="vikt-rad"><span>Vikt vid start</span><strong id="vikt">1 210 kg</strong></div>
-            <div class="vikt-bar" aria-hidden="true"><span id="vikt-raket"></span><span id="vikt-bransle"></span></div>
-            <div class="vikt-legend"><span><i class="prick raket-prick"></i>Raket <b id="torrvikt"></b></span><span><i class="prick bransle-prick"></i>Bränsle <b id="branslevikt"></b></span></div>
-            <p id="lyft-tips" class="lyft-tips"></p>
-          </div>
+        <section class="bygg panel" aria-label="Din raket">
+          <h2>Din raket</h2>
+          <fieldset><legend>Motor</legend><div id="motor-val" class="motor-val"></div></fieldset>
+          <fieldset><legend>Bränsle</legend><div class="bransle-val"><button id="btn-minus" class="knapp steg-knapp" aria-label="Ta bort ett bränsleblock">−</button><div class="bransle-tal"><output id="bransle-antal" aria-live="polite">2</output><span>block</span></div><button id="btn-plus" class="knapp steg-knapp" aria-label="Lägg till ett bränsleblock">+</button></div><div id="bransle-block" class="bransle-block" aria-hidden="true"></div></fieldset>
+          <fieldset id="steg-falt" hidden><legend>Steg</legend><div class="steg-val"><label><input type="radio" name="steg" value="1" checked><span>1</span></label><label><input type="radio" name="steg" value="2"><span>2</span></label></div></fieldset>
+          <div class="vikt"><span>Startvikt</span><b id="vikt"></b></div>
+          <button id="btn-bygga-verkstad" class="knapp verkstad-lank">Uppgradera <span aria-hidden="true">↗</span></button>
+          <div class="mini-rekord"><svg class="ikon"><use href="#ikon-bana"/></svg><span id="bana-rekord">Ingen omloppsbana ännu</span></div>
         </section>
-
-        <section class="ramp panel" aria-labelledby="ramp-rubrik">
-          <div class="ramp-topp">
-            <div class="panel-rubrik"><span class="siffra">2</span><h2 id="ramp-rubrik">Provflyg raketen</h2></div>
-            <span class="autopilot"><span class="status-prick"></span>Automatisk styrning</span>
-          </div>
+        <section class="ramp panel" aria-label="Flygning">
+          <div class="ramp-topp"><div class="vy-val"><button id="btn-narbild" class="vy-knapp vald" aria-pressed="true">Raket</button><button id="btn-bana" class="vy-knapp" aria-pressed="false">Bana</button></div><div id="tid-kontroll" class="tid-kontroll" hidden><span id="flyg-tid">0:00</span><label><span class="sr-only">Tidsfart</span><select id="tid-val"><option value="0">Paus</option><option value="1" selected>1×</option><option value="5">5×</option><option value="20">20×</option></select></label><button id="btn-avsluta" class="knapp liten">Avsluta</button></div><span id="plats-namn" class="overrubrik">STARTPLATTA 01</span></div>
           <div class="scen" id="scen">
-            <canvas id="raketCanvas" role="img" aria-label="Din raket står på startplattan. Motor och bränsle väljs till vänster."></canvas>
-            <div class="scen-etikett"><span class="overrubrik">STARTPLATTA 01</span><span id="scen-meddelande">Liten raket. Stora planer.</span></div>
-            <div class="flyg-data" id="flyg-data" hidden>
-              <span>Höjd just nu</span><strong id="flyg-hojd">0 m</strong>
-              <div class="flyg-bransle-rad"><span id="flyg-del">Bränsle kvar</span><b id="flyg-bransle-procent">100 %</b></div>
-              <div class="flyg-bransle-bar"><span id="flyg-bransle"></span></div>
-            </div>
-            <div id="nedrakning" class="nedrakning" hidden aria-live="assertive"></div>
-            <div id="steg-meddelande" class="steg-meddelande" hidden><b>Första delen är tom!</b><span>Spelet väntar på dig. Släpp den för att flyga lättare.</span></div>
-            <div class="mal-chip" id="mal-chip"><svg class="ikon"><use href="#ikon-stjarna"/></svg><span id="mal-etikett">Mål: 1 000 m</span></div>
+            <canvas id="raketCanvas" role="img" tabindex="0" aria-label="Din raket på Ceres."></canvas>
+            <div class="flyg-data" id="flyg-data" hidden><div><span>Höjd</span><b id="flyg-hojd">0 m</b></div><div><span>Fart</span><b id="flyg-fart">0 m/s</b></div><div class="fuel-data"><span id="flyg-del">Bränsle</span><b id="flyg-bransle-procent">100 %</b><div class="fuel-bar"><i id="flyg-bransle"></i></div></div></div>
+            <div class="ban-data" id="ban-data" hidden><div><span>Högsta punkt</span><b id="ban-apo">—</b></div><div><span>Lägsta punkt</span><b id="ban-peri">—</b></div><span id="ban-status">—</span></div>
+            <div id="toast" class="toast" role="status" hidden></div>
+            <div class="scen-signatur" id="scen-signatur">CERES <span>469,7 km radie</span></div>
           </div>
-          <div class="start-rad" id="start-rad">
-            <p id="start-tips">Redo när du är. Första försöket börjar här.</p>
-            <button id="btn-starta" class="knapp primar"><svg class="ikon"><use href="#ikon-raket"/></svg>Starta raketen</button>
-          </div>
-          <div class="flyg-kontroller" id="flyg-kontroller" hidden>
-            <p id="flyg-status" role="status">Raketen flyger själv. Följ höjden!</p>
-            <div class="kontroll-knappar">
-              <button id="btn-slapp" class="knapp primar" hidden>Släpp tom del <svg class="ikon"><use href="#ikon-pil"/></svg></button>
-              <button id="btn-paus" class="knapp" aria-pressed="false">Pausa</button>
-              <button id="btn-resultat" class="knapp">Till resultat <span aria-hidden="true">↗</span></button>
-            </div>
-          </div>
+          <div class="start-rad" id="start-rad"><span class="start-tag">FLYGNING <b id="flyg-nummer">01</b></span><button id="btn-starta" class="knapp primar"><svg class="ikon"><use href="#ikon-raket"/></svg>Starta</button></div>
+          <div class="flyg-kontroller" id="flyg-kontroller" hidden><div class="styrning"><button id="btn-vanster" class="knapp lut-knapp" aria-label="Luta raketen åt vänster 15 grader">↶ <span>Vänster</span></button><button id="btn-motor" class="knapp primar" aria-pressed="true">Motor på</button><button id="btn-hoger" class="knapp lut-knapp" aria-label="Luta raketen åt höger 15 grader"><span>Höger</span> ↷</button><button id="btn-stega" class="knapp steg-flyg" hidden><svg class="ikon"><use href="#ikon-steg"/></svg>Släpp steg</button></div><div class="kontroll-meta"><span>← → luta · Mellanslag motor</span><b id="flyg-vinkel">0°</b></div></div>
         </section>
       </div>
-
-      <section class="logg panel" aria-labelledby="logg-rubrik">
-        <div class="logg-topp"><div class="panel-rubrik"><span class="siffra">3</span><h2 id="logg-rubrik">Testa. Jämför. Förbättra.</h2></div><button id="btn-logg" class="knapp text-knapp" hidden>Alla försök <span aria-hidden="true">↗</span></button></div>
-        <div id="logg-lista" class="logg-lista"></div>
-      </section>
-      <footer><span id="spar-status">Dina framsteg sparas i den här webbläsaren.</span><span>Små ändringar. Nya upptäckter.</span></footer>
+      <section id="logg" class="logg" aria-label="Senaste flygningarna"><div id="logg-lista" class="logg-lista"></div></section>
+      <footer><span id="spar-status">Sparas på den här enheten.</span><button id="btn-logg" class="text-knapp" hidden>Flyglogg ↗</button></footer>
     </main>
   </div>
-
-  <dialog id="dialog-resultat" class="dialog resultat" aria-labelledby="resultat-rubrik">
-    <p id="resultat-tag" class="overrubrik">TESTET ÄR KLART</p>
-    <h2 id="resultat-rubrik">Där satt den!</h2>
-    <div class="resultat-hojd"><strong id="resultat-hojd">0</strong><span>meter upp</span></div>
-    <p id="resultat-rekord" class="resultat-rekord" hidden>Nytt höjdrekord!</p>
-    <div id="resultat-jamforelse" class="resultat-jamforelse"></div>
-    <div class="upptackt"><span class="overrubrik">VAD HÄNDE?</span><p id="resultat-insikt"></p></div>
-    <p id="resultat-mal" class="resultat-mal"></p>
-    <div class="dialog-knappar"><button id="btn-fortsatt" class="knapp primar">Till raketen <svg class="ikon"><use href="#ikon-pil"/></svg></button></div>
-  </dialog>
-
-  <dialog id="dialog-hjalp" class="dialog" aria-labelledby="hjalp-rubrik">
-    <button class="knapp stang" data-stang="dialog-hjalp" aria-label="Stäng hjälpen">×</button>
-    <p class="overrubrik">DITT FÖRSTA RYMDPROGRAM</p><h2 id="hjalp-rubrik">Tre saker. Det är allt.</h2>
-    <ol class="hjalp-lista"><li><b>Välj bränsle.</b><span>Mer bränsle räcker längre, men gör också raketen tyngre.</span></li><li><b>Provflyg.</b><span>Raketen gasar och styr själv. Testet slutar vid högsta punkten.</span></li><li><b>Ändra en sak. Testa igen.</b><span>Jämför höjden med ditt förra försök. Vad gjorde skillnad?</span></li></ol>
-    <p class="hjalp-extra">Motorer och två raketsteg låses upp när du klarar uppdrag. Vid stegbyte väntar spelet på dig.</p>
-    <p class="hjalp-extra">Använd touch eller mus. Med tangentbord: Tab för att välja, Enter för knappar och piltangenter för motorval.</p>
-    <button class="knapp primar" data-stang="dialog-hjalp">Jag är redo!</button>
-    <button id="btn-nollstall" class="knapp text-knapp">Börja om från uppdrag 1</button>
-  </dialog>
-  <dialog id="dialog-uppdrag" class="dialog" aria-labelledby="lista-rubrik"><button class="knapp stang" data-stang="dialog-uppdrag" aria-label="Stäng uppdragen">×</button><p class="overrubrik">FRÅN STARTPLATTA TILL RYMDEN</p><h2 id="lista-rubrik">Dina sex uppdrag</h2><div id="uppdrag-lista" class="uppdrag-lista"></div></dialog>
-  <dialog id="dialog-logg" class="dialog bred" aria-labelledby="historik-rubrik"><button class="knapp stang" data-stang="dialog-logg" aria-label="Stäng flygloggen">×</button><p class="overrubrik">DITT LABB I LUFTEN</p><h2 id="historik-rubrik">Flygloggen</h2><p class="hjalp-extra">Jämför samma motor och samma antal steg för att testa vad bränslet gör.</p><div id="historik-lista" class="historik-lista"></div></dialog>
-  <dialog id="dialog-nollstall" class="dialog" aria-labelledby="nollstall-rubrik"><h2 id="nollstall-rubrik">Börja om från början?</h2><p>Dina uppdrag, försök och höjdrekord i den här versionen tas bort.</p><div class="dialog-knappar"><button class="knapp" data-stang="dialog-nollstall">Behåll mina framsteg</button><button id="btn-bekrafta-nollstall" class="knapp primar">Ja, börja om</button></div></dialog>
-  <div id="live-status" class="sr-only" role="status" aria-live="polite"></div>
-  <script src="js/fysik-astronomi-raketbyggaren/delar.js"></script>
-  <script src="js/fysik-astronomi-raketbyggaren/fysik.js"></script>
-  <script src="js/fysik-astronomi-raketbyggaren/bygg.js"></script>
-  <script src="js/fysik-astronomi-raketbyggaren/flyg.js"></script>
-  <script src="js/fysik-astronomi-raketbyggaren/rita.js"></script>
-  <script src="js/fysik-astronomi-raketbyggaren/main.js"></script>
+  <dialog id="dialog-verkstad" class="dialog" aria-labelledby="verkstad-rubrik"><button class="knapp stang" data-stang="dialog-verkstad" aria-label="Stäng verkstaden">×</button><p class="overrubrik">VERKSTADEN</p><h2 id="verkstad-rubrik">Nya möjligheter.</h2><div class="saldo">★ <b id="verkstad-poang">0</b></div><div id="verkstad-lista"></div></dialog>
+  <dialog id="dialog-marken" class="dialog" aria-labelledby="marken-rubrik"><button class="knapp stang" data-stang="dialog-marken" aria-label="Stäng märken">×</button><p class="overrubrik">DITT RYMDPROGRAM</p><h2 id="marken-rubrik">Märken</h2><div id="marken-lista"></div></dialog>
+  <dialog id="dialog-resultat" class="dialog resultat" aria-labelledby="resultat-rubrik"><p class="overrubrik" id="resultat-tag">FLYGNING 01</p><h2 id="resultat-rubrik">Flygning klar</h2><div class="resultat-data"><div><b id="resultat-hojd">—</b><span>Högsta höjd</span></div><div><b id="resultat-fart">—</b><span>Maxfart</span></div><div><b id="resultat-tid">—</b><span>Tid</span></div></div><div id="resultat-marken" class="resultat-marken"></div><p id="resultat-poang" class="resultat-poang"></p><button id="btn-fortsatt" class="knapp primar">Till raketen ↗</button></dialog>
+  <dialog id="dialog-hjalp" class="dialog" aria-labelledby="hjalp-rubrik"><button class="knapp stang" data-stang="dialog-hjalp" aria-label="Stäng hjälpen">×</button><h2 id="hjalp-rubrik">Kontroller</h2><div class="hjalp-kontroller"><p><b>← →</b><span>Luta</span></p><p><b>Mellanslag</b><span>Motor på / av</span></p><p><b>Tab · Enter</b><span>Välj · tryck</span></p></div><p class="hjalp-text">Bana visar vart raketen går med avstängd motor.</p><details><summary>Om fysiken</summary><p>Ceres modelleras som en roterande sfär i två dimensioner med verklig radie och massa. Ingen atmosfär. Fart visas relativt den roterande marken. Raketmotorerna är fiktiva. Berg, ojämn gravitation och andra himlakroppar ingår inte.</p><p>1× = verklig tid. En fri omloppsbana kräver att hela banan ligger minst 1 km över ytan i minst 5 sekunder.</p><a href="https://ssd.jpl.nasa.gov/planets/phys_par.html" target="_blank" rel="noopener">Ceresdata från NASA/JPL ↗</a></details><button id="btn-nollstall" class="text-knapp">Nollställ spelet</button></dialog>
+  <dialog id="dialog-logg" class="dialog" aria-labelledby="historik-rubrik"><button class="knapp stang" data-stang="dialog-logg" aria-label="Stäng flygloggen">×</button><h2 id="historik-rubrik">Flyglogg</h2><div id="historik-lista"></div></dialog>
+  <dialog id="dialog-nollstall" class="dialog" aria-labelledby="nollstall-rubrik"><h2 id="nollstall-rubrik">Börja om?</h2><p>Märken, uppgraderingar och rekord tas bort.</p><div class="dialog-knappar"><button class="knapp" data-stang="dialog-nollstall">Behåll</button><button id="btn-bekrafta-nollstall" class="knapp primar">Nollställ</button></div></dialog>
+  <script src="js/fysik-astronomi-raketbyggaren/delar.js"></script><script src="js/fysik-astronomi-raketbyggaren/fysik.js"></script><script src="js/fysik-astronomi-raketbyggaren/bygg.js"></script><script src="js/fysik-astronomi-raketbyggaren/flyg.js"></script><script src="js/fysik-astronomi-raketbyggaren/rita.js"></script><script src="js/fysik-astronomi-raketbyggaren/main.js"></script>
 </body>
 </html>

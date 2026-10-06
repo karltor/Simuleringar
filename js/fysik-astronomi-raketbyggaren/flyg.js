@@ -1,95 +1,66 @@
-// Automatisk provflygning. Enda raketmanövern är ett lugnt, pausat stegbyte.
 window.RB = window.RB || {};
 RB.flyg = (function () {
-  var f = null, paus = false, nedrakning = 0, harVantat = false, klarVisad = false;
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var f = null, warp = 1, klarVisad = false, hudTid = 0;
   function el(id) { return document.getElementById(id); }
+  function luta(delta) { if (f && !f.slut) RB.fysik.sikta(f, f.target + delta * Math.PI / 180); }
+  function motor() { if (f && !f.slut) { f.gas = !f.gas; hud(); } }
   function init() {
-    el('btn-paus').addEventListener('click', function () {
-      if (!f || f.vantande || nedrakning > 0) return;
-      paus = !paus;
-      hud();
-    });
-    el('btn-slapp').addEventListener('click', function () {
-      if (!f || !RB.fysik.slapp(f)) return;
-      harVantat = false;
-      el('live-status').textContent = 'Tom del släppt. Den lättare raketen flyger vidare.';
-      el('btn-paus').focus({ preventScroll: true });
-      hud();
-    });
-    el('btn-resultat').addEventListener('click', function () {
-      if (!f || nedrakning > 0) return;
-      paus = false;
-      // Hoppa genom samma fysik. Ett stegbyte måste fortfarande göras av eleven.
-      RB.fysik.tick(f, 1201);
-      uppdatera();
+    el('btn-vanster').addEventListener('click', function () { luta(-15); });
+    el('btn-hoger').addEventListener('click', function () { luta(15); });
+    el('btn-motor').addEventListener('click', motor);
+    el('btn-stega').addEventListener('click', function () { if (f) RB.fysik.slapp(f); hud(); });
+    el('tid-val').addEventListener('change', function () { warp = Number(this.value); });
+    el('btn-avsluta').addEventListener('click', function () { if (f && !f.slut) { f.slut = 'avslutad'; uppdatera(); } });
+    window.addEventListener('keydown', function (event) {
+      if (!f || f.slut || document.querySelector('dialog[open]') || /^(SELECT|INPUT)$/.test(event.target.tagName)) return;
+      if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+        event.preventDefault(); luta((event.code === 'ArrowLeft' ? -1 : 1) * (event.repeat ? 3 : 15));
+      }
+      if (event.code === 'Space') { event.preventDefault(); if (!event.repeat) motor(); }
     });
   }
   function start(config) {
-    f = RB.fysik.skapa(config);
-    paus = false; harVantat = false; klarVisad = false;
-    nedrakning = reduce ? 0 : 1.5;
-    el('start-rad').hidden = true;
-    el('flyg-kontroller').hidden = false;
-    el('flyg-data').hidden = false;
-    hud();
-    el('btn-paus').focus({ preventScroll: true });
-    if (window.innerWidth < 760) el('scen').scrollIntoView({ block: 'center', behavior: reduce ? 'instant' : 'smooth' });
+    f = RB.fysik.skapa(config); warp = 1; klarVisad = false; hudTid = 0;
+    el('tid-val').value = '1'; el('start-rad').hidden = true; el('flyg-kontroller').hidden = false;
+    el('tid-kontroll').hidden = false; el('flyg-data').hidden = false; el('plats-namn').hidden = true; el('scen-signatur').hidden = true;
+    el('raketCanvas').focus({ preventScroll: true }); hud();
+    if (window.innerWidth < 760) el('scen').scrollIntoView({ block: 'center', behavior: 'instant' });
   }
   function hud() {
     if (!f) return;
-    var del = f.delar[f.aktiv], procent = Math.max(0, Math.round(100 * del.bransle / del.fullt));
-    el('flyg-hojd').textContent = RB.formatHojd(f.h);
-    el('flyg-bransle-procent').textContent = procent + ' %';
-    el('flyg-bransle').style.width = procent + '%';
-    el('flyg-del').textContent = f.config.steg === 2 ? 'Bränsle, del ' + (f.aktiv + 1) : 'Bränsle kvar';
-    el('btn-paus').textContent = paus ? 'Fortsätt flyga' : 'Pausa';
-    el('btn-paus').setAttribute('aria-pressed', String(paus));
-    el('btn-paus').disabled = f.vantande || nedrakning > 0;
-    el('btn-resultat').disabled = f.vantande || nedrakning > 0;
-    el('btn-slapp').hidden = !f.vantande;
-    el('steg-meddelande').hidden = !f.vantande;
-    el('nedrakning').hidden = nedrakning <= 0;
-    el('nedrakning').textContent = nedrakning > 0 ? Math.ceil(nedrakning * 2) : '';
-    var text = f.vantande ? 'Dags att göra raketen lättare.' : paus ? 'Pausat. Fortsätt när du vill.' :
-      nedrakning > 0 ? 'Nu kör vi!' : f.h < 1 && f.t > 2 ? 'Bränslet väger. Raketen kämpar för att lyfta.' :
-      f.fas === 'glid' ? 'Bränslet är slut. Raketen fortsätter upp av sin fart.' :
-      f.slappt ? 'Lättare raket. Nästa motor är igång!' : 'Motorn brinner. Följ höjden!';
-    // Ändra live-text bara vid fasbyten, inte för varje bildruta.
-    if (el('flyg-status').textContent !== text) el('flyg-status').textContent = text;
-    el('scen-meddelande').textContent = paus ? 'Pausat' : f.vantande ? 'Släpp dödvikten.' : f.fas === 'glid' ? 'Hur högt kommer vi?' : 'På väg upp!';
+    var del = f.delar[f.aktiv], procent = Math.round(del.bransle / del.fullt * 100);
+    el('flyg-hojd').textContent = RB.formatHojd(f.h); el('flyg-fart').textContent = Math.round(f.fart) + ' m/s';
+    el('flyg-tid').textContent = RB.formatTid(f.t); el('flyg-del').textContent = f.config.steg === 2 ? 'Bränsle · del ' + (f.aktiv + 1) : 'Bränsle';
+    el('flyg-bransle-procent').textContent = procent + ' %'; el('flyg-bransle').style.width = procent + '%';
+    var active = f.gas && del.bransle > 0;
+    el('btn-motor').textContent = del.bransle <= 0 ? 'Tank tom' : f.gas ? 'Motor på' : 'Motor av';
+    el('btn-motor').classList.toggle('av', !active); el('btn-motor').setAttribute('aria-pressed', String(f.gas));
+    el('btn-stega').hidden = f.config.steg !== 2; el('btn-stega').disabled = f.aktiv > 0;
+    el('btn-stega').textContent = f.aktiv > 0 ? 'Steg släppt' : 'Släpp steg';
+    el('flyg-vinkel').textContent = Math.round(RB.fysik.wrap(f.angle - Math.atan2(f.x, f.y)) * 180 / Math.PI) + '°';
+    el('ban-data').hidden = RB.rita.vy() !== 'bana';
+    el('ban-apo').textContent = f.bana.bunden ? RB.formatHojd(f.bana.apo) : 'Ingen';
+    el('ban-peri').textContent = f.bana.peri <= 0 ? 'Under marken' : RB.formatHojd(f.bana.peri);
+    el('ban-status').textContent = !f.bana.bunden ? 'På väg från Ceres' : f.bana.saker ? 'Fri bana runt Ceres' : 'Banan korsar marken';
+    el('ban-data').classList.toggle('saker', f.bana.saker);
   }
   function uppdatera() {
+    if (!f) return;
+    RB.main.prestationer(f);
     hud();
-    if (f.vantande && !harVantat) {
-      harVantat = true;
-      el('btn-slapp').focus({ preventScroll: true });
-      el('live-status').textContent = 'Första delen är tom. Spelet är pausat. Tryck på Släpp tom del.';
-    }
-    if (f.slut && !klarVisad) {
-      klarVisad = true;
-      RB.main.resultat(f);
-    }
+    if (f.slut && !klarVisad) { klarVisad = true; RB.main.resultat(f); }
   }
   function tick(dt) {
-    if (!f) return;
-    if (document.querySelector('dialog[open]')) return;
-    if (nedrakning > 0) {
-      nedrakning = Math.max(0, nedrakning - dt);
-      hud();
-      return;
-    }
-    if (!paus && !f.vantande && !f.slut) RB.fysik.tick(f, dt * (f.fas === 'glid' ? 30 : 20));
-    uppdatera();
+    if (!f || document.querySelector('dialog[open]')) return;
+    RB.fysik.tick(f, dt * warp);
+    RB.main.prestationer(f);
+    hudTid += dt;
+    if (hudTid >= .1 || f.slut) { hudTid = 0; uppdatera(); }
   }
   function rensa() {
-    f = null;
-    el('flyg-kontroller').hidden = true;
-    el('flyg-data').hidden = true;
-    el('steg-meddelande').hidden = true;
-    el('nedrakning').hidden = true;
-    el('start-rad').hidden = false;
-    el('scen-meddelande').textContent = 'Liten raket. Stora planer.';
+    f = null; warp = 1;
+    ['flyg-kontroller', 'tid-kontroll', 'flyg-data', 'ban-data'].forEach(function (id) { el(id).hidden = true; });
+    el('start-rad').hidden = false; el('plats-namn').hidden = false; el('scen-signatur').hidden = false; el('toast').hidden = true;
   }
-  return { init: init, start: start, tick: tick, rensa: rensa, tillstand: function () { return f; } };
+  return { init: init, start: start, tick: tick, rensa: rensa, hud: hud, tillstand: function () { return f; } };
 })();

@@ -1,196 +1,76 @@
-// Raketbyggaren – byggscenen (VAB): stapla delar, räkna Δv/TWR per steg.
+// Byggpanelen: alltid en flygbar grundraket, aldrig fri dragning av lösa delar.
 window.RB = window.RB || {};
-
 RB.bygg = (function () {
-  var stack = []; // del-id:n uppifrån och ned (index 0 = toppen)
-
-  // Delar upp stacken i steg vid varje dekopplare. Steg 0 = nedersta (brinner först).
-  // Dekopplaren ovanför ett steg följer med det steget när det släpps.
-  function beraknaSteg(s) {
-    var segment = [];
-    var akt = { delar: [], torr: 0, bransle: 0, dragkraft: 0, flode: 0 };
-    for (var i = s.length - 1; i >= 0; i--) {
-      var d = RB.delDef(s[i]);
-      if (d.typ === 'dekopplare') {
-        akt.torr += d.massa;
-        segment.push(akt);
-        akt = { delar: [], torr: 0, bransle: 0, dragkraft: 0, flode: 0 };
-        continue;
-      }
-      akt.delar.push(d.id);
-      akt.torr += d.massa;
-      if (d.typ === 'tank') akt.bransle += d.bransle;
-      if (d.typ === 'motor') {
-        akt.dragkraft += d.dragkraft;
-        akt.flode += d.dragkraft / d.ve; // massflöde = F / ve
-      }
-    }
-    segment.push(akt);
-
-    var totalMassa = 0;
-    segment.forEach(function (sg) { totalMassa = totalMassa + sg.torr + sg.bransle; });
-
-    var steg = [];
-    var massaKvar = totalMassa;
-    var totalDv = 0;
-    segment.forEach(function (sg) {
-      var m0 = massaKvar;
-      var m1 = m0 - sg.bransle;
-      var ve = sg.flode > 0 ? sg.dragkraft / sg.flode : 0;
-      var dv = (ve > 0 && sg.bransle > 0) ? ve * Math.log(m0 / m1) : 0;
-      var twr = sg.dragkraft > 0 ? sg.dragkraft / (m0 * RB.K.G0) : 0;
-      steg.push({ delar: sg.delar, torr: sg.torr, bransle: sg.bransle, dragkraft: sg.dragkraft,
-                  ve: ve, m0: m0, m1: m1, dv: dv, twr: twr });
-      totalDv += dv;
-      massaKvar = m1 - sg.torr; // släpp stegets torrvikt (inkl. dekopplare)
+  function ikon(namn) { return '<svg class="ikon" aria-hidden="true"><use href="#ikon-' + namn + '"/></svg>'; }
+  function init() {
+    var lista = document.getElementById('motor-val');
+    RB.MOTORER.forEach(function (motor) {
+      var kort = document.createElement('label');
+      kort.className = 'motor-kort';
+      kort.innerHTML = '<input type="radio" name="motor" value="' + motor.id + '">' +
+        '<span class="motor-ikon">' + ikon('motor') + '</span>' +
+        '<span class="motor-info"><b>' + motor.namn + '</b><span class="motor-text"></span></span>' +
+        '<span class="val-markering" aria-hidden="true"></span>';
+      kort.querySelector('input').addEventListener('change', function () { RB.main.andra({ motor: motor.id }); });
+      lista.appendChild(kort);
     });
-
-    var har = function (typ) {
-      return s.some(function (id) { return RB.delDef(id).typ === typ; });
-    };
-    return {
-      steg: steg, totalMassa: totalMassa, totalDv: totalDv,
-      harKapsel: har('kapsel'), harMotor: har('motor'),
-      harNos: har('nos'), harFallskarm: har('fallskarm')
-    };
-  }
-
-  // ---------- UI ----------
-  function renderPalett() {
-    var lista = document.getElementById('palett-lista');
-    lista.innerHTML = '';
-    RB.GRUPPORDNING.forEach(function (grupp) {
-      var rubrik = document.createElement('div');
-      rubrik.className = 'del-grupp';
-      rubrik.textContent = grupp;
-      lista.appendChild(rubrik);
-      RB.DELAR.forEach(function (d) {
-        if (RB.GRUPPNAMN[d.typ] !== grupp) return;
-        var agd = RB.main.harDel(d.id);
-        var kort = document.createElement('button');
-        kort.className = 'del-kort' + (agd ? '' : ' last');
-        var data = [];
-        if (d.typ === 'motor') data.push('🔥 ' + (d.dragkraft / 1000) + ' kN', 'vₑ ' + d.ve + ' m/s');
-        if (d.bransle) data.push('⛽ ' + RB.fysik.formatKg(d.bransle));
-        data.push('⚖ ' + RB.fysik.formatKg(d.massa));
-        if (d.info) data.push(d.info);
-        kort.innerHTML = '<span class="ikon">' + d.ikon + '</span>' +
-          '<span class="info"><span class="namn">' + d.namn + (agd ? '' : ' 🔒 ' + d.kostnad) + '</span>' +
-          '<span class="data">' + data.join(' · ') + '</span></span>';
-        kort.addEventListener('click', function () {
-          if (RB.main.harDel(d.id)) { laggTill(d.id); }
-          else { RB.main.oppnaForskning(); }
-        });
-        lista.appendChild(kort);
-      });
+    document.getElementById('btn-minus').addEventListener('click', function () { RB.main.andraBransle(-1); });
+    document.getElementById('btn-plus').addEventListener('click', function () { RB.main.andraBransle(1); });
+    document.getElementById('btn-tva').addEventListener('click', function () { RB.main.andra({ bransle: 2 }); });
+    document.getElementById('btn-sex').addEventListener('click', function () { RB.main.andra({ bransle: 6 }); });
+    document.querySelectorAll('input[name="steg"]').forEach(function (input) {
+      input.addEventListener('change', function () { RB.main.andra({ steg: Number(input.value) }); });
     });
+    var block = document.getElementById('bransle-block');
+    for (var i = 0; i < 8; i++) block.appendChild(document.createElement('span'));
   }
-
-  function laggTill(id) {
-    stack.push(id); // nya delar hamnar underst – man bygger uppifrån och ned
-    uppdatera();
-  }
-
-  function renderStack() {
-    var lista = document.getElementById('stack-lista');
-    lista.innerHTML = '';
-    stack.forEach(function (id, i) {
-      var d = RB.delDef(id);
-      var rad = document.createElement('div');
-      rad.className = 'stack-rad';
-      rad.innerHTML = '<span>' + d.ikon + '</span><span class="namn">' + d.namn + '</span>';
-      var upp = document.createElement('button');
-      upp.textContent = '▲';
-      upp.disabled = i === 0;
-      upp.addEventListener('click', function () {
-        stack.splice(i - 1, 0, stack.splice(i, 1)[0]);
-        uppdatera();
-      });
-      var ner = document.createElement('button');
-      ner.textContent = '▼';
-      ner.disabled = i === stack.length - 1;
-      ner.addEventListener('click', function () {
-        stack.splice(i + 1, 0, stack.splice(i, 1)[0]);
-        uppdatera();
-      });
-      var bort = document.createElement('button');
-      bort.textContent = '✕';
-      bort.className = 'bort';
-      bort.addEventListener('click', function () {
-        stack.splice(i, 1);
-        uppdatera();
-      });
-      rad.appendChild(upp); rad.appendChild(ner); rad.appendChild(bort);
-      lista.appendChild(rad);
+  function render(spel, flyger) {
+    var config = spel.config, upplast = spel.klara.length;
+    var jamfor = spel.aktuell === 1;
+    document.querySelectorAll('.motor-kort').forEach(function (kort, i) {
+      var motor = RB.MOTORER[i], last = upplast < motor.upplasning;
+      var input = kort.querySelector('input');
+      input.checked = config.motor === motor.id;
+      input.disabled = flyger || last || (jamfor && motor.id !== 'start');
+      kort.classList.toggle('last', last);
+      kort.hidden = last;
+      kort.querySelector('.motor-text').textContent = last ? 'Lås upp i uppdrag ' + (motor.upplasning + 1) : motor.text;
+      kort.querySelector('.motor-ikon').innerHTML = ikon(last ? 'las' : 'motor');
+      input.setAttribute('aria-label', motor.namn + '. ' + kort.querySelector('.motor-text').textContent);
     });
-  }
-
-  function statBox(varde, etikett, klass) {
-    return '<div class="stat-box ' + (klass || '') + '"><span class="varde">' + varde +
-           '</span><span class="etikett">' + etikett + '</span></div>';
-  }
-
-  function uppdateraStatistik() {
-    var r = beraknaSteg(stack);
-    var statEl = document.getElementById('statistik');
-    var steg1 = r.steg[0];
-    var twrKlass = !r.harMotor ? '' : (steg1.twr >= 1.05 ? 'bra' : 'dalig');
-    statEl.innerHTML =
-      statBox(RB.fysik.formatKg(r.totalMassa), 'Massa m₀') +
-      statBox(Math.round(r.totalDv) + '', 'Δv totalt (m/s)', r.totalDv > 0 ? 'bra' : '') +
-      statBox(steg1.twr > 0 ? steg1.twr.toFixed(2) : '—', 'TWR (steg 1)', twrKlass) +
-      statBox(r.steg.length + '', 'Steg');
-
-    var stegEl = document.getElementById('steg-lista');
-    stegEl.innerHTML = '';
-    r.steg.forEach(function (st, i) {
-      var rad = document.createElement('div');
-      rad.className = 'steg-rad';
-      var twrTxt = st.dragkraft > 0
-        ? '<span' + (st.twr < 1.05 && i === 0 ? ' class="twr-dalig"' : '') + '>TWR ' + st.twr.toFixed(2) + '</span>'
-        : '<span>—</span>';
-      rad.innerHTML = '<span>Steg ' + (i + 1) + '</span>' + twrTxt +
-                      '<b>Δv ' + Math.round(st.dv) + ' m/s</b>';
-      stegEl.appendChild(rad);
+    var nastaMotor = RB.MOTORER.find(function (motor) { return upplast < motor.upplasning; });
+    document.getElementById('motor-laser').hidden = !nastaMotor;
+    document.getElementById('motor-laser').textContent = nastaMotor ? 'Klara uppdrag ' + nastaMotor.upplasning + ' för att låsa upp nästa motor.' : '';
+    document.getElementById('bransle-antal').textContent = config.bransle;
+    document.getElementById('btn-minus').disabled = flyger || config.bransle <= (config.steg === 2 ? 2 : 1);
+    document.getElementById('btn-plus').disabled = flyger || config.bransle >= 8;
+    document.querySelectorAll('#bransle-block span').forEach(function (block, i) { block.classList.toggle('fyllt', i < config.bransle); });
+    document.getElementById('jamfor-val').hidden = !jamfor;
+    document.getElementById('jamfor-status').hidden = !jamfor;
+    document.getElementById('btn-tva').disabled = flyger;
+    document.getElementById('btn-sex').disabled = flyger;
+    document.getElementById('jamfor-status').textContent =
+      (spel.jamforelse.tva ? '✓ 2 block testade' : '○ Testa 2 block') + ' · ' +
+      (spel.jamforelse.sex ? '✓ 6 block testade' : '○ Testa 6 block');
+    document.getElementById('steg-falt').hidden = upplast < 4;
+    document.querySelectorAll('input[name="steg"]').forEach(function (input) {
+      input.checked = Number(input.value) === config.steg;
+      input.disabled = flyger || jamfor;
     });
-
-    // startvillkor
-    var varning = '';
-    if (stack.length === 0) varning = '← Klicka på delar för att bygga';
-    else if (!r.harKapsel) varning = 'Raketen behöver en kapsel 🧑‍🚀';
-    else if (!r.harMotor) varning = 'Raketen behöver en motor 🔥';
-    else if (steg1.dragkraft === 0) varning = 'Nedersta steget saknar motor 🔥';
-    else if (steg1.twr < 1.02) varning = 'För tung! TWR måste vara över 1 för att lyfta';
-    document.getElementById('bygg-varning').textContent = varning;
-    document.getElementById('btn-starta').disabled = varning !== '';
-    return r;
+    document.getElementById('steg-tips').textContent = config.steg === 2 ?
+      'Släpp den första delen när den är tom.' : 'Alla tankar följer med hela vägen.';
+    var data = RB.fysik.data(config);
+    document.getElementById('vikt').textContent = RB.formatVikt(data.vikt);
+    document.getElementById('torrvikt').textContent = RB.formatVikt(data.torr);
+    document.getElementById('branslevikt').textContent = RB.formatVikt(data.bransle);
+    document.getElementById('vikt-raket').style.width = (100 * data.torr / data.vikt) + '%';
+    document.getElementById('vikt-bransle').style.width = (100 * data.bransle / data.vikt) + '%';
+    var tips = document.getElementById('lyft-tips');
+    tips.classList.toggle('tung', data.lyft < 1.15);
+    tips.textContent = data.lyft < 1 ? 'Tung start! Motorn måste bränna bränsle innan raketen kan lyfta.' :
+      data.lyft < 1.15 ? 'Tung för motorn. Prova gärna och jämför höjden.' : 'Redo för lyft. Nu är det dags att testa!';
+    document.querySelector('.app').classList.toggle('flyger', flyger);
+    if (!flyger) RB.rita.rita(config, null, RB.UPPDRAG[spel.aktuell].mal);
   }
-
-  function uppdatera() {
-    renderStack();
-    uppdateraStatistik();
-    RB.rita.ritaBygg(stack);
-    RB.main.sparaRaket(stack);
-  }
-
-  function init(sparadStack) {
-    stack = (sparadStack || []).filter(function (id) { return RB.delDef(id); });
-    renderPalett();
-    document.getElementById('btn-tom').addEventListener('click', function () {
-      stack = [];
-      uppdatera();
-    });
-    document.getElementById('btn-starta').addEventListener('click', function () {
-      RB.main.startaFlygning(stack.slice());
-    });
-    uppdatera();
-  }
-
-  return {
-    init: init,
-    uppdatera: uppdatera,
-    renderPalett: renderPalett,
-    beraknaSteg: beraknaSteg,
-    hamtaStack: function () { return stack; }
-  };
+  return { init: init, render: render };
 })();

@@ -1,409 +1,159 @@
-// Raketbyggaren – all canvasritning (byggvy + flygvy).
+// Ljus startplatta och höjdvy. Canvas är en illustration, aldrig en kontroll.
 window.RB = window.RB || {};
-
 RB.rita = (function () {
-  var byggCv, byggCtx, flygCv, flygCtx;
-  var kam = { x: 0, y: 0, mpp: 0.5, auto: true };
-  var stjarnor = [];
-
-  function fixaCanvas(cv) {
-    var dpr = window.devicePixelRatio || 1;
-    var rect = cv.getBoundingClientRect();
-    if (rect.width === 0) return;
-    cv.width = Math.round(rect.width * dpr);
-    cv.height = Math.round(rect.height * dpr);
-    cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-    cv._w = rect.width; cv._h = rect.height;
+  var canvas, ctx, W = 700, H = 360, senast = null;
+  var ink = '#294756', orange = '#d56638';
+  function linje(x1, y1, x2, y2, color, width) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+    ctx.strokeStyle = color || ink; ctx.lineWidth = width || 1; ctx.stroke();
   }
-
-  // ---------- raketens utseende (lokala koordinater i meter, +y = upp) ----------
-  function ritaDel(ctx, d, yTopp) {
-    var w = d.bredd, h = d.hojd, yB = yTopp - h;
-    if (d.typ === 'nos') {
-      ctx.fillStyle = '#e8604c';
-      ctx.beginPath();
-      ctx.moveTo(0, yTopp);
-      ctx.lineTo(w / 2, yB); ctx.lineTo(-w / 2, yB);
-      ctx.closePath(); ctx.fill();
-    } else if (d.typ === 'kapsel') {
-      ctx.fillStyle = '#d7dde8';
-      ctx.beginPath();
-      ctx.moveTo(-w * 0.28, yTopp); ctx.lineTo(w * 0.28, yTopp);
-      ctx.lineTo(w / 2, yB); ctx.lineTo(-w / 2, yB);
-      ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#67e8f9';
-      ctx.beginPath();
-      ctx.arc(0, yB + h * 0.55, Math.min(0.35, w * 0.16), 0, Math.PI * 2);
-      ctx.fill();
-    } else if (d.typ === 'fallskarm') {
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.moveTo(-w * 0.35, yB);
-      ctx.quadraticCurveTo(0, yTopp + h * 0.6, w * 0.35, yB);
-      ctx.closePath(); ctx.fill();
-    } else if (d.typ === 'tank') {
-      ctx.fillStyle = '#cfd8e3';
-      ctx.fillRect(-w / 2, yB, w, h);
-      ctx.fillStyle = d.id === 'tankXL' ? '#7c5cff' : d.id === 'tankL' ? '#3b82f6' : d.id === 'tankM' ? '#10b981' : '#f59e0b';
-      ctx.fillRect(-w / 2, yB + h * 0.42, w, h * 0.16);
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.fillRect(-w * 0.38, yB, w * 0.13, h);
-    } else if (d.typ === 'motor') {
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(-w * 0.35, yTopp - h * 0.3, w * 0.7, h * 0.3);
-      ctx.fillStyle = '#334155';
-      ctx.beginPath();
-      ctx.moveTo(-w * 0.22, yTopp - h * 0.3);
-      ctx.lineTo(w * 0.22, yTopp - h * 0.3);
-      ctx.lineTo(w / 2, yB); ctx.lineTo(-w / 2, yB);
-      ctx.closePath(); ctx.fill();
-    } else if (d.typ === 'dekopplare') {
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillRect(-w / 2, yB, w, h);
-    }
+  function ruta(x, y, w, h, r, fill, stroke) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
   }
-
-  // ritar hela stacken med toppen vid y = totalHöjd/2 (centrerad kring origo)
-  function ritaRaket(ctx, stack, opts) {
-    opts = opts || {};
-    var H = 0;
-    stack.forEach(function (id) { H += RB.delDef(id).hojd; });
-    var y = H / 2;
-    stack.forEach(function (id) {
-      ritaDel(ctx, RB.delDef(id), y);
-      y -= RB.delDef(id).hojd;
-    });
-    if (opts.flamma > 0) {
-      var sista = RB.delDef(stack[stack.length - 1]);
-      var w = sista.bredd * 0.45;
-      var L = (3 + Math.random() * 1.5) * opts.flamma * Math.max(1, sista.bredd * 0.7);
-      var yB = -H / 2;
-      var grad = ctx.createLinearGradient(0, yB, 0, yB - L);
-      grad.addColorStop(0, 'rgba(255,237,160,0.95)');
-      grad.addColorStop(0.4, 'rgba(251,146,60,0.85)');
-      grad.addColorStop(1, 'rgba(239,68,68,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.moveTo(-w, yB);
-      ctx.quadraticCurveTo(-w * 0.5, yB - L * 0.6, 0, yB - L);
-      ctx.quadraticCurveTo(w * 0.5, yB - L * 0.6, w, yB);
-      ctx.closePath(); ctx.fill();
-    }
-    if (opts.fallskarm) {
-      var c = 4.5;
-      ctx.strokeStyle = 'rgba(245,158,11,0.9)';
-      ctx.lineWidth = 0.12;
-      ctx.beginPath();
-      ctx.moveTo(0, H / 2); ctx.lineTo(-c * 0.8, H / 2 + c * 1.4);
-      ctx.moveTo(0, H / 2); ctx.lineTo(c * 0.8, H / 2 + c * 1.4);
-      ctx.stroke();
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.arc(0, H / 2 + c * 1.5, c, Math.PI, 0);
-      ctx.closePath(); ctx.fill();
-    }
-    return H;
-  }
-
-  // ---------- byggvyn ----------
-  function ritaBygg(stack) {
-    if (!byggCv._w) fixaCanvas(byggCv);
-    var ctx = byggCtx, W = byggCv._w, H = byggCv._h;
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#0b1228');
-    grad.addColorStop(1, '#16294a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-    // ramp
-    ctx.fillStyle = '#22304f';
-    ctx.fillRect(0, H - 26, W, 26);
-    ctx.fillStyle = '#41557e';
-    ctx.fillRect(W / 2 - 70, H - 32, 140, 6);
-
-    if (stack.length === 0) {
-      ctx.fillStyle = 'rgba(147,160,191,0.6)';
-      ctx.font = '15px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText('Bygg din raket – välj delar till vänster', W / 2, H / 2);
-      return;
-    }
-
-    var rakH = 0, maxB = 2;
-    stack.forEach(function (id) {
-      var d = RB.delDef(id);
-      rakH += d.hojd;
-      if (d.bredd > maxB) maxB = d.bredd;
-    });
-    var s = Math.min((H - 90) / rakH, (W * 0.4) / maxB, 13);
-    s = Math.max(s, 2);
-
-    ctx.save();
-    ctx.translate(W / 2, H - 34 - (rakH * s) / 2);
-    ctx.scale(s, -s);
-    ritaRaket(ctx, stack, {});
+  function moln(x, y, s) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+    ctx.fillStyle = '#ffffff'; ctx.beginPath();
+    ctx.ellipse(0, 0, 31, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(-12, -8, 14, 15, 0, 0, Math.PI * 2);
+    ctx.ellipse(10, -13, 18, 20, 0, 0, Math.PI * 2);
+    ctx.ellipse(29, -2, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
-
-    // markera stegen vid varje dekopplare
-    ctx.font = '11px system-ui';
-    ctx.textAlign = 'left';
-    var stegNr = RB.bygg.beraknaSteg(stack).steg.length;
-    var yTopp = H - 34 - rakH * s;
-    var y = yTopp;
-    ctx.setLineDash([5, 5]);
-    stack.forEach(function (id) {
-      var d = RB.delDef(id);
-      if (d.typ === 'dekopplare') {
-        var ly = y + (d.hojd / 2) * s;
-        ctx.strokeStyle = 'rgba(251,191,36,0.5)';
-        ctx.beginPath();
-        ctx.moveTo(W / 2 - 75, ly); ctx.lineTo(W / 2 + 75, ly);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(251,191,36,0.8)';
-        ctx.fillText('Steg ' + stegNr, W / 2 + 80, ly + 4);
-        stegNr--;
+  }
+  function raket(config, x, y, scale, f) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    var block = f && f.slappt ? f.delar[1].block : config.bransle;
+    var bodyH = 55 + block * 11;
+    var split = config.steg === 2 && (!f || !f.slappt);
+    var ground = bodyH + 45;
+    var allFuel = f ? f.delar.slice(f.aktiv).reduce(function (sum, d) { return sum + d.bransle; }, 0) / (block * 500) : 1;
+    // Ombord finns alltid nos, kapsel och fenor.
+    ctx.fillStyle = '#264957'; ctx.beginPath(); ctx.moveTo(-23, ground - 46); ctx.lineTo(-48, ground + 7); ctx.lineTo(-23, ground); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(23, ground - 46); ctx.lineTo(48, ground + 7); ctx.lineTo(23, ground); ctx.closePath(); ctx.fill();
+    ruta(-25, 25, 50, bodyH + 20, 9, '#fffdf5', ink);
+    ruta(11, 31, 10, bodyH + 10, 4, '#e9eee9');
+    // Tankens fyllning sjunker under flygningen.
+    ruta(-15, 77, 30, Math.max(1, (bodyH - 43) * Math.max(0, allFuel)), 3, '#e9a677');
+    for (var i = 0; i < block; i++) linje(-14, 78 + i * 11, 14, 78 + i * 11, '#f7cfab', 1);
+    ctx.fillStyle = orange; ctx.beginPath(); ctx.moveTo(-25, 30); ctx.quadraticCurveTo(-24, 0, 0, -30); ctx.quadraticCurveTo(24, 0, 25, 30); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 49, 14, 0, Math.PI * 2); ctx.fillStyle = ink; ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 49, 10, 0, Math.PI * 2); ctx.fillStyle = '#b3d6d6'; ctx.fill();
+    linje(-5, 45, 4, 41, '#fff', 2.5);
+    linje(-25, ground - 21, 25, ground - 21, ink, 1.5);
+    if (split) {
+      var boundary = 76 + Math.floor(config.bransle * .4) * 11;
+      ruta(-27, boundary, 54, 8, 2, ink);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 6px system-ui'; ctx.textAlign = 'center'; ctx.fillText('SLÄPP HÄR', 0, boundary + 6);
+    }
+    ctx.fillStyle = '#71888c'; ctx.beginPath(); ctx.moveTo(-13, ground); ctx.lineTo(-18, ground + 13); ctx.lineTo(18, ground + 13); ctx.lineTo(13, ground); ctx.closePath(); ctx.fill();
+    if (f && f.fas === 'motor' && !f.vantande && !f.slut) {
+      var flame = 35 + 7 * Math.sin(f.t * 12);
+      ctx.fillStyle = '#e79539'; ctx.beginPath(); ctx.moveTo(-13, ground + 13); ctx.quadraticCurveTo(-15, ground + 30, 0, ground + 13 + flame); ctx.quadraticCurveTo(15, ground + 30, 13, ground + 13); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#fff0b5'; ctx.beginPath(); ctx.moveTo(-7, ground + 13); ctx.lineTo(0, ground + 37); ctx.lineTo(7, ground + 13); ctx.fill();
+    }
+    ctx.restore();
+    return ground * scale;
+  }
+  function fond(f) {
+    var altitude = f ? f.h : 0;
+    var top = altitude > 35000 ? '#e7eeef' : '#e5f1f1';
+    var grad = ctx.createLinearGradient(0, 0, 0, H); grad.addColorStop(0, top); grad.addColorStop(1, '#f7f8ed');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#a6c2c21c'; ctx.lineWidth = 1;
+    for (var x = 0; x < W; x += 28) linje(x, 0, x, H, '#a6c2c224');
+    for (var y = 0; y < H; y += 28) linje(0, y, W, y, '#a6c2c224');
+    if (altitude < 35000) {
+      var drift = f ? Math.min(f.h / 250, H) : 0;
+      moln(W * .18, H * .31 + drift, .95); moln(W * .70, H * .23 + drift, .7); moln(W * .87, H * .54 + drift, 1.2);
+    } else {
+      for (var i = 0; i < 20; i++) {
+        var sx = ((i * 137 + 29) % 997) / 997 * W, sy = ((i * 71 + 37) % 331) / 331 * H;
+        linje(sx - 2, sy, sx + 2, sy, '#789695', 1); linje(sx, sy - 2, sx, sy + 2, '#789695', 1);
       }
-      y += d.hojd * s;
-    });
-    ctx.setLineDash([]);
-  }
-
-  // ---------- flygvyn ----------
-  function vTillS(wx, wy) {
-    return {
-      x: (wx - kam.x) / kam.mpp + flygCv._w / 2,
-      y: flygCv._h / 2 - (wy - kam.y) / kam.mpp
-    };
-  }
-
-  function ritaPlanet(ctx) {
-    var c = vTillS(0, 0);
-    var rPx = RB.K.PLANET_R / kam.mpp;
-    if (rPx < 1) return;
-
-    // atmosfär
-    var aPx = (RB.K.PLANET_R + RB.K.ATM_HOJD) / kam.mpp;
-    var ag = ctx.createRadialGradient(c.x, c.y, rPx * 0.98, c.x, c.y, aPx);
-    ag.addColorStop(0, 'rgba(96,165,250,0.5)');
-    ag.addColorStop(1, 'rgba(96,165,250,0)');
-    ctx.fillStyle = ag;
-    ctx.beginPath(); ctx.arc(c.x, c.y, aPx, 0, Math.PI * 2); ctx.fill();
-
-    // hav
-    ctx.fillStyle = '#1d4f8f';
-    ctx.beginPath(); ctx.arc(c.x, c.y, rPx, 0, Math.PI * 2); ctx.fill();
-
-    // kontinenter (deterministiska blobbar)
-    ctx.save();
-    ctx.beginPath(); ctx.arc(c.x, c.y, rPx, 0, Math.PI * 2); ctx.clip();
-    for (var i = 0; i < 12; i++) {
-      var h1 = Math.sin(i * 127.1) * 0.5 + 0.5;
-      var h2 = Math.sin(i * 311.7 + 1.3) * 0.5 + 0.5;
-      var h3 = Math.sin(i * 74.7 + 2.1) * 0.5 + 0.5;
-      var vink = h1 * Math.PI * 2;
-      var avst = rPx * (0.15 + 0.78 * h2);
-      var stl = rPx * (0.12 + 0.2 * h3);
-      ctx.fillStyle = i % 3 === 0 ? '#2f7d4f' : '#3a915d';
-      ctx.beginPath();
-      ctx.ellipse(c.x + Math.cos(vink) * avst, c.y + Math.sin(vink) * avst,
-                  stl, stl * 0.65, vink, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-
-    // startplattan (vid planetens "nordpol")
-    if (kam.mpp < 6) {
-      var p = vTillS(0, RB.K.PLANET_R);
-      ctx.fillStyle = '#94a3b8';
-      ctx.fillRect(p.x - 18 / kam.mpp, p.y, 36 / kam.mpp, 5 / kam.mpp);
     }
   }
-
-  function ritaMane(ctx, t) {
-    var m = RB.fysik.manePos(t);
-    var c = vTillS(m.x, m.y);
-    var rPx = RB.K.MANE_R / kam.mpp;
-    // månens banring
-    var pc = vTillS(0, 0);
-    ctx.strokeStyle = 'rgba(147,160,191,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(pc.x, pc.y, RB.K.MANE_AVSTAND / kam.mpp, 0, Math.PI * 2);
-    ctx.stroke();
-    if (rPx < 0.5) {
-      ctx.fillStyle = '#cbd5e1';
-      ctx.beginPath(); ctx.arc(c.x, c.y, 2, 0, Math.PI * 2); ctx.fill();
-      return;
+  function mark(f) {
+    // När kameran följer raketen försvinner marken nedåt, aldrig uppåt.
+    var ground = H - 65 + (f ? Math.min(f.h / 20, H) : 0);
+    if (ground >= H) return;
+    ctx.fillStyle = '#d8e5cf'; ctx.beginPath(); ctx.moveTo(0, ground + 14); ctx.quadraticCurveTo(W * .18, ground - 52, W * .40, ground + 15); ctx.quadraticCurveTo(W * .72, ground - 42, W, ground + 13); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#a1b9a3'; ctx.beginPath(); ctx.moveTo(0, ground + 30); ctx.quadraticCurveTo(W * .3, ground + 8, W * .52, ground + 22); ctx.quadraticCurveTo(W * .8, ground + 7, W, ground + 28); ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    // Ett litet raketlabb och en flagga, ritade utan externa resurser.
+    var hx = W * .16;
+    ruta(hx - 34, ground - 12, 68, 40, 5, '#f3f3e9', '#7d9796');
+    ruta(hx - 21, ground + 1, 42, 27, 3, '#a8bbba');
+    for (var hy = ground + 6; hy < ground + 24; hy += 5) linje(hx - 20, hy, hx + 20, hy, '#809b9b');
+    ctx.font = 'bold 7px system-ui'; ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.fillText('RAKETLABBET', hx, ground - 2);
+    var flagX = W * .73;
+    linje(flagX, ground - 24, flagX, ground + 24, ink, 2);
+    ctx.fillStyle = orange; ctx.beginPath(); ctx.moveTo(flagX, ground - 23); ctx.lineTo(flagX + 25, ground - 18); ctx.lineTo(flagX, ground - 9); ctx.fill();
+    ruta(W * .49 - 54, ground + 20, 108, 8, 3, '#819997', ink);
+    ruta(W * .49 - 35, ground + 28, 70, 6, 2, '#637e7c');
+    return ground;
+  }
+  function malLinje(mal, f) {
+    if (!mal) return;
+    var lineY = !f ? H * .23 : H * .59 - (mal - f.h) / Math.max(20, f.h / (H * .5));
+    if (lineY < 70 || lineY > H - 65) return;
+    ctx.setLineDash([5, 6]); linje(20, lineY, W - 55, lineY, '#92afa9'); ctx.setLineDash([]);
+    ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'right'; ctx.fillStyle = '#3f6765';
+    ctx.fillText('MÅL ' + RB.formatHojd(mal), W - 62, lineY - 8);
+  }
+  function matare(f) {
+    var x = W - 28, bot = H - 36, top = 145;
+    if (H < 300) top = 120;
+    linje(x, top, x, bot, '#a8bebe');
+    for (var i = 0; i <= 10; i++) {
+      var y = bot - i * (bot - top) / 10;
+      linje(x - (i % 5 === 0 ? 10 : 5), y, x, y, '#8da6a7');
     }
-    ctx.fillStyle = '#b8c0cc';
-    ctx.beginPath(); ctx.arc(c.x, c.y, rPx, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#9aa3b2';
-    [[0.3, -0.2, 0.25], [-0.35, 0.25, 0.18], [0.05, 0.4, 0.14]].forEach(function (k) {
-      ctx.beginPath();
-      ctx.arc(c.x + k[0] * rPx, c.y + k[1] * rPx, k[2] * rPx, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    if (f) {
+      var height = Math.min(1, f.h / 100000), currentY = bot - height * (bot - top);
+      ctx.fillStyle = orange; ctx.beginPath(); ctx.arc(x, currentY, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.save(); ctx.translate(x + 9, (top + bot) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = '#4c676e'; ctx.font = '9px system-ui'; ctx.textAlign = 'center'; ctx.fillText('FRÅN MARKEN TILL RYMDEN', 0, 0); ctx.restore();
   }
-
-  function ritaBana(ctx, f) {
-    if (!f.bana || f.maxHojd < 200 || f.bana.hyperbolisk || f.bana.e >= 0.999) return;
-    var b = f.bana;
-    var e = b.e || 0.0001;
-    var exN = b.ex / e, eyN = b.ey / e;
-    // ellipsens centrum ligger −a·e från fokus (planetens centrum) längs e-vektorn
-    var cWx = -b.a * b.ex, cWy = -b.a * b.ey;
-    var c = vTillS(cWx, cWy);
-    var rot = Math.atan2(-eyN, exN); // skärmens y pekar nedåt
-    ctx.save();
-    ctx.strokeStyle = 'rgba(232,237,247,0.55)';
-    ctx.lineWidth = 1.4;
-    ctx.setLineDash([7, 7]);
-    ctx.beginPath();
-    ctx.ellipse(c.x, c.y, b.a / kam.mpp, (b.a * Math.sqrt(1 - e * e)) / kam.mpp, rot, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    // markera apoapsis & periapsis
-    var pe = vTillS(exN * b.rP, eyN * b.rP);
-    var ap = vTillS(-exN * b.rA, -eyN * b.rA);
-    ctx.fillStyle = '#ffb24d';
-    ctx.beginPath(); ctx.arc(pe.x, pe.y, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#5eead4';
-    ctx.beginPath(); ctx.arc(ap.x, ap.y, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-  }
-
-  function ritaRaketIVarlden(ctx, stack, pos, ang, opts) {
-    var p = vTillS(pos.x, pos.y);
-    if (p.x < -120 || p.x > flygCv._w + 120 || p.y < -120 || p.y > flygCv._h + 120) return;
-    var s = Math.max(1 / kam.mpp, 1.5); // krymp aldrig till osynlighet
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(Math.PI / 2 - ang);
-    ctx.scale(s, -s);
-    if (opts.alfa) ctx.globalAlpha = opts.alfa;
-    ritaRaket(ctx, stack, opts);
-    ctx.restore();
-  }
-
-  function ritaFlyg(f) {
-    if (!flygCv._w) fixaCanvas(flygCv);
-    var ctx = flygCtx, W = flygCv._w, H = flygCv._h;
-
-    // kamera: nära marken följer vi raketen, i rymden ramas hela banan in
-    if (kam.auto) {
-      var mal = 0.15 + f.hojd / 350;
-      if (f.hojd > RB.K.ATM_HOJD * 0.8 && f.bana) {
-        var rMax = RB.K.PLANET_R + f.hojd;
-        if (!f.bana.hyperbolisk && f.bana.apo > f.hojd) rMax = RB.K.PLANET_R + f.bana.apo;
-        mal = Math.max(mal, 2.4 * rMax / Math.min(W, H));
+  function rita(config, f, mal) {
+    senast = [config, f, mal];
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H); fond(f); malLinje(mal, f);
+    mark(f);
+    var cx = W * .49;
+    var scale = Math.min(1.17, (H - 105) / (110 + config.bransle * 11));
+    var rocketH = (100 + (f && f.slappt ? f.delar[1].block : config.bransle) * 11) * scale;
+    var startY = H - 65 + 12 - rocketH;
+    var ry = startY - (f ? Math.min(f.h / 12, Math.max(0, startY - (H * .5 - rocketH * .4))) : 0);
+    if (f && f.h > 300) {
+      ctx.setLineDash([3, 7]); linje(cx, ry + rocketH + 48, cx, H + 10, '#d8a880', 2); ctx.setLineDash([]);
+      if (f.slappt && f.t > 0) {
+        ctx.save(); ctx.globalAlpha = .35; ruta(cx + 52, Math.min(H - 30, ry + rocketH + 80), 24, 36, 5, '#9aaca7'); ctx.restore();
       }
-      mal = Math.min(2500, Math.max(0.15, mal));
-      kam.mpp += (mal - kam.mpp) * 0.06;
     }
-    kam.x = f.pos.x; kam.y = f.pos.y;
-
-    // himmel: mörkare ju högre upp
-    var atm = Math.max(0, 1 - f.hojd / RB.K.ATM_HOJD);
-    ctx.fillStyle = 'rgb(' + Math.round(11 + 50 * atm) + ',' + Math.round(16 + 90 * atm) + ',' + Math.round(32 + 140 * atm) + ')';
-    ctx.fillRect(0, 0, W, H);
-
-    // stjärnor
-    ctx.fillStyle = 'rgba(255,255,255,' + (0.85 - atm * 0.7) + ')';
-    stjarnor.forEach(function (st) {
-      ctx.fillRect(st[0] * W, st[1] * H, st[2], st[2]);
-    });
-
-    ritaPlanet(ctx);
-    ritaMane(ctx, f.t);
-
-    // färdspår
-    if (f.spar.length > 1) {
-      ctx.strokeStyle = 'rgba(94,234,212,0.4)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      f.spar.forEach(function (pt, i) {
-        var sp = vTillS(pt.x, pt.y);
-        if (i === 0) ctx.moveTo(sp.x, sp.y); else ctx.lineTo(sp.x, sp.y);
-      });
-      ctx.stroke();
+    raket(config, cx, ry, scale, f); matare(f);
+    if (!f && W > 470) {
+      ctx.fillStyle = '#536d72'; ctx.font = '10px system-ui'; ctx.textAlign = 'left';
+      var tx = Math.min(W - 165, cx + 80);
+      linje(cx + 34, ry + 50 * scale, tx - 8, ry + 50 * scale, '#9ab6b4');
+      ctx.fillText('KAPSEL INGÅR', tx, ry + 50 * scale + 3);
+      linje(cx + 34, ry + 95 * scale, tx - 8, ry + 95 * scale, '#9ab6b4');
+      ctx.fillText(config.bransle + ' BRÄNSLEBLOCK', tx, ry + 95 * scale + 3);
     }
-
-    ritaBana(ctx, f);
-
-    // avlossade steg
-    f.avlossadeSteg.forEach(function (s) {
-      ritaRaketIVarlden(ctx, s.delar.slice().reverse(), s.pos,
-        s.ang + (f.t - s.fodd) * 0.35, { alfa: 0.55 });
-    });
-
-    // raketen
-    if (f.slut !== 'krasch') {
-      ritaRaketIVarlden(ctx, kvarStack(f), f.pos, f.ang, {
-        flamma: (f.gas > 0 && f.steg[f.aktivtSteg].bransle > 0 && f.steg[f.aktivtSteg].dragkraft > 0) ? f.gas : 0,
-        fallskarm: f.fallskarmUte
-      });
-    }
-
-    // explosionspartiklar
-    f.partiklar.forEach(function (p) {
-      var sp = vTillS(p.x, p.y);
-      ctx.fillStyle = p.liv > 1 ? 'rgba(253,224,71,0.95)' : 'rgba(249,115,22,' + Math.max(0, p.liv) + ')';
-      var st = 2 + p.liv * 3;
-      ctx.fillRect(sp.x - st / 2, sp.y - st / 2, st, st);
-    });
+    canvas.setAttribute('aria-label', f ? 'Raketen är ' + RB.formatHojd(f.h) + ' över marken. ' + (f.vantande ? 'Första delen är tom, spelet väntar.' : '') :
+      'Färdig grundraket med ' + RB.motor(config.motor).namn.toLowerCase() + ', ' + config.bransle + ' bränsleblock och ' + config.steg + ' raketsteg.');
   }
-
-  // stacken som är kvar = allt utom de avlossade stegens delar (+ deras dekopplare)
-  function kvarStack(f) {
-    var bort = 0;
-    for (var i = 0; i < f.aktivtSteg; i++) {
-      bort += f.steg[i].delar.length + 1; // +1 för dekopplaren ovanför steget
-    }
-    if (bort === 0) return f.stack;
-    return f.stack.slice(0, Math.max(1, f.stack.length - bort));
+  function resize() {
+    var rect = canvas.getBoundingClientRect(); W = rect.width; H = rect.height;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (senast) rita.apply(null, senast);
   }
-
-  // ---------- zoom ----------
-  function zoom(faktor) {
-    kam.mpp = Math.min(4000, Math.max(0.05, kam.mpp * faktor));
-    kam.auto = false;
-    uppdateraAutoKnapp();
-  }
-  function uppdateraAutoKnapp() {
-    document.getElementById('btn-zoom-auto').classList.toggle('auto-pa', kam.auto);
-  }
-
   function init() {
-    byggCv = document.getElementById('byggCanvas');
-    byggCtx = byggCv.getContext('2d');
-    flygCv = document.getElementById('flygCanvas');
-    flygCtx = flygCv.getContext('2d');
-    for (var i = 0; i < 160; i++) {
-      stjarnor.push([Math.random(), Math.random(), Math.random() < 0.15 ? 2 : 1]);
-    }
-    window.addEventListener('resize', function () {
-      fixaCanvas(byggCv); fixaCanvas(flygCv);
-      RB.rita.ritaBygg(RB.bygg.hamtaStack());
-    });
-    fixaCanvas(byggCv); fixaCanvas(flygCv);
-
-    flygCv.addEventListener('wheel', function (e) {
-      e.preventDefault();
-      zoom(e.deltaY > 0 ? 1.25 : 0.8);
-    }, { passive: false });
-    document.getElementById('btn-zoom-in').addEventListener('click', function () { zoom(0.7); });
-    document.getElementById('btn-zoom-ut').addEventListener('click', function () { zoom(1.45); });
-    document.getElementById('btn-zoom-auto').addEventListener('click', function () {
-      kam.auto = true;
-      uppdateraAutoKnapp();
-    });
+    canvas = document.getElementById('raketCanvas'); ctx = canvas.getContext('2d');
+    new ResizeObserver(resize).observe(canvas);
+    resize();
   }
-
-  function nyFlygKamera() {
-    kam.mpp = 0.3;
-    kam.auto = true;
-    uppdateraAutoKnapp();
-    fixaCanvas(flygCv);
-  }
-
-  return { init: init, ritaBygg: ritaBygg, ritaFlyg: ritaFlyg, nyFlygKamera: nyFlygKamera };
+  return { init: init, rita: rita };
 })();

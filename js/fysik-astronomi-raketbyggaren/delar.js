@@ -7,13 +7,13 @@ RB.K = { R: 469700, MU: 6.67430e-11 * 938.416e18, ROTATION: .37809042 * 86400,
 RB.K.OMEGA = 2 * Math.PI / RB.K.ROTATION;
 // Fiktiva, fysikaliskt rimliga raketmotorer. Alla krafter/massor är i SI-enheter.
 RB.MOTORER = [
-  { id: 'start', namn: 'Puls', massa: 120, kraft: 2200, ve: 1500, pris: 0 },
-  { id: 'kraft', namn: 'Atlas', massa: 300, kraft: 5500, ve: 1650, pris: 175 },
-  { id: 'snal', namn: 'Nova', massa: 140, kraft: 1600, ve: 2700, pris: 300 }
+  { id: 'start', namn: 'Puls', massa: 120, kraft: 10000, ve: 2200, pris: 0 },
+  { id: 'kraft', namn: 'Atlas', massa: 300, kraft: 22000, ve: 2400, pris: 175 },
+  { id: 'snal', namn: 'Nova', massa: 140, kraft: 9000, ve: 3200, pris: 300 }
 ];
 RB.UPPGRADERINGAR = [
-  { id: 'kraft', namn: 'Atlas', text: '5,5 kN · 300 kg', pris: 175, ikon: 'motor' },
-  { id: 'snal', namn: 'Nova', text: '1,6 kN · 140 kg · effektivare', pris: 300, ikon: 'motor' },
+  { id: 'kraft', namn: 'Atlas', text: '22 kN · 300 kg', pris: 175, ikon: 'motor' },
+  { id: 'snal', namn: 'Nova', text: '9 kN · 140 kg · effektivare', pris: 300, ikon: 'motor' },
   { id: 'steg', namn: 'Två raketsteg', text: 'En del kan släppas under flygningen.', pris: 250, ikon: 'steg' }
 ];
 // Oberoende prestationer. Ingen föreskriven ordning, motor eller bränslemängd.

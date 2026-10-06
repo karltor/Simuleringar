@@ -4,6 +4,7 @@ RB.flyg = (function () {
   function el(id) { return document.getElementById(id); }
   function luta(delta) { if (f && !f.slut) RB.fysik.sikta(f, f.target + delta * Math.PI / 180); }
   function motor() { if (f && !f.slut) { f.gas = !f.gas; hud(); } }
+  function sattMotor(pa) { if (f && !f.slut) { f.gas = pa; hud(); } }
   function init() {
     el('btn-vanster').addEventListener('click', function () { luta(-15); });
     el('btn-hoger').addEventListener('click', function () { luta(15); });
@@ -13,9 +14,11 @@ RB.flyg = (function () {
     el('btn-avsluta').addEventListener('click', function () { if (f && !f.slut) { f.slut = 'avslutad'; uppdatera(); } });
     window.addEventListener('keydown', function (event) {
       if (!f || f.slut || document.querySelector('dialog[open]') || /^(SELECT|INPUT)$/.test(event.target.tagName)) return;
-      if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
-        event.preventDefault(); luta((event.code === 'ArrowLeft' ? -1 : 1) * (event.repeat ? 3 : 15));
+      if (event.code === 'ArrowLeft' || event.code === 'ArrowRight' || event.code === 'KeyA' || event.code === 'KeyD') {
+        event.preventDefault(); luta((event.code === 'ArrowLeft' || event.code === 'KeyA' ? -1 : 1) * (event.repeat ? 3 : 15));
       }
+      if (event.code === 'KeyW' || event.code === 'ArrowUp') { event.preventDefault(); sattMotor(true); }
+      if (event.code === 'KeyS' || event.code === 'ArrowDown') { event.preventDefault(); sattMotor(false); }
       if (event.code === 'Space') { event.preventDefault(); if (!event.repeat) motor(); }
     });
   }
@@ -38,7 +41,6 @@ RB.flyg = (function () {
     el('btn-stega').hidden = f.config.steg !== 2; el('btn-stega').disabled = f.aktiv > 0;
     el('btn-stega').textContent = f.aktiv > 0 ? 'Steg släppt' : 'Släpp steg';
     el('flyg-vinkel').textContent = Math.round(RB.fysik.wrap(f.angle - Math.atan2(f.x, f.y)) * 180 / Math.PI) + '°';
-    el('ban-data').hidden = RB.rita.vy() !== 'bana';
     el('ban-apo').textContent = f.bana.bunden ? RB.formatHojd(f.bana.apo) : 'Ingen';
     el('ban-peri').textContent = f.bana.peri <= 0 ? 'Under marken' : RB.formatHojd(f.bana.peri);
     el('ban-status').textContent = !f.bana.bunden ? 'På väg från Ceres' : f.bana.saker ? 'Fri bana runt Ceres' : 'Banan korsar marken';
@@ -59,7 +61,8 @@ RB.flyg = (function () {
   }
   function rensa() {
     f = null; warp = 1;
-    ['flyg-kontroller', 'tid-kontroll', 'flyg-data', 'ban-data'].forEach(function (id) { el(id).hidden = true; });
+    ['flyg-kontroller', 'tid-kontroll', 'flyg-data'].forEach(function (id) { el(id).hidden = true; });
+    el('ban-apo').textContent = '—'; el('ban-peri').textContent = '—'; el('ban-status').textContent = 'Redo för start'; el('ban-data').classList.remove('saker');
     el('start-rad').hidden = false; el('plats-namn').hidden = false; el('scen-signatur').hidden = false; el('toast').hidden = true;
   }
   return { init: init, start: start, tick: tick, rensa: rensa, hud: hud, tillstand: function () { return f; } };

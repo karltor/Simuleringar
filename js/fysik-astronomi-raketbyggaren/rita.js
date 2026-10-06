@@ -1,21 +1,33 @@
-// Raketen är en illustration; banvyn och spåret kommer från fysikens koordinater.
+// Raketen är en illustration; banprognosen och kartans spår använder fysikens koordinater.
 window.RB = window.RB || {};
 RB.rita = (function () {
-  var canvas, ctx, W = 800, H = 400, aktuellVy = 'raket', senast = null;
+  var canvas, ctx, W = 800, H = 400, nar, map, senast = null;
+  var rorelse = { flight: null, tid: 0, x: 0, y: 0 };
   var ink = '#294756', orange = '#d56638';
   function ruta(x, y, w, h, radius, fill, stroke) {
     ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fillStyle = fill; ctx.fill();
     if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1.5; ctx.stroke(); }
   }
   function linje(x1, y1, x2, y2, color, width) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = color; ctx.lineWidth = width || 1; ctx.stroke(); }
-  function fond() {
+  function fond(f) {
     var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#eaf0f0'); g.addColorStop(1, '#f7f7ed');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     for (var x = 0; x < W; x += 32) linje(x, 0, x, H, '#afc0ba22');
     for (var y = 0; y < H; y += 32) linje(0, y, W, y, '#afc0ba22');
-    for (var i = 0; i < 22; i++) {
-      var sx = ((i * 137 + 53) % 991) / 991 * W, sy = ((i * 71 + 29) % 317) / 317 * H;
-      linje(sx - 2, sy, sx + 2, sy, '#92a9a5'); linje(sx, sy - 2, sx, sy + 2, '#92a9a5');
+    if (rorelse.flight !== f) rorelse = { flight: f, tid: f ? f.t : 0, x: 0, y: 0 };
+    var vx = f ? f.sidofart : 0, vy = f ? f.radialfart : 0;
+    var fart = Math.hypot(vx, vy), faktor = .45 / (1 + fart / 550);
+    var dt = f ? Math.max(0, f.t - rorelse.tid) : 0;
+    // Kameran följer raketen: omgivningen rör sig motsatt markrelativ hastighet.
+    rorelse.x -= vx * faktor * dt; rorelse.y += vy * faktor * dt; rorelse.tid = f ? f.t : 0;
+    var dx = fart > .01 ? -vx / fart : 0, dy = fart > .01 ? vy / fart : 0;
+    var langd = fart > .5 ? Math.min(24, 2 + fart * .05) : 0;
+    var antal = Math.max(30, Math.min(64, Math.round(W * H / 5000)));
+    for (var i = 0; i < antal; i++) {
+      var sx = ((((i * 137 + 53) % 991) / 991 * (W + 60) + rorelse.x) % (W + 60) + W + 60) % (W + 60) - 30;
+      var sy = ((((i * 71 + 29) % 317) / 317 * (H + 60) + rorelse.y) % (H + 60) + H + 60) % (H + 60) - 30;
+      if (langd) linje(sx - dx * langd, sy - dy * langd, sx, sy, '#72928a66', 1.3);
+      ctx.beginPath(); ctx.arc(sx, sy, i % 3 === 0 ? 1.5 : 1, 0, Math.PI * 2); ctx.fillStyle = '#567b767d'; ctx.fill();
     }
   }
   function raket(config, x, y, scale, angle, f) {
@@ -44,9 +56,13 @@ RB.rita = (function () {
     ctx.restore();
   }
   function narbild(config, f) {
-    var height = f ? f.h : 0, pixel = Math.min(2, H / Math.max(200, height * 2));
-    var cy = f && height > 10 ? H * .58 : H - 64 - (90 + config.bransle * 10) * .6;
-    var cx = W * .5, ground = H - 42 + (f ? height * pixel : 0);
+    var height = f ? f.h : 0, top = f ? 77 : 0, ledig = H - top;
+    var block = f && f.slappt ? f.delar[1].block : config.bransle;
+    var scale = Math.min(1.3, Math.max(.25, (ledig - 20) / (154 + block * 10)));
+    var startY = H - 42 - (55 + block * 5) * scale;
+    var blend = f ? Math.min(1, height / 30) : 0;
+    var cy = startY + (top + ledig * .43 - startY) * blend;
+    var cx = W * .5, ground = H - 32 + height * .8;
     if (ground < H + 60) {
       ctx.fillStyle = '#c5cabc'; ctx.beginPath(); ctx.moveTo(0, ground + 8); ctx.quadraticCurveTo(W * .17, ground - 15, W * .42, ground + 5); ctx.quadraticCurveTo(W * .76, ground - 26, W, ground + 6); ctx.lineTo(W, H + 100); ctx.lineTo(0, H + 100); ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#a7b3a7'; ctx.fillRect(0, ground + 13, W, H);
@@ -60,16 +76,7 @@ RB.rita = (function () {
         for (var j = 0; j < 3; j++) linje(W * .78 - 9 + j * 9, ground - 37, W * .78 - 9 + j * 9, ground - 23, '#b0cbc5');
       }
     }
-    if (f) {
-      var radial = Math.atan2(f.x, f.y), ux = Math.sin(radial), uy = Math.cos(radial), tx = Math.cos(radial), ty = -Math.sin(radial);
-      ctx.beginPath(); f.spar.forEach(function (point, i) {
-        var dx = point.x - f.x, dy = point.y - f.y;
-        var sx = cx + (dx * tx + dy * ty) * pixel, sy = cy - (dx * ux + dy * uy) * pixel;
-        if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
-      }); ctx.strokeStyle = '#c8815666'; ctx.lineWidth = 2; ctx.stroke();
-    }
     var angle = f ? RB.fysik.wrap(f.angle - Math.atan2(f.x, f.y)) : 0;
-    var scale = Math.min(1.3, (H - 105) / (125 + config.bransle * 10));
     raket(config, cx, cy, scale, angle, f);
     if (f && f.slut === 'krasch') {
       ctx.fillStyle = '#d5663840'; ctx.beginPath(); ctx.arc(cx, cy, 45, 0, Math.PI * 2); ctx.fill();
@@ -90,8 +97,8 @@ RB.rita = (function () {
   function karta(config, f) {
     var extent = RB.K.R * 1.18;
     if (f) extent = Math.max(extent, Math.hypot(f.x, f.y) * 1.12, f.bana.bunden ? (RB.K.R + f.bana.apo) * 1.06 : 0);
-    var scale = Math.min(W * .37, H * .35) / extent;
-    var cx = W * .43, cy = H * .57;
+    var scale = Math.min(W * .4, H * .43) / extent;
+    var cx = W * .5, cy = H * .5;
     function project(x, y) { return [cx + x * scale, cy - y * scale]; }
     if (f && f.bana.p > .1) {
       var b = f.bana, started = false; ctx.beginPath();
@@ -115,28 +122,28 @@ RB.rita = (function () {
       var ship = project(f.x, f.y);
       ctx.save(); ctx.translate(ship[0], ship[1]); ctx.rotate(f.angle); ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(5, 6); ctx.lineTo(0, 3); ctx.lineTo(-5, 6); ctx.closePath(); ctx.fillStyle = orange; ctx.fill(); ctx.strokeStyle = '#7b351d'; ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
     }
-    ctx.fillStyle = ink; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center'; ctx.fillText('CERES', cx, cy + Math.min(20, RB.K.R * scale * .2));
+    if (RB.K.R * scale > 20) { ctx.fillStyle = ink; ctx.font = 'bold 10px system-ui'; ctx.textAlign = 'center'; ctx.fillText('CERES', cx, cy + Math.min(15, RB.K.R * scale * .2)); }
   }
+  function yta(v) { ctx = v.ctx; W = v.w; H = v.h; }
   function rita(config, f) {
     senast = [config, f]; if (!ctx) return;
-    ctx.clearRect(0, 0, W, H); fond();
-    if (aktuellVy === 'bana') karta(config, f); else narbild(config, f);
+    yta(nar); ctx.clearRect(0, 0, W, H); fond(f); narbild(config, f);
+    yta(map); ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#f0f4ef'; ctx.fillRect(0, 0, W, H); karta(config, f);
     canvas.setAttribute('aria-label', f ? 'Raket på ' + RB.formatHojd(f.h) + ', fart ' + Math.round(f.fart) + ' meter per sekund.' : 'Din raket på Ceres med ' + config.bransle + ' bränsleblock.');
+    map.canvas.setAttribute('aria-label', f ? 'Banprognos med avstängd motor. ' + (f.bana.saker ? 'Fri bana runt Ceres.' : !f.bana.bunden ? 'På väg från Ceres.' : 'Banan korsar marken.') : 'Ceres och startplattan.');
   }
   function resize() {
-    var bounds = canvas.getBoundingClientRect(); W = bounds.width; H = bounds.height;
-    var dpr = Math.min(2, window.devicePixelRatio || 1); canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    [nar, map].forEach(function (v) {
+      var bounds = v.canvas.getBoundingClientRect(); v.w = bounds.width; v.h = bounds.height;
+      var dpr = Math.min(2, window.devicePixelRatio || 1); v.canvas.width = Math.round(v.w * dpr); v.canvas.height = Math.round(v.h * dpr); v.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
     if (senast) rita.apply(null, senast);
   }
-  function byt(vy) {
-    aktuellVy = vy;
-    ['narbild', 'bana'].forEach(function (id) { var vald = id === (vy === 'raket' ? 'narbild' : 'bana'); var btn = document.getElementById('btn-' + id); btn.classList.toggle('vald', vald); btn.setAttribute('aria-pressed', String(vald)); });
-    var f = RB.flyg && RB.flyg.tillstand(); document.getElementById('ban-data').hidden = !f || vy !== 'bana';
-    if (senast) rita.apply(null, senast); if (f) RB.flyg.hud();
-  }
   function init() {
-    canvas = document.getElementById('raketCanvas'); ctx = canvas.getContext('2d'); new ResizeObserver(resize).observe(canvas); resize();
-    document.getElementById('btn-narbild').addEventListener('click', function () { byt('raket'); }); document.getElementById('btn-bana').addEventListener('click', function () { byt('bana'); });
+    canvas = document.getElementById('raketCanvas'); ctx = canvas.getContext('2d');
+    nar = { canvas: canvas, ctx: ctx, w: 800, h: 400 };
+    var banaCanvas = document.getElementById('banaCanvas'); map = { canvas: banaCanvas, ctx: banaCanvas.getContext('2d'), w: 300, h: 160 };
+    var observer = new ResizeObserver(resize); observer.observe(canvas); observer.observe(banaCanvas); resize();
   }
-  return { init: init, rita: rita, vy: function () { return aktuellVy; } };
+  return { init: init, rita: rita };
 })();

@@ -23,8 +23,8 @@ test('två verkliga sekunder ger meter, inte tiotusentals meter', () => {
   assert.equal(f.fart, 0);
   RB.fysik.tick(f, 2);
   assert.ok(Math.abs(f.t - 2) < 1e-9);
-  assert.ok(f.h > 3 && f.h < 10);
-  assert.ok(Math.abs(initialFuel - f.delar[0].bransle - 2200 / 1500 * 2) < 1e-8);
+  assert.ok(f.h > 20 && f.h < 30);
+  assert.ok(Math.abs(initialFuel - f.delar[0].bransle - 10000 / 2200 * 2) < 1e-8);
   assert.equal(f.iBana, false);
 });
 
@@ -56,22 +56,30 @@ test('höjd ensam eller flykthastighet räknas aldrig som omloppsbana', () => {
   assert.ok(Math.abs(radial.apo - 100000) < 1e-6);
 });
 
-test('första raketen kan nå en verklig, måttlig omloppsbana med två manövrer', () => {
+test('startraketen kan nå en fri omloppsbana inom 90 verkliga sekunder med grova styrval', () => {
   const f = RB.fysik.skapa({ motor: 'start', bransle: 2, steg: 1 });
   let phase = 0;
-  // Testpilot, inte en autopilot i spelet: lyft, bygg sidofart, glid, bränn vid toppen.
-  for (let t = 0; t < 1000 && !f.slut && !f.iBana; t++) {
-    if (t === 20) RB.fysik.sikta(f, Math.PI / 2);
-    if (phase === 0 && f.sidofart > 180) { f.gas = false; phase = 1; }
-    if (phase === 1 && f.radialfart < 0) { f.gas = true; phase = 2; }
-    if (phase === 2) RB.fysik.sikta(f, Math.atan2(f.x, f.y) + Math.PI / 2);
-    if (phase === 2 && f.bana.saker) { f.gas = false; phase = 3; }
-    RB.fysik.tick(f, 1);
+  // Testpilot, inte en autopilot i spelet. Samma 15-gradersval som spelknapparna.
+  for (let i = 0; i < 900 && !f.slut && !f.iBana; i++) {
+    if (f.t >= 4 && phase === 0) { RB.fysik.sikta(f, Math.PI / 2); phase = 1; }
+    if (phase === 1 && f.sidofart >= 160) { RB.fysik.sikta(f, 120 * Math.PI / 180); phase = 2; }
+    if (f.bana.saker) { f.gas = false; phase = 3; }
+    RB.fysik.tick(f, .1);
   }
   assert.equal(f.iBana, true);
   assert.ok(f.bana.peri >= 1000);
-  assert.ok(f.bana.apo < 20000);
+  assert.ok(f.t <= 90);
+  assert.ok(f.bana.apo < 100000);
   assert.ok(f.delar[0].bransle > 0);
+});
+
+test('startraketen har rimlig, högre acceleration med liten tank och ökar när bränsle förbrukas', () => {
+  const liten = RB.fysik.skapa({ bransle: 1 }), stor = RB.fysik.skapa({ bransle: 8 });
+  const initial = RB.motor('start').kraft / RB.fysik.massa(liten);
+  assert.ok(initial > 14 && initial < 15);
+  assert.ok(RB.motor('start').kraft / RB.fysik.massa(stor) > 5);
+  RB.fysik.tick(liten, 5);
+  assert.ok(RB.motor('start').kraft / RB.fysik.massa(liten) > initial);
 });
 
 test('stegbyte tappar faktisk massa, ger ingen gratis fart och pausar inte', () => {
